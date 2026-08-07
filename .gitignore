@@ -1,2 +1,131 @@
+# =====================================================
+# Hostly AI PMS - .gitignore
+# =====================================================
+
+# ==========================
+# Node
+# ==========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==========================
+# Build
+# ==========================
+.next/
+out/
+dist/
+build/
+coverage/
+
+# ==========================
+# TypeScript
+# ==========================
+*.tsbuildinfo
+
+# ==========================
+# Logs
+# ==========================
+logs/
+*.log
+
+# ==========================
+# Environment Variables
+# ==========================
 .env
+.env.*
+!.env.example
+
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+frontend/.env.development
+
 backend/.env
+backend/.env.local
+backend/.env.production
+backend/.env.development
+
+# ==========================
+# Vercel
+# ==========================
+.vercel
+
+# ==========================
+# Supabase Local
+# ==========================
+supabase/.temp
+supabase/.branches
+supabase/.env
+
+# ==========================
+# IDE
+# ==========================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+.idea/
+
+# ==========================
+# OS
+# ==========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==========================
+# Cache
+# ==========================
+.cache/
+.parcel-cache/
+.eslintcache
+.turbo/
+
+# ==========================
+# Testing
+# ==========================
+playwright-report/
+test-results/
+
+# ==========================
+# Runtime
+# ==========================
+tmp/
+temp/
+
+# ==========================
+# Uploads (Development)
+# ==========================
+uploads/
+storage/
+
+# ==========================
+# Generated Reports
+# ==========================
+reports/
+exports/
+
+# ==========================
+# Secrets
+# ==========================
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# ==========================
+# Database Dumps
+# ==========================
+*.sql
+*.sqlite
+*.db
+
+# ==========================
+# Misc
+# ==========================
+*.swp
+*.swo
