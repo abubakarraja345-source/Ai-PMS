@@ -1,9 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+  const supabase = createClient();
+
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,8 +34,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-2xl border p-8 shadow-sm">
+    <main className="flex min-h-screen items-center justify-center">
+      <div className="w-full max-w-md rounded-2xl border p-8">
         <h1 className="text-3xl font-semibold">Welcome back</h1>
 
         <p className="mt-2 text-muted-foreground">
