@@ -5,6 +5,9 @@ import compression from "compression";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 
+import testRoutes from "./routes/test.routes";
+import propertyRoutes from "./modules/properties/routes";
+
 const app = express();
 
 app.use(helmet());
@@ -21,5 +24,9 @@ app.get("/health", (req, res) => {
     version: "1.0.0",
   });
 });
+
+app.use("/api/test", testRoutes);
+
+app.use("/api/properties", propertyRoutes);
 
 export default app;

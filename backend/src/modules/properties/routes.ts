@@ -1,6 +1,33 @@
-import { Router } from 'express';
-import { PropertyController } from './controller';
+import { Router } from "express";
 
-export const propertyRouter = Router();
+import { requireAuth } from "../../middleware/auth.middleware";
+import { requireOrganization } from "../../middleware/organization.middleware";
 
-propertyRouter.get('/', PropertyController.getAll);
+import {
+  listProperties,
+  createPropertyController,
+  getPropertyController,
+} from "./controller";
+
+const router = Router();
+
+router.get(
+  "/",
+  requireAuth,
+  requireOrganization,
+  listProperties
+);
+
+router.post(
+  "/",
+  requireAuth,
+  requireOrganization,
+  createPropertyController
+);
+router.get(
+  "/:id",
+  requireAuth,
+  requireOrganization,
+  getPropertyController
+);
+export default router;

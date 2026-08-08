@@ -1,6 +1,13 @@
-import { env } from './env';
+import { createClient } from "@supabase/supabase-js";
+import { env } from "./env";
 
-export const supabaseConfig = {
-  url: env.supabaseUrl,
-  serviceRoleKey: env.supabaseServiceRoleKey,
-};
+export const supabase = createClient(
+  env.supabaseUrl,
+  env.supabaseServiceRoleKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);

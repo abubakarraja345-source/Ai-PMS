@@ -1,9 +1,119 @@
-import { Request, Response } from 'express';
-import { PropertyService } from './service';
+import { Response } from "express";
+import { OrganizationRequest } from "../../middleware/organization.middleware";
+import {
+  addProperty,
+  getProperties,
+  getProperty,
+} from "./service";
 
-export class PropertyController {
-  static async getAll(req: Request, res: Response) {
-    const properties = await PropertyService.getAll();
-    res.json(properties);
+export async function listProperties(
+  req: OrganizationRequest,
+  res: Response
+) {
+  try {
+    if (!req.organization) {
+      return res.status(403).json({
+        success: false,
+        error: "Organization context is required",
+      });
+    }
+
+    const properties = await getProperties(
+      req.organization.id
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: properties,
+    });
+  } catch (error) {
+    console.error("List properties error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Unable to load properties",
+    });
+  }
+}
+
+export async function createPropertyController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  try {
+    if (!req.organization) {
+      return res.status(403).json({
+        success: false,
+        error: "Organization context is required",
+      });
+    }
+
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required",
+      });
+    }
+
+    const property = await addProperty(
+      req.organization.id,
+      req.user.id,
+      req.body
+    );
+
+    return res.status(201).json({
+      success: true,
+      data: property,
+    });
+  } catch (error) {
+    console.error("Create property error:", error);
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unable to create property";
+
+    return res.status(400).json({
+      success: false,
+      error: message,
+    });
+  }
+}
+
+export async function getPropertyController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  try {
+    if (!req.organization) {
+      return res.status(403).json({
+        success: false,
+        error: "Organization context is required",
+      });
+    }
+
+    const property = await getProperty(
+      req.organization.id,
+      req.params.id
+    );
+
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        error: "Property not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: property,
+    });
+  } catch (error) {
+    console.error("Get property error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Unable to load property",
+    });
   }
 }

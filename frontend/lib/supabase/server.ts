@@ -12,15 +12,13 @@ export async function createClient() {
         getAll() {
           return cookieStore.getAll();
         },
-
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
           } catch {
-            // Cookie writes can fail when called from a Server Component.
-            // The proxy will refresh the session.
+            // Server Component
           }
         },
       },
