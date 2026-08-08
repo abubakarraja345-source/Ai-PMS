@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "@/components/auth/logout-button";
+import DashboardStats from "@/components/dashboard/dashboard-stats";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -14,9 +15,9 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <div className="rounded-2xl border p-8">
-        <h1 className="text-2xl font-semibold">
+    <main className="min-h-screen p-8">
+      <div>
+        <h1 className="text-3xl font-bold">
           Welcome to AI PMS
         </h1>
 
@@ -24,7 +25,10 @@ export default async function DashboardPage() {
           Logged in as {user.email}
         </p>
       </div>
-      <div className="mt-6">
+
+      <DashboardStats />
+
+      <div className="mt-8">
         <LogoutButton />
       </div>
     </main>

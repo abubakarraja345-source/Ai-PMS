@@ -4,41 +4,47 @@ import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
-  const supabase = createClient();
-
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin(e: FormEvent) {
+  const supabase = createClient();
+
+  async function handleLogin(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     setLoading(true);
     setMessage("");
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
 
-    setLoading(false);
+      if (error) {
+        setMessage(`❌ ${error.message}`);
+        return;
+      }
 
-    if (error) {
-      setMessage(`❌ ${error.message}`);
-      return;
+      setMessage("✅ Check your email. We sent you a Magic Link.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? `❌ ${error.message}` : "❌ Login failed"
+      );
+    } finally {
+      setLoading(false);
     }
-
-    setMessage("✅ Check your email. We sent you a Magic Link.");
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
+    <main className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-md rounded-2xl border p-8">
         <h1 className="text-3xl font-semibold">Welcome back</h1>
 
-        <p className="mt-2 text-muted-foreground">
+        <p className="mt-2 text-gray-500">
           Enter your email to receive a secure login link.
         </p>
 

@@ -4,6 +4,8 @@ import {
   addProperty,
   getProperties,
   getProperty,
+  editProperty,
+  removeProperty,
 } from "./service";
 
 export async function listProperties(
@@ -114,6 +116,86 @@ export async function getPropertyController(
     return res.status(500).json({
       success: false,
       error: "Unable to load property",
+    });
+  }
+}
+
+export async function updatePropertyController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  try {
+    if (!req.organization) {
+      return res.status(403).json({
+        success: false,
+        error: "Organization context is required",
+      });
+    }
+
+    const property = await editProperty(
+      req.organization.id,
+      req.params.id,
+      req.body
+    );
+
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        error: "Property not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: property,
+    });
+  } catch (error) {
+    console.error("Update property error:", error);
+
+    return res.status(400).json({
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unable to update property",
+    });
+  }
+}
+
+export async function deletePropertyController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  try {
+    if (!req.organization) {
+      return res.status(403).json({
+        success: false,
+        error: "Organization context is required",
+      });
+    }
+
+    const deleted = await removeProperty(
+      req.organization.id,
+      req.params.id
+    );
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        error: "Property not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Property deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete property error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Unable to delete property",
     });
   }
 }

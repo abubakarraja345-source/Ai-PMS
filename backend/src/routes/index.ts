@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { healthRouter } from './health.routes';
 import { authRouter } from './auth.routes';
-import { propertyRouter } from './property.routes';
+import { propertyRouter } from './properties.routes';
 import { reservationRouter } from './reservation.routes';
 import { guestRouter } from './guest.routes';
 import { calendarRouter } from './calendar.routes';

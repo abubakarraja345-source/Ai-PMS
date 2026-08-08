@@ -82,6 +82,26 @@ export async function createProperty(
 
   return data;
 }
+
+export async function updateProperty(
+  organizationId: string,
+  propertyId: string,
+  updates: Record<string, unknown>
+): Promise<Property | null> {
+  const { data, error } = await supabase
+    .from("properties")
+    .update(updates)
+    .eq("id", propertyId)
+    .eq("organization_id", organizationId)
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
 export async function findPropertyById(
   organizationId: string,
   propertyId: string
@@ -98,4 +118,21 @@ export async function findPropertyById(
   }
 
   return data;
+}
+export async function deleteProperty(
+  organizationId: string,
+  propertyId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("properties")
+    .delete()
+    .eq("id", propertyId)
+    .eq("organization_id", organizationId)
+    .select("id");
+
+  if (error) {
+    throw error;
+  }
+
+  return !!data && data.length > 0;
 }

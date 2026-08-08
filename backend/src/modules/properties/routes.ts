@@ -7,6 +7,8 @@ import {
   listProperties,
   createPropertyController,
   getPropertyController,
+  updatePropertyController,
+  deletePropertyController,
 } from "./controller";
 
 const router = Router();
@@ -30,4 +32,18 @@ router.get(
   requireOrganization,
   getPropertyController
 );
+router.patch(
+  "/:id",
+  requireAuth,
+  requireOrganization,
+  updatePropertyController
+);
+
+router.delete(
+  "/:id",
+  requireAuth,
+  requireOrganization,
+  deletePropertyController
+);
+
 export default router;

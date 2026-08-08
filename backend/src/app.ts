@@ -4,7 +4,7 @@ import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-
+import dashboardRoutes from "./routes/dashboard.routes";
 import testRoutes from "./routes/test.routes";
 import propertyRoutes from "./modules/properties/routes";
 
@@ -26,7 +26,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/test", testRoutes);
-
+app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/properties", propertyRoutes);
 
 export default app;
