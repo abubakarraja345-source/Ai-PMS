@@ -3,25 +3,50 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
 
+interface PropertySummary {
+  id: string;
+  title: string;
+}
+
+interface GuestSummary {
+  id: string;
+  first_name: string;
+  last_name: string | null;
+  email: string | null;
+}
+
 interface Reservation {
   id: string;
+  organization_id?: string;
+
   property_id: string;
   guest_id: string;
+
+  property: PropertySummary | null;
+  guest: GuestSummary | null;
+
   booking_reference: string | null;
   source: string;
   status: string;
+
   check_in: string;
   check_out: string;
+
   adults: number;
   children: number;
   infants: number;
   pets: number;
+
   nights: number | null;
+
   total_amount: number | null;
   cleaning_fee: number | null;
   taxes: number | null;
+
   currency: string | null;
+
   special_requests: string | null;
+
   created_at?: string;
   updated_at?: string;
 }
@@ -137,11 +162,25 @@ function getStatusClasses(status: string) {
   }
 }
 
+function getGuestName(
+  guest: GuestSummary | null
+) {
+  if (!guest) return "Unknown guest";
+
+  return `${guest.first_name} ${
+    guest.last_name ?? ""
+  }`.trim();
+}
+
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<
     Reservation[]
   >([]);
 
+  /*
+   * These are still needed for the
+   * Create Reservation dropdowns.
+   */
   const [properties, setProperties] = useState<Property[]>(
     []
   );
@@ -163,6 +202,7 @@ export default function ReservationsPage() {
     useState<ModalMode>(null);
 
   const [search, setSearch] = useState("");
+
   const [statusFilter, setStatusFilter] =
     useState("all");
 
@@ -170,7 +210,16 @@ export default function ReservationsPage() {
     useState<ReservationForm>(initialForm);
 
   /*
-   * Load all reservation-related data
+   * Load reservations + properties + guests.
+   *
+   * Reservations now already contain:
+   *
+   * reservation.property
+   * reservation.guest
+   *
+   * Properties and guests are still loaded
+   * because the Create Reservation form needs
+   * them for dropdowns.
    */
   async function loadData() {
     try {
@@ -214,37 +263,39 @@ export default function ReservationsPage() {
   }, []);
 
   /*
-   * Filter reservations
+   * Filter reservations.
+   *
+   * IMPORTANT:
+   * We now use reservation.property and
+   * reservation.guest directly.
    */
   const filteredReservations = useMemo(() => {
     const query = search.trim().toLowerCase();
 
     return reservations.filter((reservation) => {
-      const property = properties.find(
-        (item) =>
-          item.id === reservation.property_id
-      );
+      const propertyName =
+        reservation.property?.title ?? "";
 
-      const guest = guests.find(
-        (item) =>
-          item.id === reservation.guest_id
-      );
+      const guestName =
+        getGuestName(reservation.guest);
 
-      const guestName = guest
-        ? `${guest.first_name} ${
-            guest.last_name ?? ""
-          }`
-        : "";
+      const guestEmail =
+        reservation.guest?.email ?? "";
 
       const matchesSearch =
         !query ||
         reservation.booking_reference
           ?.toLowerCase()
           .includes(query) ||
-        property?.title
-          ?.toLowerCase()
+        propertyName
+          .toLowerCase()
           .includes(query) ||
-        guestName.toLowerCase().includes(query) ||
+        guestName
+          .toLowerCase()
+          .includes(query) ||
+        guestEmail
+          .toLowerCase()
+          .includes(query) ||
         reservation.source
           ?.toLowerCase()
           .includes(query);
@@ -259,15 +310,10 @@ export default function ReservationsPage() {
     });
   }, [
     reservations,
-    properties,
-    guests,
     search,
     statusFilter,
   ]);
 
-  /*
-   * Form field updater
-   */
   function updateForm(
     field: keyof ReservationForm,
     value: string | number
@@ -278,25 +324,16 @@ export default function ReservationsPage() {
     }));
   }
 
-  /*
-   * Reset create form
-   */
   function resetForm() {
     setForm(initialForm);
   }
 
-  /*
-   * Open create modal
-   */
   function openCreateModal() {
     resetForm();
     setError("");
     setShowCreateModal(true);
   }
 
-  /*
-   * Close create modal
-   */
   function closeCreateModal() {
     if (saving) return;
 
@@ -332,43 +369,61 @@ export default function ReservationsPage() {
         "/api/reservations",
         {
           method: "POST",
+
           body: JSON.stringify({
             property_id: form.property_id,
             guest_id: form.guest_id,
+
             booking_reference:
               form.booking_reference || null,
+
             source: form.source,
+
             status: form.status,
+
             check_in: form.check_in,
             check_out: form.check_out,
+
             adults: Number(form.adults),
             children: Number(form.children),
             infants: Number(form.infants),
             pets: Number(form.pets),
+
             nights,
+
             total_amount:
               form.total_amount === ""
                 ? null
                 : Number(form.total_amount),
+
             cleaning_fee:
               form.cleaning_fee === ""
                 ? 0
                 : Number(form.cleaning_fee),
+
             taxes:
               form.taxes === ""
                 ? 0
                 : Number(form.taxes),
+
             currency: form.currency,
+
             special_requests:
               form.special_requests || null,
           }),
         }
       );
 
-      setReservations((current) => [
-        response.data,
-        ...current,
-      ]);
+      /*
+       * The POST response may contain the
+       * reservation but depending on the backend
+       * it may not contain the nested property/guest.
+       *
+       * Reloading ensures the new reservation
+       * gets the same relational structure as
+       * the GET endpoint.
+       */
+      await loadData();
 
       closeCreateModal();
     } catch (err) {
@@ -443,10 +498,11 @@ export default function ReservationsPage() {
       setSaving(true);
       setError("");
 
-      const response = await apiFetch(
+      await apiFetch(
         `/api/reservations/${selectedReservation.id}`,
         {
           method: "PATCH",
+
           body: JSON.stringify({
             check_in:
               selectedReservation.check_in,
@@ -483,13 +539,11 @@ export default function ReservationsPage() {
         }
       );
 
-      setReservations((current) =>
-        current.map((item) =>
-          item.id === selectedReservation.id
-            ? response.data
-            : item
-        )
-      );
+      /*
+       * Reload to get the complete relational
+       * property + guest objects again.
+       */
+      await loadData();
 
       setSelectedReservation(null);
       setModalMode(null);
@@ -523,28 +577,34 @@ export default function ReservationsPage() {
       setSaving(true);
       setError("");
 
-      const response = await apiFetch(
+      await apiFetch(
         `/api/reservations/${reservation.id}`,
         {
           method: "PATCH",
+
           body: JSON.stringify({
             status: "cancelled",
           }),
         }
       );
 
-      setReservations((current) =>
-        current.map((item) =>
-          item.id === reservation.id
-            ? response.data
-            : item
-        )
-      );
+      /*
+       * Reload so the relational property/guest
+       * data remains consistent.
+       */
+      await loadData();
 
       if (
         selectedReservation?.id === reservation.id
       ) {
-        setSelectedReservation(response.data);
+        setSelectedReservation((current) =>
+          current
+            ? {
+                ...current,
+                status: "cancelled",
+              }
+            : current
+        );
       }
     } catch (err) {
       setError(
@@ -574,17 +634,11 @@ export default function ReservationsPage() {
     });
   }
 
-  /*
-   * Calculate create-form nights
-   */
   const createNights = calculateNights(
     form.check_in,
     form.check_out
   );
 
-  /*
-   * Calculate selected reservation nights
-   */
   const selectedNights = selectedReservation
     ? calculateNights(
         selectedReservation.check_in,
@@ -594,6 +648,7 @@ export default function ReservationsPage() {
 
   return (
     <div className="min-h-full">
+
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
@@ -614,6 +669,7 @@ export default function ReservationsPage() {
           <span className="mr-2 text-lg leading-none">
             +
           </span>
+
           New Reservation
         </button>
       </div>
@@ -656,11 +712,25 @@ export default function ReservationsPage() {
           }
           className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
         >
-          <option value="all">All statuses</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="pending">Pending</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
+          <option value="all">
+            All statuses
+          </option>
+
+          <option value="confirmed">
+            Confirmed
+          </option>
+
+          <option value="pending">
+            Pending
+          </option>
+
+          <option value="completed">
+            Completed
+          </option>
+
+          <option value="cancelled">
+            Cancelled
+          </option>
         </select>
 
         <button
@@ -674,6 +744,7 @@ export default function ReservationsPage() {
 
       {/* Stats */}
       <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
         <div className="rounded-xl border bg-white p-5 shadow-sm">
           <p className="text-sm text-slate-500">
             Total Reservations
@@ -692,7 +763,8 @@ export default function ReservationsPage() {
           <p className="mt-2 text-2xl font-semibold text-emerald-600">
             {
               reservations.filter(
-                (item) => item.status === "confirmed"
+                (item) =>
+                  item.status === "confirmed"
               ).length
             }
           </p>
@@ -706,7 +778,8 @@ export default function ReservationsPage() {
           <p className="mt-2 text-2xl font-semibold text-amber-600">
             {
               reservations.filter(
-                (item) => item.status === "pending"
+                (item) =>
+                  item.status === "pending"
               ).length
             }
           </p>
@@ -726,10 +799,12 @@ export default function ReservationsPage() {
             }
           </p>
         </div>
+
       </div>
 
       {/* Table */}
       <div className="mt-6 overflow-hidden rounded-xl border bg-white shadow-sm">
+
         {loading ? (
           <div className="p-12 text-center">
             <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
@@ -740,6 +815,7 @@ export default function ReservationsPage() {
           </div>
         ) : filteredReservations.length === 0 ? (
           <div className="p-12 text-center">
+
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
               📅
             </div>
@@ -749,7 +825,8 @@ export default function ReservationsPage() {
             </h3>
 
             <p className="mt-1 text-sm text-slate-500">
-              {search || statusFilter !== "all"
+              {search ||
+              statusFilter !== "all"
                 ? "Try changing your search or filters."
                 : "Create your first reservation to get started."}
             </p>
@@ -766,7 +843,9 @@ export default function ReservationsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
+
             <table className="w-full min-w-[1050px] text-left text-sm">
+
               <thead className="border-b bg-slate-50">
                 <tr>
                   <th className="px-5 py-4 font-medium text-slate-600">
@@ -804,32 +883,21 @@ export default function ReservationsPage() {
               </thead>
 
               <tbody className="divide-y">
+
                 {filteredReservations.map(
                   (reservation) => {
-                    const property =
-                      properties.find(
-                        (item) =>
-                          item.id ===
-                          reservation.property_id
+
+                    const guestName =
+                      getGuestName(
+                        reservation.guest
                       );
-
-                    const guest = guests.find(
-                      (item) =>
-                        item.id ===
-                        reservation.guest_id
-                    );
-
-                    const guestName = guest
-                      ? `${guest.first_name} ${
-                          guest.last_name ?? ""
-                        }`.trim()
-                      : "Unknown guest";
 
                     return (
                       <tr
                         key={reservation.id}
                         className="transition hover:bg-slate-50"
                       >
+
                         {/* Booking */}
                         <td className="px-5 py-4">
                           <button
@@ -854,49 +922,63 @@ export default function ReservationsPage() {
 
                         {/* Guest */}
                         <td className="px-5 py-4">
+
                           <p className="font-medium text-slate-800">
                             {guestName}
                           </p>
 
-                          {guest?.email && (
-                            <p className="mt-1 max-w-[180px] truncate text-xs text-slate-500">
-                              {guest.email}
+                          {reservation.guest
+                            ?.email && (
+                            <p className="mt-1 max-w-[200px] truncate text-xs text-slate-500">
+                              {
+                                reservation
+                                  .guest
+                                  .email
+                              }
                             </p>
                           )}
+
                         </td>
 
                         {/* Property */}
                         <td className="px-5 py-4">
+
                           <p className="font-medium text-slate-800">
-                            {property?.title ??
+                            {reservation.property
+                              ?.title ??
                               "Unknown property"}
                           </p>
 
-                          {property?.city && (
-                            <p className="mt-1 text-xs text-slate-500">
-                              {property.city}
-                            </p>
-                          )}
                         </td>
 
                         {/* Stay */}
                         <td className="px-5 py-4">
+
                           <p className="text-slate-700">
                             {reservation.check_in}
                           </p>
 
                           <p className="mt-1 text-xs text-slate-500">
-                            → {reservation.check_out}
+                            →{" "}
+                            {
+                              reservation.check_out
+                            }
                           </p>
 
                           <p className="mt-1 text-xs font-medium text-slate-600">
-                            {reservation.nights ?? "-"}{" "}
+                            {reservation.nights ??
+                              (calculateNights(
+                                reservation.check_in,
+                                reservation.check_out
+                              ) || "-")}{" "}
                             nights
                           </p>
+
                         </td>
 
                         {/* Guests */}
                         <td className="px-5 py-4">
+
                           <p className="font-medium text-slate-800">
                             {reservation.adults +
                               reservation.children +
@@ -906,10 +988,12 @@ export default function ReservationsPage() {
                           <p className="mt-1 text-xs text-slate-500">
                             {reservation.adults} adults
                           </p>
+
                         </td>
 
                         {/* Amount */}
                         <td className="px-5 py-4">
+
                           <p className="font-medium text-slate-900">
                             {formatCurrency(
                               reservation.total_amount,
@@ -918,27 +1002,35 @@ export default function ReservationsPage() {
                           </p>
 
                           {reservation.taxes &&
-                            reservation.taxes > 0 ? (
+                            reservation.taxes >
+                              0 ? (
                             <p className="mt-1 text-xs text-slate-500">
                               + taxes
                             </p>
                           ) : null}
+
                         </td>
 
                         {/* Status */}
                         <td className="px-5 py-4">
+
                           <span
                             className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${getStatusClasses(
                               reservation.status
                             )}`}
                           >
-                            {reservation.status}
+                            {
+                              reservation.status
+                            }
                           </span>
+
                         </td>
 
                         {/* Actions */}
                         <td className="px-5 py-4">
+
                           <div className="flex justify-end gap-2">
+
                             <button
                               onClick={() =>
                                 openViewReservation(
@@ -975,12 +1067,16 @@ export default function ReservationsPage() {
                                 Cancel
                               </button>
                             )}
+
                           </div>
+
                         </td>
+
                       </tr>
                     );
                   }
                 )}
+
               </tbody>
             </table>
           </div>
@@ -990,8 +1086,11 @@ export default function ReservationsPage() {
       {/* Create Reservation Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
+
           <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+
             <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-5">
+
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">
                   New Reservation
@@ -1008,14 +1107,17 @@ export default function ReservationsPage() {
               >
                 ✕
               </button>
+
             </div>
 
             <form
               onSubmit={createReservation}
               className="space-y-6 p-6"
             >
+
               {/* Property + Guest */}
               <div className="grid gap-5 md:grid-cols-2">
+
                 <div>
                   <label className="text-sm font-medium text-slate-700">
                     Property *
@@ -1036,14 +1138,16 @@ export default function ReservationsPage() {
                       Select property
                     </option>
 
-                    {properties.map((property) => (
-                      <option
-                        key={property.id}
-                        value={property.id}
-                      >
-                        {property.title}
-                      </option>
-                    ))}
+                    {properties.map(
+                      (property) => (
+                        <option
+                          key={property.id}
+                          value={property.id}
+                        >
+                          {property.title}
+                        </option>
+                      )
+                    )}
                   </select>
                 </div>
 
@@ -1074,15 +1178,19 @@ export default function ReservationsPage() {
                       >
                         {guest.first_name}{" "}
                         {guest.last_name ?? ""}
-                        {guest.vip ? " ★ VIP" : ""}
+                        {guest.vip
+                          ? " ★ VIP"
+                          : ""}
                       </option>
                     ))}
                   </select>
                 </div>
+
               </div>
 
               {/* Booking */}
               <div className="grid gap-5 md:grid-cols-3">
+
                 <div>
                   <label className="text-sm font-medium text-slate-700">
                     Booking Reference
@@ -1119,15 +1227,19 @@ export default function ReservationsPage() {
                     <option value="direct">
                       Direct
                     </option>
+
                     <option value="airbnb">
                       Airbnb
                     </option>
+
                     <option value="booking.com">
                       Booking.com
                     </option>
+
                     <option value="vrbo">
                       VRBO
                     </option>
+
                     <option value="other">
                       Other
                     </option>
@@ -1152,20 +1264,24 @@ export default function ReservationsPage() {
                     <option value="confirmed">
                       Confirmed
                     </option>
+
                     <option value="pending">
                       Pending
                     </option>
                   </select>
                 </div>
+
               </div>
 
               {/* Dates */}
               <div>
+
                 <h3 className="text-sm font-semibold text-slate-900">
                   Stay Details
                 </h3>
 
                 <div className="mt-4 grid gap-5 md:grid-cols-3">
+
                   <div>
                     <label className="text-sm font-medium text-slate-700">
                       Check-in *
@@ -1194,7 +1310,10 @@ export default function ReservationsPage() {
                       required
                       type="date"
                       value={form.check_out}
-                      min={form.check_in || undefined}
+                      min={
+                        form.check_in ||
+                        undefined
+                      }
                       onChange={(event) =>
                         updateForm(
                           "check_out",
@@ -1206,7 +1325,9 @@ export default function ReservationsPage() {
                   </div>
 
                   <div className="flex items-end">
+
                     <div className="w-full rounded-lg bg-slate-50 px-4 py-3">
+
                       <p className="text-xs text-slate-500">
                         Nights
                       </p>
@@ -1214,57 +1335,79 @@ export default function ReservationsPage() {
                       <p className="mt-1 font-semibold text-slate-900">
                         {createNights || "-"}
                       </p>
+
                     </div>
+
                   </div>
+
                 </div>
               </div>
 
               {/* Guest Count */}
               <div>
+
                 <h3 className="text-sm font-semibold text-slate-900">
                   Guests
                 </h3>
 
                 <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+
                   {[
                     ["adults", "Adults", 1],
-                    ["children", "Children", 0],
-                    ["infants", "Infants", 0],
+                    [
+                      "children",
+                      "Children",
+                      0,
+                    ],
+                    [
+                      "infants",
+                      "Infants",
+                      0,
+                    ],
                     ["pets", "Pets", 0],
-                  ].map(([field, label, min]) => (
-                    <div key={field}>
-                      <label className="text-sm font-medium text-slate-700">
-                        {label}
-                      </label>
+                  ].map(
+                    ([field, label, min]) => (
+                      <div key={field}>
 
-                      <input
-                        type="number"
-                        min={Number(min)}
-                        value={
-                          form[
-                            field as keyof ReservationForm
-                          ] as number
-                        }
-                        onChange={(event) =>
-                          updateForm(
-                            field as keyof ReservationForm,
-                            Number(event.target.value)
-                          )
-                        }
-                        className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
-                      />
-                    </div>
-                  ))}
+                        <label className="text-sm font-medium text-slate-700">
+                          {label}
+                        </label>
+
+                        <input
+                          type="number"
+                          min={Number(min)}
+                          value={
+                            form[
+                              field as keyof ReservationForm
+                            ] as number
+                          }
+                          onChange={(event) =>
+                            updateForm(
+                              field as keyof ReservationForm,
+                              Number(
+                                event.target.value
+                              )
+                            )
+                          }
+                          className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                        />
+
+                      </div>
+                    )
+                  )}
+
                 </div>
               </div>
 
               {/* Financial */}
               <div>
+
                 <h3 className="text-sm font-semibold text-slate-900">
                   Financial
                 </h3>
 
                 <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+
                   <div>
                     <label className="text-sm font-medium text-slate-700">
                       Total Amount
@@ -1344,22 +1487,27 @@ export default function ReservationsPage() {
                       <option value="USD">
                         USD
                       </option>
+
                       <option value="PKR">
                         PKR
                       </option>
+
                       <option value="EUR">
                         EUR
                       </option>
+
                       <option value="GBP">
                         GBP
                       </option>
                     </select>
                   </div>
+
                 </div>
               </div>
 
               {/* Requests */}
               <div>
+
                 <label className="text-sm font-medium text-slate-700">
                   Special Requests
                 </label>
@@ -1376,10 +1524,12 @@ export default function ReservationsPage() {
                   placeholder="Late check-in, extra bed, airport pickup..."
                   className="mt-2 w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
                 />
+
               </div>
 
               {/* Actions */}
               <div className="flex justify-end gap-3 border-t pt-5">
+
                 <button
                   type="button"
                   onClick={closeCreateModal}
@@ -1402,7 +1552,9 @@ export default function ReservationsPage() {
                     ? "Creating..."
                     : "Create Reservation"}
                 </button>
+
               </div>
+
             </form>
           </div>
         </div>
@@ -1412,10 +1564,14 @@ export default function ReservationsPage() {
       {selectedReservation &&
         modalMode && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
+
             <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+
               {/* Header */}
               <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-5">
+
                 <div>
+
                   <h2 className="text-lg font-semibold text-slate-900">
                     {modalMode === "view"
                       ? "Reservation Details"
@@ -1426,6 +1582,7 @@ export default function ReservationsPage() {
                     {selectedReservation.booking_reference ||
                       selectedReservation.id}
                   </p>
+
                 </div>
 
                 <button
@@ -1436,54 +1593,59 @@ export default function ReservationsPage() {
                 >
                   ✕
                 </button>
+
               </div>
 
               <div className="space-y-6 p-6">
+
                 {/* Summary */}
                 <div className="grid gap-4 sm:grid-cols-2">
+
                   <div className="rounded-lg bg-slate-50 p-4">
+
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                       Property
                     </p>
 
                     <p className="mt-1 font-medium text-slate-900">
-                      {properties.find(
-                        (item) =>
-                          item.id ===
-                          selectedReservation.property_id
-                      )?.title ??
+                      {selectedReservation.property
+                        ?.title ??
                         "Unknown property"}
                     </p>
+
                   </div>
 
                   <div className="rounded-lg bg-slate-50 p-4">
+
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                       Guest
                     </p>
 
                     <p className="mt-1 font-medium text-slate-900">
-                      {(() => {
-                        const guest =
-                          guests.find(
-                            (item) =>
-                              item.id ===
-                              selectedReservation.guest_id
-                          );
-
-                        return guest
-                          ? `${guest.first_name} ${
-                              guest.last_name ?? ""
-                            }`.trim()
-                          : "Unknown guest";
-                      })()}
+                      {getGuestName(
+                        selectedReservation.guest
+                      )}
                     </p>
+
+                    {selectedReservation.guest
+                      ?.email && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        {
+                          selectedReservation
+                            .guest.email
+                        }
+                      </p>
+                    )}
+
                   </div>
+
                 </div>
 
                 {/* View */}
                 {modalMode === "view" && (
                   <>
                     <div className="grid gap-5 sm:grid-cols-2">
+
                       <div>
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                           Booking Reference
@@ -1576,7 +1738,9 @@ export default function ReservationsPage() {
                             selectedReservation.infants
                           }{" "}
                           infants ·{" "}
-                          {selectedReservation.pets}{" "}
+                          {
+                            selectedReservation.pets
+                          }{" "}
                           pets
                         </p>
                       </div>
@@ -1593,18 +1757,21 @@ export default function ReservationsPage() {
                           )}
                         </p>
                       </div>
+
                     </div>
 
                     {(selectedReservation.special_requests ||
                       selectedReservation.cleaning_fee ||
                       selectedReservation.taxes) && (
                       <div className="border-t pt-5">
+
                         <h3 className="text-sm font-semibold text-slate-900">
                           Additional Details
                         </h3>
 
                         {selectedReservation.special_requests && (
                           <div className="mt-4 rounded-lg bg-slate-50 p-4">
+
                             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                               Special Requests
                             </p>
@@ -1614,10 +1781,12 @@ export default function ReservationsPage() {
                                 selectedReservation.special_requests
                               }
                             </p>
+
                           </div>
                         )}
 
                         <div className="mt-4 grid gap-4 sm:grid-cols-2">
+
                           <div>
                             <p className="text-xs text-slate-500">
                               Cleaning Fee
@@ -1643,11 +1812,13 @@ export default function ReservationsPage() {
                               )}
                             </p>
                           </div>
+
                         </div>
                       </div>
                     )}
 
                     <div className="flex justify-end border-t pt-5">
+
                       <button
                         onClick={() =>
                           openEditReservation(
@@ -1658,6 +1829,7 @@ export default function ReservationsPage() {
                       >
                         Edit Reservation
                       </button>
+
                     </div>
                   </>
                 )}
@@ -1666,6 +1838,7 @@ export default function ReservationsPage() {
                 {modalMode === "edit" && (
                   <>
                     <div className="grid gap-5 sm:grid-cols-2">
+
                       <div>
                         <label className="text-sm font-medium text-slate-700">
                           Check-in
@@ -1849,21 +2022,26 @@ export default function ReservationsPage() {
                           <option value="confirmed">
                             Confirmed
                           </option>
+
                           <option value="pending">
                             Pending
                           </option>
+
                           <option value="completed">
                             Completed
                           </option>
+
                           <option value="cancelled">
                             Cancelled
                           </option>
                         </select>
                       </div>
+
                     </div>
 
                     {/* Nights preview */}
                     <div className="rounded-lg bg-slate-50 p-4">
+
                       <p className="text-xs text-slate-500">
                         Updated stay
                       </p>
@@ -1871,10 +2049,12 @@ export default function ReservationsPage() {
                       <p className="mt-1 font-semibold text-slate-900">
                         {selectedNights} nights
                       </p>
+
                     </div>
 
                     {/* Edit buttons */}
                     <div className="flex justify-end gap-3 border-t pt-5">
+
                       <button
                         type="button"
                         onClick={
@@ -1896,13 +2076,16 @@ export default function ReservationsPage() {
                           ? "Saving..."
                           : "Save Changes"}
                       </button>
+
                     </div>
                   </>
                 )}
+
               </div>
             </div>
           </div>
         )}
+
     </div>
   );
 }

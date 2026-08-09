@@ -5,30 +5,48 @@ import {
 } from "./types";
 import { CreateReservationInput } from "./validation";
 
+const RESERVATION_SELECT = `
+  id,
+  organization_id,
+  property_id,
+  guest_id,
+  booking_reference,
+  source,
+  status,
+  check_in,
+  check_out,
+  adults,
+  children,
+  infants,
+  pets,
+  nights,
+  total_amount,
+  cleaning_fee,
+  taxes,
+  currency,
+  special_requests,
+  created_at,
+  updated_at,
+
+  property:properties(
+    id,
+    title
+  ),
+
+  guest:guests(
+    id,
+    first_name,
+    last_name,
+    email
+  )
+`;
+
 export async function findReservationsByOrganization(
   organizationId: string
 ): Promise<ReservationListItem[]> {
   const { data, error } = await supabase
     .from("reservations")
-    .select(`
-      id,
-      property_id,
-      guest_id,
-      booking_reference,
-      source,
-      status,
-      check_in,
-      check_out,
-      adults,
-      children,
-      infants,
-      pets,
-      nights,
-      total_amount,
-      currency,
-      created_at,
-      updated_at
-    `)
+    .select(RESERVATION_SELECT)
     .eq("organization_id", organizationId)
     .order("check_in", {
       ascending: true,
@@ -47,7 +65,7 @@ export async function findReservationById(
 ): Promise<Reservation | null> {
   const { data, error } = await supabase
     .from("reservations")
-    .select("*")
+    .select(RESERVATION_SELECT)
     .eq("id", reservationId)
     .eq("organization_id", organizationId)
     .maybeSingle();
@@ -115,7 +133,7 @@ export async function createReservation(
       special_requests:
         input.special_requests ?? null,
     })
-    .select("*")
+    .select(RESERVATION_SELECT)
     .single();
 
   if (error) {
@@ -135,7 +153,7 @@ export async function updateReservation(
     .update(updates)
     .eq("id", reservationId)
     .eq("organization_id", organizationId)
-    .select("*")
+    .select(RESERVATION_SELECT)
     .maybeSingle();
 
   if (error) {
