@@ -7,7 +7,8 @@ import cookieParser from "cookie-parser";
 import dashboardRoutes from "./routes/dashboard.routes";
 import testRoutes from "./routes/test.routes";
 import propertyRoutes from "./modules/properties/routes";
-
+import { reservationRouter } from "./modules/reservations/routes";
+import { guestRouter } from "./routes/guest.routes";
 const app = express();
 
 app.use(helmet());
@@ -28,5 +29,7 @@ app.get("/health", (req, res) => {
 app.use("/api/test", testRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/properties", propertyRoutes);
+app.use("/api/guests", guestRouter);
+app.use("/api/reservations", reservationRouter);
 
 export default app;
