@@ -4,11 +4,14 @@ import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+
 import dashboardRoutes from "./routes/dashboard.routes";
 import testRoutes from "./routes/test.routes";
+
 import propertyRoutes from "./modules/properties/routes";
+import { GuestsRouter } from "./modules/guests/routes";
 import { reservationRouter } from "./modules/reservations/routes";
-import { guestRouter } from "./routes/guest.routes";
+
 const app = express();
 
 app.use(helmet());
@@ -29,7 +32,7 @@ app.get("/health", (req, res) => {
 app.use("/api/test", testRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/properties", propertyRoutes);
-app.use("/api/guests", guestRouter);
+app.use("/api/guests", GuestsRouter);
 app.use("/api/reservations", reservationRouter);
 
 export default app;

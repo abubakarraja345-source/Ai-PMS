@@ -1,6 +1,32 @@
-import { Router } from 'express';
-import { GuestsController } from './controller';
+import { Router } from "express";
 
-export const GuestsRouter = Router();
+import {
+  requireAuth,
+} from "../../middleware/auth.middleware";
 
-GuestsRouter.get('/', GuestsController.getAll);
+import {
+  GuestsController,
+} from "./controller";
+
+export const GuestsRouter =
+  Router();
+
+GuestsRouter.use(requireAuth);
+
+// GET /api/guests
+GuestsRouter.get(
+  "/",
+  GuestsController.getAll
+);
+
+// GET /api/guests/:id
+GuestsRouter.get(
+  "/:id",
+  GuestsController.getOne
+);
+
+// POST /api/guests
+GuestsRouter.post(
+  "/",
+  GuestsController.create
+);
