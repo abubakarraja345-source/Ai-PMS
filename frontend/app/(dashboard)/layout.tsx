@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import NotificationBell from "@/components/notifications/notification-bell";
 
 export default function DashboardLayout({
   children,
@@ -20,6 +21,7 @@ export default function DashboardLayout({
     { name: "Cleaning", href: "/cleaning" },
     { name: "Maintenance", href: "/maintenance" },
     { name: "Reports", href: "/reports" },
+    { name: "Team", href: "/team" },
     { name: "AI Assistant", href: "/ai" },
   ];
 
@@ -93,9 +95,7 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="rounded-lg border px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
-              Notifications
-            </button>
+            <NotificationBell />
           </div>
         </header>
 

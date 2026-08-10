@@ -70,6 +70,13 @@ supabase/.env
 .idea/
 
 # ==========================
+# Claude Code local config
+# (contains machine-specific permission allowlists that can end
+# up embedding secrets from commands run during a session)
+# ==========================
+.claude/
+
+# ==========================
 # OS
 # ==========================
 .DS_Store

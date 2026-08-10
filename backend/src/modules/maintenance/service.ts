@@ -16,6 +16,11 @@ import {
 import { verifyProperty } from "../reservations/service";
 import { findReservationById } from "../reservations/repository";
 
+import {
+  notifyMaintenanceCreated,
+  notifyMaintenanceStatusChanged,
+} from "../notifications/service";
+
 export async function getMaintenanceTickets(
   organizationId: string,
   filters: MaintenanceTicketFilters
@@ -93,11 +98,15 @@ export async function addMaintenanceTicket(
       ? new Date().toISOString()
       : null;
 
-  return createMaintenanceTicket(
+  const ticket = await createMaintenanceTicket(
     organizationId,
     reportedBy,
     { ...input, resolved_at: resolvedAt }
   );
+
+  await notifyMaintenanceCreated(organizationId, ticket);
+
+  return ticket;
 }
 
 export async function editMaintenanceTicket(
@@ -181,11 +190,25 @@ export async function editMaintenanceTicket(
   if ("opened_at" in updates) delete updates.opened_at;
   if ("created_at" in updates) delete updates.created_at;
 
-  return updateMaintenanceTicket(
+  const statusChanged =
+    updates.status !== undefined &&
+    updates.status !== existing.status;
+
+  const updated = await updateMaintenanceTicket(
     organizationId,
     ticketId,
     updates
   );
+
+  if (updated && statusChanged) {
+    await notifyMaintenanceStatusChanged(
+      organizationId,
+      updated,
+      updated.status
+    );
+  }
+
+  return updated;
 }
 
 export async function removeMaintenanceTicket(

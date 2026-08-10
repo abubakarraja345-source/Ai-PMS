@@ -16,6 +16,11 @@ import {
 import { verifyProperty } from "../reservations/service";
 import { findReservationById } from "../reservations/repository";
 
+import {
+  notifyCleaningCreated,
+  notifyCleaningStatusChanged,
+} from "../notifications/service";
+
 export async function getCleaningTasks(
   organizationId: string,
   filters: CleaningTaskFilters
@@ -103,10 +108,14 @@ export async function addCleaningTask(
     timestamps.completed_at = new Date().toISOString();
   }
 
-  return createCleaningTask(organizationId, {
+  const task = await createCleaningTask(organizationId, {
     ...input,
     ...timestamps,
   });
+
+  await notifyCleaningCreated(organizationId, task);
+
+  return task;
 }
 
 export async function editCleaningTask(
@@ -192,7 +201,25 @@ export async function editCleaningTask(
     delete updates.organization_id;
   if ("created_at" in updates) delete updates.created_at;
 
-  return updateCleaningTask(organizationId, taskId, updates);
+  const statusChanged =
+    updates.status !== undefined &&
+    updates.status !== existing.status;
+
+  const updated = await updateCleaningTask(
+    organizationId,
+    taskId,
+    updates
+  );
+
+  if (updated && statusChanged) {
+    await notifyCleaningStatusChanged(
+      organizationId,
+      updated,
+      updated.status
+    );
+  }
+
+  return updated;
 }
 
 export async function removeCleaningTask(

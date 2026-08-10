@@ -9,6 +9,11 @@ import { OrganizationMember } from "./types";
 import { supabase } from "../../config/supabase";
 import { isOrganizationRole } from "../../middleware/organization.middleware";
 
+import {
+  notifyMemberRemoved,
+  notifyMemberRoleChanged,
+} from "../notifications/service";
+
 /**
  * organization_members only stores user_id — resolving a
  * human-readable email requires the Supabase Auth admin API.
@@ -107,11 +112,21 @@ export async function changeMemberRole(
     );
   }
 
-  return updateMemberRole(
+  const updated = await updateMemberRole(
     organizationId,
     targetMemberId,
     newRole
   );
+
+  if (updated) {
+    await notifyMemberRoleChanged(
+      organizationId,
+      target.user_id,
+      newRole
+    );
+  }
+
+  return updated;
 }
 
 /**
@@ -153,5 +168,11 @@ export async function removeMember(
     );
   }
 
-  return deleteMember(organizationId, targetMemberId);
+  const deleted = await deleteMember(organizationId, targetMemberId);
+
+  if (deleted) {
+    await notifyMemberRemoved(organizationId, target.user_id);
+  }
+
+  return deleted;
 }

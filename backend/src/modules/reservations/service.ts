@@ -14,6 +14,11 @@ import {
   RESERVATION_STATUSES,
 } from "./validation";
 
+import {
+  notifyReservationCreated,
+  notifyReservationStatusChanged,
+} from "../notifications/service";
+
 export async function getReservations(
   organizationId: string
 ) {
@@ -178,10 +183,14 @@ export async function addReservation(
     );
   }
 
-  return createReservation(
+  const reservation = await createReservation(
     organizationId,
     input
   );
+
+  await notifyReservationCreated(organizationId, reservation);
+
+  return reservation;
 }
 
 /**
@@ -489,14 +498,28 @@ export async function editReservation(
     delete updates.created_at;
   }
 
+  const statusChanged =
+    updates.status !== undefined &&
+    updates.status !== existing.status;
+
   /*
    * Update reservation.
    */
-  return updateReservation(
+  const updated = await updateReservation(
     organizationId,
     reservationId,
     updates
   );
+
+  if (updated && statusChanged) {
+    await notifyReservationStatusChanged(
+      organizationId,
+      updated,
+      updated.status ?? String(updates.status)
+    );
+  }
+
+  return updated;
 }
 
 /**
