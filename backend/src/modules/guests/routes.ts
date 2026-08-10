@@ -5,6 +5,10 @@ import {
 } from "../../middleware/auth.middleware";
 
 import {
+  requireOrganization,
+} from "../../middleware/organization.middleware";
+
+import {
   GuestsController,
 } from "./controller";
 
@@ -12,6 +16,7 @@ export const GuestsRouter =
   Router();
 
 GuestsRouter.use(requireAuth);
+GuestsRouter.use(requireOrganization);
 
 // GET /api/guests
 GuestsRouter.get(

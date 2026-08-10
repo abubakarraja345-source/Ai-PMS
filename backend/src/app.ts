@@ -14,6 +14,8 @@ import { reservationRouter } from "./modules/reservations/routes";
 import calendarRoutes from "./modules/calendar/routes";
 import cleaningRoutes from "./modules/cleaning/routes";
 import maintenanceRoutes from "./modules/maintenance/routes";
+import reportsRoutes from "./modules/reports/routes";
+import organizationRoutes from "./modules/organization/routes";
 
 const app = express();
 
@@ -40,5 +42,7 @@ app.use("/api/reservations", reservationRouter);
 app.use("/api/calendar", calendarRoutes);
 app.use("/api/cleaning", cleaningRoutes);
 app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/reports", reportsRoutes);
+app.use("/api/organization", organizationRoutes);
 
 export default app;

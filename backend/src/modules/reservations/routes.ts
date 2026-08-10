@@ -1,8 +1,11 @@
 import { Router } from "express";
 import {
   requireAuth,
-  AuthenticatedRequest,
 } from "../../middleware/auth.middleware";
+import {
+  requireOrganization,
+  OrganizationRequest,
+} from "../../middleware/organization.middleware";
 import { validateCreateReservation } from "./validation";
 import {
   addReservation,
@@ -11,11 +14,11 @@ import {
   getReservations,
   removeReservation,
 } from "./service";
-import { supabase } from "../../config/supabase";
 
 export const reservationRouter = Router();
 
 reservationRouter.use(requireAuth);
+reservationRouter.use(requireOrganization);
 
 /**
  * Returns a client-safe error message.
@@ -41,44 +44,20 @@ function toClientErrorMessage(
   return fallback;
 }
 
-async function getOrganizationId(userId: string) {
-  const { data, error } = await supabase
-    .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return data?.organization_id ?? null;
-}
-
 // GET /api/reservations
 reservationRouter.get(
   "/",
-  async (req: AuthenticatedRequest, res) => {
+  async (req: OrganizationRequest, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: "Authentication required",
-        });
-      }
-
-      const organizationId =
-        await getOrganizationId(req.user.id);
-
-      if (!organizationId) {
+      if (!req.organization) {
         return res.status(403).json({
           success: false,
-          error: "Organization not found",
+          error: "Organization context is required",
         });
       }
 
       const data = await getReservations(
-        organizationId
+        req.organization.id
       );
 
       return res.json({
@@ -102,27 +81,17 @@ reservationRouter.get(
 // GET /api/reservations/:id
 reservationRouter.get(
   "/:id",
-  async (req: AuthenticatedRequest, res) => {
+  async (req: OrganizationRequest, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: "Authentication required",
-        });
-      }
-
-      const organizationId =
-        await getOrganizationId(req.user.id);
-
-      if (!organizationId) {
+      if (!req.organization) {
         return res.status(403).json({
           success: false,
-          error: "Organization not found",
+          error: "Organization context is required",
         });
       }
 
       const data = await getReservation(
-        organizationId,
+        req.organization.id,
         req.params.id
       );
 
@@ -154,22 +123,12 @@ reservationRouter.get(
 // POST /api/reservations
 reservationRouter.post(
   "/",
-  async (req: AuthenticatedRequest, res) => {
+  async (req: OrganizationRequest, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: "Authentication required",
-        });
-      }
-
-      const organizationId =
-        await getOrganizationId(req.user.id);
-
-      if (!organizationId) {
+      if (!req.organization) {
         return res.status(403).json({
           success: false,
-          error: "Organization not found",
+          error: "Organization context is required",
         });
       }
 
@@ -177,7 +136,7 @@ reservationRouter.post(
         validateCreateReservation(req.body);
 
       const data = await addReservation(
-        organizationId,
+        req.organization.id,
         input
       );
 
@@ -205,27 +164,17 @@ reservationRouter.post(
 // PATCH /api/reservations/:id
 reservationRouter.patch(
   "/:id",
-  async (req: AuthenticatedRequest, res) => {
+  async (req: OrganizationRequest, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: "Authentication required",
-        });
-      }
-
-      const organizationId =
-        await getOrganizationId(req.user.id);
-
-      if (!organizationId) {
+      if (!req.organization) {
         return res.status(403).json({
           success: false,
-          error: "Organization not found",
+          error: "Organization context is required",
         });
       }
 
       const data = await editReservation(
-        organizationId,
+        req.organization.id,
         req.params.id,
         req.body
       );
@@ -261,27 +210,17 @@ reservationRouter.patch(
 // DELETE /api/reservations/:id
 reservationRouter.delete(
   "/:id",
-  async (req: AuthenticatedRequest, res) => {
+  async (req: OrganizationRequest, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: "Authentication required",
-        });
-      }
-
-      const organizationId =
-        await getOrganizationId(req.user.id);
-
-      if (!organizationId) {
+      if (!req.organization) {
         return res.status(403).json({
           success: false,
-          error: "Organization not found",
+          error: "Organization context is required",
         });
       }
 
       const deleted = await removeReservation(
-        organizationId,
+        req.organization.id,
         req.params.id
       );
 

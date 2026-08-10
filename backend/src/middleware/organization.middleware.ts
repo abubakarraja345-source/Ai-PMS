@@ -2,11 +2,35 @@ import { NextFunction, Response } from "express";
 import { AuthenticatedRequest } from "./auth.middleware";
 import { supabase } from "../config/supabase";
 
+/**
+ * Confirmed via read-only inspection: the live data only ever
+ * had "owner" (the schema's own default, "company_admin", was
+ * never actually used by any row) and no CHECK constraint
+ * exists. These three values are the approved role vocabulary
+ * for role enforcement, not something discovered in data.
+ */
+export const ORGANIZATION_ROLES = [
+  "owner",
+  "company_admin",
+  "member",
+] as const;
+
+export type OrganizationRole =
+  (typeof ORGANIZATION_ROLES)[number];
+
+export function isOrganizationRole(
+  value: string
+): value is OrganizationRole {
+  return (ORGANIZATION_ROLES as readonly string[]).includes(
+    value
+  );
+}
+
 export interface OrganizationRequest extends AuthenticatedRequest {
   organization?: {
     id: string;
     name: string;
-    role: string;
+    role: OrganizationRole;
   };
 }
 
@@ -89,10 +113,29 @@ export async function requireOrganization(
     }
 
     // 3. Attach organization context
+    //
+    // The role column has no CHECK constraint at the database
+    // level (confirmed via schema inspection). If a row ever
+    // holds something outside the three approved values, fail
+    // safe to the least-privileged role rather than trusting an
+    // unrecognized string or crashing the request.
+    const role: OrganizationRole = isOrganizationRole(
+      membership.role
+    )
+      ? membership.role
+      : "member";
+
+    if (role !== membership.role) {
+      console.warn(
+        "Unrecognized organization role in database, defaulting to 'member':",
+        membership.role
+      );
+    }
+
     req.organization = {
       id: organization.id,
       name: organization.name,
-      role: membership.role,
+      role,
     };
 
     console.log("Organization attached:", req.organization);

@@ -1,7 +1,5 @@
 import { Response } from "express";
-import {
-  AuthenticatedRequest,
-} from "../../middleware/auth.middleware";
+import { OrganizationRequest } from "../../middleware/organization.middleware";
 
 import {
   getGuests,
@@ -15,52 +13,24 @@ import {
   validateCreateGuest,
 } from "./validation";
 
-import { supabase } from "../../config/supabase";
-
-async function getOrganizationId(
-  userId: string
-) {
-  const { data, error } = await supabase
-    .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return data?.organization_id ?? null;
-}
-
 export class GuestsController {
   /**
    * GET /api/guests
    */
   static async getAll(
-    req: AuthenticatedRequest,
+    req: OrganizationRequest,
     res: Response
   ) {
     try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: "Authentication required",
-        });
-      }
-
-      const organizationId =
-        await getOrganizationId(req.user.id);
-
-      if (!organizationId) {
+      if (!req.organization) {
         return res.status(403).json({
           success: false,
-          error: "Organization not found",
+          error: "Organization context is required",
         });
       }
 
       const data = await getGuests(
-        organizationId
+        req.organization.id
       );
 
       return res.json({
@@ -84,29 +54,19 @@ export class GuestsController {
    * GET /api/guests/:id
    */
   static async getOne(
-    req: AuthenticatedRequest,
+    req: OrganizationRequest,
     res: Response
   ) {
     try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: "Authentication required",
-        });
-      }
-
-      const organizationId =
-        await getOrganizationId(req.user.id);
-
-      if (!organizationId) {
+      if (!req.organization) {
         return res.status(403).json({
           success: false,
-          error: "Organization not found",
+          error: "Organization context is required",
         });
       }
 
       const data = await getGuest(
-        organizationId,
+        req.organization.id,
         req.params.id
       );
 
@@ -138,24 +98,14 @@ export class GuestsController {
    * POST /api/guests
    */
   static async create(
-    req: AuthenticatedRequest,
+    req: OrganizationRequest,
     res: Response
   ) {
     try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: "Authentication required",
-        });
-      }
-
-      const organizationId =
-        await getOrganizationId(req.user.id);
-
-      if (!organizationId) {
+      if (!req.organization) {
         return res.status(403).json({
           success: false,
-          error: "Organization not found",
+          error: "Organization context is required",
         });
       }
 
@@ -163,7 +113,7 @@ export class GuestsController {
         validateCreateGuest(req.body);
 
       const data = await addGuest(
-        organizationId,
+        req.organization.id,
         input
       );
 
@@ -191,29 +141,19 @@ export class GuestsController {
    * PATCH /api/guests/:id
    */
   static async update(
-    req: AuthenticatedRequest,
+    req: OrganizationRequest,
     res: Response
   ) {
     try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: "Authentication required",
-        });
-      }
-
-      const organizationId =
-        await getOrganizationId(req.user.id);
-
-      if (!organizationId) {
+      if (!req.organization) {
         return res.status(403).json({
           success: false,
-          error: "Organization not found",
+          error: "Organization context is required",
         });
       }
 
       const data = await editGuest(
-        organizationId,
+        req.organization.id,
         req.params.id,
         req.body
       );
@@ -249,29 +189,19 @@ export class GuestsController {
    * DELETE /api/guests/:id
    */
   static async remove(
-    req: AuthenticatedRequest,
+    req: OrganizationRequest,
     res: Response
   ) {
     try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: "Authentication required",
-        });
-      }
-
-      const organizationId =
-        await getOrganizationId(req.user.id);
-
-      if (!organizationId) {
+      if (!req.organization) {
         return res.status(403).json({
           success: false,
-          error: "Organization not found",
+          error: "Organization context is required",
         });
       }
 
       const deleted = await removeGuest(
-        organizationId,
+        req.organization.id,
         req.params.id
       );
 

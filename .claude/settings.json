@@ -29,7 +29,18 @@
       "Bash(curl -s -o /tmp/mt_edit.html -w \"HTTP_STATUS:%{http_code}\\\\n\" http://localhost:3000/maintenance/11111111-2222-3333-4444-555555555555/edit)",
       "Bash(rm _verify_dashboard_maint.mjs)",
       "Bash(rm _schema_full.mjs)",
-      "Bash(rm _check_org.mjs)"
+      "Bash(rm _check_org.mjs)",
+      "Bash(rm _check_reports_data.mjs)",
+      "Bash(curl -s -o /tmp/reports_noauth.json -w \"HTTP_STATUS:%{http_code}\\\\n\" \"http://localhost:5000/api/reports/summary?start=2026-08-01&end=2026-08-10\")",
+      "Bash(curl -s -o /tmp/rep_page.html -w \"HTTP_STATUS:%{http_code}\\\\n\" http://localhost:3000/reports)",
+      "Bash(curl -s http://localhost:3000/dashboard -o /tmp/dash_check.html -w \"HTTP_STATUS:%{http_code}\\\\n\")",
+      "Bash(rm _rbac_schema.mjs)",
+      "Bash(rm _rbac_rpc_inspect.mjs)",
+      "Bash(rm _rbac_rls_test.mjs)",
+      "Bash(rm _rbac_auth_user.mjs)",
+      "Bash(rm _rbac_reverify.mjs)",
+      "Bash(awk -F'=' '/^RESEND_API_KEY=/{print \"RESEND_API_KEY length:\", length\\($2\\)}' .env)",
+      "Bash(awk -F'=' '/^FRONTEND_URL=/{print \"FRONTEND_URL:\", $2}' .env)"
     ]
   }
 }

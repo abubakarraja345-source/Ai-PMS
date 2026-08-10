@@ -19,6 +19,7 @@ export default function DashboardLayout({
     { name: "Guests", href: "/guests" },
     { name: "Cleaning", href: "/cleaning" },
     { name: "Maintenance", href: "/maintenance" },
+    { name: "Reports", href: "/reports" },
     { name: "AI Assistant", href: "/ai" },
   ];
 
