@@ -12,6 +12,8 @@ import propertyRoutes from "./modules/properties/routes";
 import { GuestsRouter } from "./modules/guests/routes";
 import { reservationRouter } from "./modules/reservations/routes";
 import calendarRoutes from "./modules/calendar/routes";
+import cleaningRoutes from "./modules/cleaning/routes";
+import maintenanceRoutes from "./modules/maintenance/routes";
 
 const app = express();
 
@@ -36,5 +38,7 @@ app.use("/api/properties", propertyRoutes);
 app.use("/api/guests", GuestsRouter);
 app.use("/api/reservations", reservationRouter);
 app.use("/api/calendar", calendarRoutes);
+app.use("/api/cleaning", cleaningRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
 
 export default app;

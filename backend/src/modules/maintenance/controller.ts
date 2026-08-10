@@ -2,17 +2,17 @@ import { Response } from "express";
 import { OrganizationRequest } from "../../middleware/organization.middleware";
 
 import {
-  getCleaningTasks,
-  getCleaningTask,
-  addCleaningTask,
-  editCleaningTask,
-  removeCleaningTask,
+  getMaintenanceTickets,
+  getMaintenanceTicket,
+  addMaintenanceTicket,
+  editMaintenanceTicket,
+  removeMaintenanceTicket,
 } from "./service";
 
 import {
-  validateCreateCleaningTask,
-  validateUpdateCleaningTask,
-  validateCleaningFilters,
+  validateCreateMaintenanceTicket,
+  validateUpdateMaintenanceTicket,
+  validateMaintenanceFilters,
 } from "./validation";
 
 /**
@@ -28,7 +28,7 @@ function isKnownError(error: unknown): error is Error {
   );
 }
 
-export async function listCleaningTasks(
+export async function listMaintenanceTickets(
   req: OrganizationRequest,
   res: Response
 ) {
@@ -40,11 +40,11 @@ export async function listCleaningTasks(
       });
     }
 
-    const filters = validateCleaningFilters(
+    const filters = validateMaintenanceFilters(
       req.query as Record<string, unknown>
     );
 
-    const data = await getCleaningTasks(
+    const data = await getMaintenanceTickets(
       req.organization.id,
       filters
     );
@@ -54,7 +54,7 @@ export async function listCleaningTasks(
       data,
     });
   } catch (error) {
-    console.error("List cleaning tasks error:", error);
+    console.error("List maintenance tickets error:", error);
 
     if (isKnownError(error)) {
       return res.status(400).json({
@@ -65,12 +65,12 @@ export async function listCleaningTasks(
 
     return res.status(500).json({
       success: false,
-      error: "Unable to load cleaning tasks",
+      error: "Unable to load maintenance tickets",
     });
   }
 }
 
-export async function getCleaningTaskController(
+export async function getMaintenanceTicketController(
   req: OrganizationRequest,
   res: Response
 ) {
@@ -82,33 +82,33 @@ export async function getCleaningTaskController(
       });
     }
 
-    const task = await getCleaningTask(
+    const ticket = await getMaintenanceTicket(
       req.organization.id,
       req.params.id
     );
 
-    if (!task) {
+    if (!ticket) {
       return res.status(404).json({
         success: false,
-        error: "Cleaning task not found",
+        error: "Maintenance ticket not found",
       });
     }
 
     return res.status(200).json({
       success: true,
-      data: task,
+      data: ticket,
     });
   } catch (error) {
-    console.error("Get cleaning task error:", error);
+    console.error("Get maintenance ticket error:", error);
 
     return res.status(500).json({
       success: false,
-      error: "Unable to load cleaning task",
+      error: "Unable to load maintenance ticket",
     });
   }
 }
 
-export async function createCleaningTaskController(
+export async function createMaintenanceTicketController(
   req: OrganizationRequest,
   res: Response
 ) {
@@ -120,30 +120,38 @@ export async function createCleaningTaskController(
       });
     }
 
-    const input = validateCreateCleaningTask(req.body);
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required",
+      });
+    }
 
-    const task = await addCleaningTask(
+    const input = validateCreateMaintenanceTicket(req.body);
+
+    const ticket = await addMaintenanceTicket(
       req.organization.id,
+      req.user.id,
       input
     );
 
     return res.status(201).json({
       success: true,
-      data: task,
+      data: ticket,
     });
   } catch (error) {
-    console.error("Create cleaning task error:", error);
+    console.error("Create maintenance ticket error:", error);
 
     return res.status(400).json({
       success: false,
       error: isKnownError(error)
         ? error.message
-        : "Unable to create cleaning task",
+        : "Unable to create maintenance ticket",
     });
   }
 }
 
-export async function updateCleaningTaskController(
+export async function updateMaintenanceTicketController(
   req: OrganizationRequest,
   res: Response
 ) {
@@ -155,38 +163,40 @@ export async function updateCleaningTaskController(
       });
     }
 
-    const updates = validateUpdateCleaningTask(req.body);
+    const updates = validateUpdateMaintenanceTicket(
+      req.body
+    );
 
-    const task = await editCleaningTask(
+    const ticket = await editMaintenanceTicket(
       req.organization.id,
       req.params.id,
       updates
     );
 
-    if (!task) {
+    if (!ticket) {
       return res.status(404).json({
         success: false,
-        error: "Cleaning task not found",
+        error: "Maintenance ticket not found",
       });
     }
 
     return res.status(200).json({
       success: true,
-      data: task,
+      data: ticket,
     });
   } catch (error) {
-    console.error("Update cleaning task error:", error);
+    console.error("Update maintenance ticket error:", error);
 
     return res.status(400).json({
       success: false,
       error: isKnownError(error)
         ? error.message
-        : "Unable to update cleaning task",
+        : "Unable to update maintenance ticket",
     });
   }
 }
 
-export async function deleteCleaningTaskController(
+export async function deleteMaintenanceTicketController(
   req: OrganizationRequest,
   res: Response
 ) {
@@ -198,7 +208,7 @@ export async function deleteCleaningTaskController(
       });
     }
 
-    const deleted = await removeCleaningTask(
+    const deleted = await removeMaintenanceTicket(
       req.organization.id,
       req.params.id
     );
@@ -206,20 +216,20 @@ export async function deleteCleaningTaskController(
     if (!deleted) {
       return res.status(404).json({
         success: false,
-        error: "Cleaning task not found",
+        error: "Maintenance ticket not found",
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Cleaning task deleted successfully",
+      message: "Maintenance ticket deleted successfully",
     });
   } catch (error) {
-    console.error("Delete cleaning task error:", error);
+    console.error("Delete maintenance ticket error:", error);
 
     return res.status(500).json({
       success: false,
-      error: "Unable to delete cleaning task",
+      error: "Unable to delete maintenance ticket",
     });
   }
 }

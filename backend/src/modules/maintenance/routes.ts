@@ -4,11 +4,11 @@ import { requireAuth } from "../../middleware/auth.middleware";
 import { requireOrganization } from "../../middleware/organization.middleware";
 
 import {
-  listCleaningTasks,
-  getCleaningTaskController,
-  createCleaningTaskController,
-  updateCleaningTaskController,
-  deleteCleaningTaskController,
+  listMaintenanceTickets,
+  getMaintenanceTicketController,
+  createMaintenanceTicketController,
+  updateMaintenanceTicketController,
+  deleteMaintenanceTicketController,
 } from "./controller";
 
 const router = Router();
@@ -17,35 +17,35 @@ router.get(
   "/",
   requireAuth,
   requireOrganization,
-  listCleaningTasks
+  listMaintenanceTickets
 );
 
 router.post(
   "/",
   requireAuth,
   requireOrganization,
-  createCleaningTaskController
+  createMaintenanceTicketController
 );
 
 router.get(
   "/:id",
   requireAuth,
   requireOrganization,
-  getCleaningTaskController
+  getMaintenanceTicketController
 );
 
 router.patch(
   "/:id",
   requireAuth,
   requireOrganization,
-  updateCleaningTaskController
+  updateMaintenanceTicketController
 );
 
 router.delete(
   "/:id",
   requireAuth,
   requireOrganization,
-  deleteCleaningTaskController
+  deleteMaintenanceTicketController
 );
 
 export default router;

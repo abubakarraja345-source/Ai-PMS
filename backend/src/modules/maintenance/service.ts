@@ -1,43 +1,42 @@
 import {
-  findCleaningTasksByOrganization,
-  findCleaningTaskById,
-  createCleaningTask,
-  updateCleaningTask,
-  deleteCleaningTask,
+  findMaintenanceTicketsByOrganization,
+  findMaintenanceTicketById,
+  createMaintenanceTicket,
+  updateMaintenanceTicket,
+  deleteMaintenanceTicket,
 } from "./repository";
 
 import {
-  CreateCleaningTaskInput,
-  CleaningTaskFilters,
-  CleaningStatus,
+  CreateMaintenanceTicketInput,
+  MaintenanceTicketFilters,
+  MaintenanceStatus,
   isValidStatusTransition,
 } from "./validation";
 
 import { verifyProperty } from "../reservations/service";
 import { findReservationById } from "../reservations/repository";
 
-export async function getCleaningTasks(
+export async function getMaintenanceTickets(
   organizationId: string,
-  filters: CleaningTaskFilters
+  filters: MaintenanceTicketFilters
 ) {
-  return findCleaningTasksByOrganization(
+  return findMaintenanceTicketsByOrganization(
     organizationId,
     filters
   );
 }
 
-export async function getCleaningTask(
+export async function getMaintenanceTicket(
   organizationId: string,
-  taskId: string
+  ticketId: string
 ) {
-  return findCleaningTaskById(organizationId, taskId);
+  return findMaintenanceTicketById(organizationId, ticketId);
 }
 
 /**
  * Verifies the reservation belongs to the org (reusing the
- * existing org-scoped lookup rather than a new ownership
- * helper) and, when a property is also specified, that the
- * reservation actually belongs to that property.
+ * existing org-scoped lookup) and, when a property is also
+ * specified, that the reservation actually belongs to it.
  */
 async function verifyReservationForProperty(
   organizationId: string,
@@ -62,9 +61,10 @@ async function verifyReservationForProperty(
   }
 }
 
-export async function addCleaningTask(
+export async function addMaintenanceTicket(
   organizationId: string,
-  input: CreateCleaningTaskInput
+  reportedBy: string,
+  input: CreateMaintenanceTicketInput
 ) {
   const propertyBelongsToOrg = await verifyProperty(
     organizationId,
@@ -85,38 +85,29 @@ export async function addCleaningTask(
     );
   }
 
-  // A task created directly in a later-stage status still
-  // needs its workflow timestamps set, same as an update would.
-  const timestamps: {
-    started_at?: string;
-    completed_at?: string;
-  } = {};
+  // A ticket created directly as "resolved" still needs its
+  // resolved_at timestamp set, same as an update-driven
+  // transition would.
+  const resolvedAt =
+    input.status === "resolved"
+      ? new Date().toISOString()
+      : null;
 
-  if (
-    input.status === "in_progress" ||
-    input.status === "completed"
-  ) {
-    timestamps.started_at = new Date().toISOString();
-  }
-
-  if (input.status === "completed") {
-    timestamps.completed_at = new Date().toISOString();
-  }
-
-  return createCleaningTask(organizationId, {
-    ...input,
-    ...timestamps,
-  });
+  return createMaintenanceTicket(
+    organizationId,
+    reportedBy,
+    { ...input, resolved_at: resolvedAt }
+  );
 }
 
-export async function editCleaningTask(
+export async function editMaintenanceTicket(
   organizationId: string,
-  taskId: string,
+  ticketId: string,
   updates: Record<string, unknown>
 ) {
-  const existing = await findCleaningTaskById(
+  const existing = await findMaintenanceTicketById(
     organizationId,
-    taskId
+    ticketId
   );
 
   if (!existing) {
@@ -156,8 +147,8 @@ export async function editCleaningTask(
   }
 
   if (updates.status !== undefined) {
-    const currentStatus = existing.status as CleaningStatus;
-    const nextStatus = updates.status as CleaningStatus;
+    const currentStatus = existing.status as MaintenanceStatus;
+    const nextStatus = updates.status as MaintenanceStatus;
 
     if (!isValidStatusTransition(currentStatus, nextStatus)) {
       throw new Error(
@@ -165,22 +156,18 @@ export async function editCleaningTask(
       );
     }
 
-    if (nextStatus === "in_progress" && !existing.started_at) {
-      updates.started_at = new Date().toISOString();
+    if (nextStatus === "resolved") {
+      updates.resolved_at = new Date().toISOString();
     }
 
-    if (nextStatus === "completed") {
-      updates.completed_at = new Date().toISOString();
-    }
-
-    // Moving away from completed: clear completed_at (it's no
-    // longer accurate) but keep started_at — the task genuinely
-    // was started at that earlier time.
+    // resolved -> in_progress clears resolved_at (it's no
+    // longer accurate); resolved -> closed preserves it
+    // (no action needed — it's simply not touched).
     if (
-      currentStatus === "completed" &&
+      currentStatus === "resolved" &&
       nextStatus === "in_progress"
     ) {
-      updates.completed_at = null;
+      updates.resolved_at = null;
     }
   }
 
@@ -190,23 +177,29 @@ export async function editCleaningTask(
   if ("id" in updates) delete updates.id;
   if ("organization_id" in updates)
     delete updates.organization_id;
+  if ("reported_by" in updates) delete updates.reported_by;
+  if ("opened_at" in updates) delete updates.opened_at;
   if ("created_at" in updates) delete updates.created_at;
 
-  return updateCleaningTask(organizationId, taskId, updates);
+  return updateMaintenanceTicket(
+    organizationId,
+    ticketId,
+    updates
+  );
 }
 
-export async function removeCleaningTask(
+export async function removeMaintenanceTicket(
   organizationId: string,
-  taskId: string
+  ticketId: string
 ) {
-  const existing = await findCleaningTaskById(
+  const existing = await findMaintenanceTicketById(
     organizationId,
-    taskId
+    ticketId
   );
 
   if (!existing) {
     return false;
   }
 
-  return deleteCleaningTask(organizationId, taskId);
+  return deleteMaintenanceTicket(organizationId, ticketId);
 }

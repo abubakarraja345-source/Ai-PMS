@@ -18,7 +18,18 @@
       "Bash(curl -s -o /tmp/cal_resp.json -w \"HTTP_STATUS:%{http_code}\\\\n\" \"http://localhost:5000/api/calendar?start=2026-08-01&end=2026-09-01\")",
       "Bash(curl -sf http://localhost:3000/)",
       "Bash(curl -s -o /tmp/fe_cal_resp.html -w \"HTTP_STATUS:%{http_code}\\\\n\" http://localhost:3000/calendar)",
-      "Bash(curl -s -D - -o /dev/null http://localhost:3000/dashboard)"
+      "Bash(curl -s -D - -o /dev/null http://localhost:3000/dashboard)",
+      "Bash(curl -s -o /tmp/dash_summary_check.json -w \"HTTP_STATUS:%{http_code}\\\\n\" http://localhost:5000/api/dashboard/summary)",
+      "Bash(rm _schema_maintenance.mjs)",
+      "Bash(rm _verify_embed_maint.mjs)",
+      "Bash(curl -s -o /tmp/maint_noauth.json -w \"HTTP_STATUS:%{http_code}\\\\n\" http://localhost:5000/api/maintenance)",
+      "Bash(curl -s -o /tmp/mt_list.html -w \"HTTP_STATUS:%{http_code}\\\\n\" http://localhost:3000/maintenance)",
+      "Bash(curl -s -o /tmp/mt_new.html -w \"HTTP_STATUS:%{http_code}\\\\n\" http://localhost:3000/maintenance/new)",
+      "Bash(curl -s -o /tmp/mt_detail.html -w \"HTTP_STATUS:%{http_code}\\\\n\" http://localhost:3000/maintenance/11111111-2222-3333-4444-555555555555)",
+      "Bash(curl -s -o /tmp/mt_edit.html -w \"HTTP_STATUS:%{http_code}\\\\n\" http://localhost:3000/maintenance/11111111-2222-3333-4444-555555555555/edit)",
+      "Bash(rm _verify_dashboard_maint.mjs)",
+      "Bash(rm _schema_full.mjs)",
+      "Bash(rm _check_org.mjs)"
     ]
   }
 }
