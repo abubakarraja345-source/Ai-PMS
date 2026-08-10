@@ -74,6 +74,10 @@ export async function findCleaningTasksByOrganization(
     query = query.lte("scheduled_date", filters.end);
   }
 
+  if (filters.assignedTo) {
+    query = query.eq("assigned_to", filters.assignedTo);
+  }
+
   query = query
     .order("scheduled_date", {
       ascending: true,

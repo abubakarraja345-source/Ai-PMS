@@ -162,6 +162,12 @@ function getStatusClasses(status: string) {
   }
 }
 
+function isImportedReservation(
+  bookingReference: string | null
+) {
+  return !!bookingReference && bookingReference.startsWith("ical:");
+}
+
 function getGuestName(
   guest: GuestSummary | null
 ) {
@@ -191,6 +197,7 @@ export default function ReservationsPage() {
   const [saving, setSaving] = useState(false);
 
   const [error, setError] = useState("");
+  const [conflictWarning, setConflictWarning] = useState("");
 
   const [showCreateModal, setShowCreateModal] =
     useState(false);
@@ -205,6 +212,10 @@ export default function ReservationsPage() {
 
   const [statusFilter, setStatusFilter] =
     useState("all");
+
+  const [propertyFilter, setPropertyFilter] = useState("all");
+  const [startFilter, setStartFilter] = useState("");
+  const [endFilter, setEndFilter] = useState("");
 
   const [form, setForm] =
     useState<ReservationForm>(initialForm);
@@ -304,14 +315,31 @@ export default function ReservationsPage() {
         statusFilter === "all" ||
         reservation.status === statusFilter;
 
+      const matchesProperty =
+        propertyFilter === "all" ||
+        reservation.property_id === propertyFilter;
+
+      const matchesStart =
+        !startFilter || reservation.check_in >= startFilter;
+
+      const matchesEnd =
+        !endFilter || reservation.check_out <= endFilter;
+
       return Boolean(
-        matchesSearch && matchesStatus
+        matchesSearch &&
+          matchesStatus &&
+          matchesProperty &&
+          matchesStart &&
+          matchesEnd
       );
     });
   }, [
     reservations,
     search,
     statusFilter,
+    propertyFilter,
+    startFilter,
+    endFilter,
   ]);
 
   function updateForm(
@@ -424,6 +452,12 @@ export default function ReservationsPage() {
        * the GET endpoint.
        */
       await loadData();
+
+      setConflictWarning(
+        response.conflictCount > 0
+          ? `Note: this reservation's dates overlap with ${response.conflictCount} other reservation(s) for this property.`
+          : ""
+      );
 
       closeCreateModal();
     } catch (err) {
@@ -688,6 +722,19 @@ export default function ReservationsPage() {
         </div>
       )}
 
+      {conflictWarning && (
+        <div className="mt-5 flex items-start justify-between gap-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span>{conflictWarning}</span>
+
+          <button
+            onClick={() => setConflictWarning("")}
+            className="font-medium text-amber-800 hover:text-amber-950"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="mt-6 flex flex-col gap-3 rounded-xl border bg-white p-4 shadow-sm md:flex-row">
         <div className="relative flex-1">
@@ -732,6 +779,35 @@ export default function ReservationsPage() {
             Cancelled
           </option>
         </select>
+
+        <select
+          value={propertyFilter}
+          onChange={(event) => setPropertyFilter(event.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+        >
+          <option value="all">All properties</option>
+          {properties.map((property) => (
+            <option key={property.id} value={property.id}>
+              {property.title}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="date"
+          value={startFilter}
+          onChange={(event) => setStartFilter(event.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+        />
+
+        <span className="self-center text-sm text-slate-400">to</span>
+
+        <input
+          type="date"
+          value={endFilter}
+          onChange={(event) => setEndFilter(event.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+        />
 
         <button
           onClick={loadData}
@@ -908,12 +984,24 @@ export default function ReservationsPage() {
                             }
                             className="font-medium text-slate-900 hover:underline"
                           >
-                            {reservation.booking_reference ||
-                              reservation.id.slice(
-                                0,
-                                8
-                              )}
+                            {isImportedReservation(
+                              reservation.booking_reference
+                            )
+                              ? reservation.id.slice(0, 8)
+                              : reservation.booking_reference ||
+                                reservation.id.slice(
+                                  0,
+                                  8
+                                )}
                           </button>
+
+                          {isImportedReservation(
+                            reservation.booking_reference
+                          ) && (
+                            <span className="ml-2 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blue-700">
+                              Imported
+                            </span>
+                          )}
 
                           <p className="mt-1 text-xs capitalize text-slate-500">
                             {reservation.source}

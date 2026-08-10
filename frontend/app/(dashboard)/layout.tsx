@@ -21,6 +21,8 @@ export default function DashboardLayout({
     { name: "Cleaning", href: "/cleaning" },
     { name: "Maintenance", href: "/maintenance" },
     { name: "Reports", href: "/reports" },
+    { name: "Inventory", href: "/inventory" },
+    { name: "Integrations", href: "/integrations" },
     { name: "Team", href: "/team" },
     { name: "AI Assistant", href: "/ai" },
   ];

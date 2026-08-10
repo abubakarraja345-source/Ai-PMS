@@ -104,6 +104,7 @@ export default function CleaningPage() {
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [startFilter, setStartFilter] = useState("");
   const [endFilter, setEndFilter] = useState("");
+  const [assignedToFilter, setAssignedToFilter] = useState("");
 
   const loadTasks = useCallback(async () => {
     try {
@@ -119,6 +120,8 @@ export default function CleaningPage() {
         params.set("priority", priorityFilter);
       if (startFilter) params.set("start", startFilter);
       if (endFilter) params.set("end", endFilter);
+      if (assignedToFilter.trim())
+        params.set("assigned_to", assignedToFilter.trim());
 
       const query = params.toString();
 
@@ -142,6 +145,7 @@ export default function CleaningPage() {
     priorityFilter,
     startFilter,
     endFilter,
+    assignedToFilter,
   ]);
 
   useEffect(() => {
@@ -265,6 +269,14 @@ export default function CleaningPage() {
           type="date"
           value={endFilter}
           onChange={(e) => setEndFilter(e.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+        />
+
+        <input
+          type="text"
+          value={assignedToFilter}
+          onChange={(e) => setAssignedToFilter(e.target.value)}
+          placeholder="Assigned to..."
           className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
         />
 

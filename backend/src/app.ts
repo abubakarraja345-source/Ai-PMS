@@ -18,6 +18,13 @@ import reportsRoutes from "./modules/reports/routes";
 import organizationRoutes from "./modules/organization/routes";
 import settingsRoutes from "./modules/settings/routes";
 import notificationsRoutes from "./modules/notifications/routes";
+import propertyImagesRoutes from "./modules/property-media/routes";
+import propertyDetailsRoutes from "./modules/property-details/routes";
+import {
+  propertyInventoryRoutes,
+  organizationInventoryRoutes,
+} from "./modules/inventory/routes";
+import integrationsRoutes from "./modules/integrations/routes";
 
 const app = express();
 
@@ -48,5 +55,10 @@ app.use("/api/reports", reportsRoutes);
 app.use("/api/organization", organizationRoutes);
 app.use("/api/organization/settings", settingsRoutes);
 app.use("/api/notifications", notificationsRoutes);
+app.use("/api/properties/:propertyId/images", propertyImagesRoutes);
+app.use("/api/properties/:propertyId", propertyDetailsRoutes);
+app.use("/api/properties/:propertyId/inventory", propertyInventoryRoutes);
+app.use("/api/inventory", organizationInventoryRoutes);
+app.use("/api/integrations", integrationsRoutes);
 
 export default app;

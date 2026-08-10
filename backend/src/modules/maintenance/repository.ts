@@ -74,6 +74,10 @@ export async function findMaintenanceTicketsByOrganization(
     query = query.eq("category", filters.category);
   }
 
+  if (filters.assignedTo) {
+    query = query.eq("assigned_to", filters.assignedTo);
+  }
+
   query = query.order("created_at", { ascending: false });
 
   const { data, error } = await query;

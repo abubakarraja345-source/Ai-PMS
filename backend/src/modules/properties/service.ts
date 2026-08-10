@@ -12,6 +12,12 @@ import {
   deleteProperty,
 } from "./repository";
 
+import { StorageService } from "../../services/storage.service";
+import { findImagePathsByProperty } from "../property-media/repository";
+import { IMAGES_BUCKET } from "../property-media/validation";
+import { findDocumentPathsByProperty } from "../property-details/repository";
+import { DOCUMENTS_BUCKET } from "../property-details/validation";
+
 export async function getProperties(
   organizationId: string
 ) {
@@ -99,8 +105,41 @@ export async function removeProperty(
     throw new Error("Property ID is required");
   }
 
-  return deleteProperty(
+  // Storage objects are not covered by the database's ON DELETE
+  // CASCADE on property_images/property_documents (confirmed via
+  // a live test) — collect their paths before the property (and
+  // its cascaded child rows) are gone, so they can still be
+  // purged from Storage afterward.
+  const [imagePaths, documentPaths] = await Promise.all([
+    findImagePathsByProperty(propertyId),
+    findDocumentPathsByProperty(propertyId),
+  ]);
+
+  const deleted = await deleteProperty(
     organizationId,
     propertyId
   );
+
+  if (deleted) {
+    await Promise.all([
+      StorageService.deleteObjects(IMAGES_BUCKET, imagePaths).catch(
+        (error) => {
+          console.error(
+            "Failed to delete property image storage objects:",
+            error
+          );
+        }
+      ),
+      StorageService.deleteObjects(DOCUMENTS_BUCKET, documentPaths).catch(
+        (error) => {
+          console.error(
+            "Failed to delete property document storage objects:",
+            error
+          );
+        }
+      ),
+    ]);
+  }
+
+  return deleted;
 }

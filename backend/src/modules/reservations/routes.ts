@@ -6,10 +6,14 @@ import {
   requireOrganization,
   OrganizationRequest,
 } from "../../middleware/organization.middleware";
-import { validateCreateReservation } from "./validation";
+import {
+  validateCreateReservation,
+  validateReservationFilters,
+} from "./validation";
 import {
   addReservation,
   editReservation,
+  findConflictingReservations,
   getReservation,
   getReservations,
   removeReservation,
@@ -56,8 +60,13 @@ reservationRouter.get(
         });
       }
 
+      const filters = validateReservationFilters(
+        req.query as Record<string, unknown>
+      );
+
       const data = await getReservations(
-        req.organization.id
+        req.organization.id,
+        filters
       );
 
       return res.json({
@@ -140,9 +149,18 @@ reservationRouter.post(
         input
       );
 
+      const conflicts = await findConflictingReservations(
+        req.organization.id,
+        data.property_id,
+        data.check_in,
+        data.check_out,
+        data.id
+      );
+
       return res.status(201).json({
         success: true,
         data,
+        conflictCount: conflicts.length,
       });
     } catch (error) {
       console.error(
@@ -186,9 +204,18 @@ reservationRouter.patch(
         });
       }
 
+      const conflicts = await findConflictingReservations(
+        req.organization.id,
+        data.property_id,
+        data.check_in,
+        data.check_out,
+        data.id
+      );
+
       return res.json({
         success: true,
         data,
+        conflictCount: conflicts.length,
       });
     } catch (error) {
       console.error(

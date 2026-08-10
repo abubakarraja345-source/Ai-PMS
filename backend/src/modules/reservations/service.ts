@@ -5,6 +5,7 @@ import {
   deleteReservation,
   findReservationById,
   findReservationsByOrganization,
+  findReservationsByOrganizationInRange,
   updateReservation,
 } from "./repository";
 
@@ -20,10 +21,46 @@ import {
 } from "../notifications/service";
 
 export async function getReservations(
-  organizationId: string
+  organizationId: string,
+  filters: {
+    guestId?: string;
+    propertyId?: string;
+    status?: string;
+  } = {}
 ) {
   return findReservationsByOrganization(
-    organizationId
+    organizationId,
+    filters
+  );
+}
+
+/**
+ * Non-blocking overlap check for the same property, excluding a
+ * given reservation (used on edit, so a reservation never
+ * "conflicts with itself") and cancelled reservations (which don't
+ * occupy the property). This never prevents a save — double-
+ * booking prevention was explicitly flagged earlier in this
+ * project as an unresolved business-rule decision, so this only
+ * surfaces the information for the UI to display, matching this
+ * phase's "conflict detection" requirement without silently
+ * changing existing create/update behavior.
+ */
+export async function findConflictingReservations(
+  organizationId: string,
+  propertyId: string,
+  checkIn: string,
+  checkOut: string,
+  excludeReservationId?: string
+) {
+  const overlapping = await findReservationsByOrganizationInRange(
+    organizationId,
+    checkIn,
+    checkOut,
+    propertyId
+  );
+
+  return overlapping.filter(
+    (r) => r.id !== excludeReservationId
   );
 }
 

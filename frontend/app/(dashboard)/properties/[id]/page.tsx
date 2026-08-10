@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { createClient } from "@/lib/supabase/client";
+import PropertyImagesSection from "@/components/properties/property-images-section";
+import PropertyAmenitiesSection from "@/components/properties/property-amenities-section";
+import PropertyRulesSection from "@/components/properties/property-rules-section";
+import PropertyDocumentsSection from "@/components/properties/property-documents-section";
 
 type Property = {
   id: string;
@@ -40,6 +45,7 @@ export default function PropertyDetailsPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [canManage, setCanManage] = useState(false);
 
   useEffect(() => {
     async function loadProperty() {
@@ -67,6 +73,31 @@ export default function PropertyDetailsPage() {
       loadProperty();
     }
   }, [propertyId]);
+
+  useEffect(() => {
+    async function loadRole() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const response = await apiFetch("/api/organization/members");
+        const self = (response.data ?? []).find(
+          (member: { userId: string }) =>
+            member.userId === session?.user?.id
+        );
+
+        setCanManage(
+          self?.role === "owner" || self?.role === "company_admin"
+        );
+      } catch {
+        setCanManage(false);
+      }
+    }
+
+    loadRole();
+  }, []);
 
   if (loading) {
     return (
@@ -153,8 +184,13 @@ export default function PropertyDetailsPage() {
           </button>
         </div>
 
+        <PropertyImagesSection
+          propertyId={property.id}
+          canManage={canManage}
+        />
+
         {/* Overview */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">
             Property Overview
           </h2>
@@ -252,6 +288,16 @@ export default function PropertyDetailsPage() {
           </div>
         </section>
 
+        <PropertyAmenitiesSection
+          propertyId={property.id}
+          canManage={canManage}
+        />
+
+        <PropertyRulesSection
+          propertyId={property.id}
+          canManage={canManage}
+        />
+
         {/* Wi-Fi / Manual */}
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">
@@ -295,6 +341,11 @@ export default function PropertyDetailsPage() {
             </div>
           </div>
         </section>
+
+        <PropertyDocumentsSection
+          propertyId={property.id}
+          canManage={canManage}
+        />
 
         {/* Coordinates */}
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

@@ -90,6 +90,26 @@ interface DashboardSummary {
     activeProperties: number;
     occupancyRate: number;
   };
+  cleaning: {
+    total: number;
+    pending: number;
+    inProgress: number;
+  };
+  maintenance: {
+    total: number;
+    open: number;
+    inProgress: number;
+    urgent: number;
+  };
+  inventory: {
+    totalItems: number;
+    lowStockCount: number;
+  };
+  integrations: {
+    total: number;
+    active: number;
+    error: number;
+  };
 }
 
 function getGuestName(guest: GuestSummary | null | undefined) {
@@ -442,6 +462,96 @@ export default function DashboardStats() {
               combined.
             </p>
           )}
+        </div>
+
+        {/* Operations */}
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Operations
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            What needs attention right now.
+          </p>
+
+          <div className="mt-5 space-y-3">
+            <a
+              href="/cleaning"
+              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
+            >
+              <span className="text-sm text-slate-700">
+                Cleaning tasks
+              </span>
+              <span className="text-sm font-medium text-slate-900">
+                {summary.cleaning.pending +
+                  summary.cleaning.inProgress}{" "}
+                active
+              </span>
+            </a>
+
+            <a
+              href="/maintenance"
+              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
+            >
+              <span className="text-sm text-slate-700">
+                Maintenance tickets
+              </span>
+              <span
+                className={`text-sm font-medium ${
+                  summary.maintenance.urgent > 0
+                    ? "text-red-600"
+                    : "text-slate-900"
+                }`}
+              >
+                {summary.maintenance.open +
+                  summary.maintenance.inProgress}{" "}
+                open
+                {summary.maintenance.urgent > 0
+                  ? ` (${summary.maintenance.urgent} urgent)`
+                  : ""}
+              </span>
+            </a>
+
+            <a
+              href="/inventory"
+              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
+            >
+              <span className="text-sm text-slate-700">
+                Low-stock inventory
+              </span>
+              <span
+                className={`text-sm font-medium ${
+                  summary.inventory.lowStockCount > 0
+                    ? "text-red-600"
+                    : "text-slate-900"
+                }`}
+              >
+                {summary.inventory.lowStockCount} item
+                {summary.inventory.lowStockCount === 1 ? "" : "s"}
+              </span>
+            </a>
+
+            <a
+              href="/integrations"
+              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
+            >
+              <span className="text-sm text-slate-700">
+                Integrations
+              </span>
+              <span
+                className={`text-sm font-medium ${
+                  summary.integrations.error > 0
+                    ? "text-red-600"
+                    : "text-slate-900"
+                }`}
+              >
+                {summary.integrations.active} active
+                {summary.integrations.error > 0
+                  ? `, ${summary.integrations.error} error`
+                  : ""}
+              </span>
+            </a>
+          </div>
         </div>
 
         {/* Quick actions */}

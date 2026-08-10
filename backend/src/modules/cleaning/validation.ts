@@ -292,6 +292,7 @@ export interface CleaningTaskFilters {
   scheduledDate?: string;
   start?: string;
   end?: string;
+  assignedTo?: string;
 }
 
 /**
@@ -359,6 +360,20 @@ export function validateCleaningFilters(
 
   if (query.end !== undefined && query.end !== "") {
     filters.end = validateDate(query.end, "end");
+  }
+
+  if (
+    query.assigned_to !== undefined &&
+    query.assigned_to !== ""
+  ) {
+    if (
+      typeof query.assigned_to !== "string" ||
+      !query.assigned_to.trim()
+    ) {
+      throw new Error("assigned_to must be a valid string");
+    }
+
+    filters.assignedTo = query.assigned_to.trim();
   }
 
   return filters;

@@ -82,6 +82,7 @@ export default function MaintenancePage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [assignedToFilter, setAssignedToFilter] = useState("");
 
   const loadTickets = useCallback(async () => {
     try {
@@ -97,6 +98,8 @@ export default function MaintenancePage() {
         params.set("priority", priorityFilter);
       if (categoryFilter.trim())
         params.set("category", categoryFilter.trim());
+      if (assignedToFilter.trim())
+        params.set("assigned_to", assignedToFilter.trim());
 
       const query = params.toString();
 
@@ -119,6 +122,7 @@ export default function MaintenancePage() {
     statusFilter,
     priorityFilter,
     categoryFilter,
+    assignedToFilter,
   ]);
 
   useEffect(() => {
@@ -235,6 +239,14 @@ export default function MaintenancePage() {
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
           placeholder="Filter by category..."
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+        />
+
+        <input
+          type="text"
+          value={assignedToFilter}
+          onChange={(e) => setAssignedToFilter(e.target.value)}
+          placeholder="Assigned to..."
           className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
         />
 

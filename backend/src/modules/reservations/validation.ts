@@ -310,3 +310,56 @@ export function validateCreateReservation(
         : null,
   };
 }
+
+export interface ReservationFilters {
+  guestId?: string;
+  propertyId?: string;
+  status?: string;
+}
+
+/**
+ * Validates GET /api/reservations query params. Every filter is
+ * optional and additive — omitting all of them preserves the
+ * existing "return everything for this org" behavior exactly.
+ */
+export function validateReservationFilters(
+  query: Record<string, unknown>
+): ReservationFilters {
+  const filters: ReservationFilters = {};
+
+  if (query.guest_id !== undefined && query.guest_id !== "") {
+    if (typeof query.guest_id !== "string" || !query.guest_id.trim()) {
+      throw new Error("guest_id must be a valid string");
+    }
+
+    filters.guestId = query.guest_id.trim();
+  }
+
+  if (query.property_id !== undefined && query.property_id !== "") {
+    if (
+      typeof query.property_id !== "string" ||
+      !query.property_id.trim()
+    ) {
+      throw new Error("property_id must be a valid string");
+    }
+
+    filters.propertyId = query.property_id.trim();
+  }
+
+  if (query.status !== undefined && query.status !== "") {
+    if (
+      typeof query.status !== "string" ||
+      !RESERVATION_STATUSES.includes(
+        query.status.trim() as (typeof RESERVATION_STATUSES)[number]
+      )
+    ) {
+      throw new Error(
+        `status must be one of: ${RESERVATION_STATUSES.join(", ")}`
+      );
+    }
+
+    filters.status = query.status.trim();
+  }
+
+  return filters;
+}

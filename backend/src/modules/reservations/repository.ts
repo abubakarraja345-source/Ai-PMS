@@ -42,15 +42,33 @@ const RESERVATION_SELECT = `
 `;
 
 export async function findReservationsByOrganization(
-  organizationId: string
+  organizationId: string,
+  filters: {
+    guestId?: string;
+    propertyId?: string;
+    status?: string;
+  } = {}
 ): Promise<ReservationListItem[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("reservations")
     .select(RESERVATION_SELECT)
-    .eq("organization_id", organizationId)
-    .order("check_in", {
-      ascending: true,
-    });
+    .eq("organization_id", organizationId);
+
+  if (filters.guestId) {
+    query = query.eq("guest_id", filters.guestId);
+  }
+
+  if (filters.propertyId) {
+    query = query.eq("property_id", filters.propertyId);
+  }
+
+  if (filters.status) {
+    query = query.eq("status", filters.status);
+  }
+
+  const { data, error } = await query.order("check_in", {
+    ascending: true,
+  });
 
   if (error) {
     throw error;

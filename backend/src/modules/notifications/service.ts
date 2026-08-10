@@ -359,6 +359,100 @@ export async function notifyMemberRemoved(
   }
 }
 
+interface InventoryLowStockEventData {
+  itemName: string;
+  quantity: number;
+  minimumQuantity: number;
+  unit: string | null;
+  propertyTitle: string;
+}
+
+export async function notifyInventoryLowStock(
+  organizationId: string,
+  item: InventoryLowStockEventData
+): Promise<void> {
+  try {
+    const recipients = await resolveRecipients(organizationId);
+    const unitLabel = item.unit ? ` ${item.unit}` : "";
+
+    await dispatch(
+      organizationId,
+      recipients,
+      "Low stock alert",
+      `${item.itemName} at ${item.propertyTitle} is low on stock (${item.quantity}${unitLabel} remaining, minimum ${item.minimumQuantity}${unitLabel}).`,
+      "inventory_low_stock"
+    );
+  } catch (error) {
+    console.error("Failed to create inventory_low_stock notification:", error);
+  }
+}
+
+interface IntegrationEventData {
+  provider: string;
+  accountName: string | null;
+}
+
+function integrationLabel(data: IntegrationEventData): string {
+  return data.accountName ? `${data.provider} (${data.accountName})` : data.provider;
+}
+
+export async function notifyIntegrationConnected(
+  organizationId: string,
+  data: IntegrationEventData
+): Promise<void> {
+  try {
+    const recipients = await resolveRecipients(organizationId);
+
+    await dispatch(
+      organizationId,
+      recipients,
+      "Integration connected",
+      `${integrationLabel(data)} connected successfully.`,
+      "integration_connected"
+    );
+  } catch (error) {
+    console.error("Failed to create integration_connected notification:", error);
+  }
+}
+
+export async function notifyIntegrationSyncFailed(
+  organizationId: string,
+  data: IntegrationEventData & { errorMessage: string }
+): Promise<void> {
+  try {
+    const recipients = await resolveRecipients(organizationId);
+
+    await dispatch(
+      organizationId,
+      recipients,
+      "Integration sync failed",
+      `${integrationLabel(data)} failed: ${data.errorMessage}`,
+      "integration_sync_failed"
+    );
+  } catch (error) {
+    console.error("Failed to create integration_sync_failed notification:", error);
+  }
+}
+
+export async function notifyIntegrationSyncConflict(
+  organizationId: string,
+  data: IntegrationEventData & { conflictCount: number }
+): Promise<void> {
+  try {
+    const recipients = await resolveRecipients(organizationId);
+
+    await dispatch(
+      organizationId,
+      recipients,
+      "Integration sync conflict",
+      `${integrationLabel(data)} sync found ${data.conflictCount} conflicting reservation(s) that were not imported automatically.`,
+      "integration_sync_conflict"
+    );
+  } catch (error) {
+    console.error("Failed to create integration_sync_conflict notification:", error);
+  }
+}
+
 function humanizeFieldName(field: string): string {
   return field.replace(/_/g, " ");
 }

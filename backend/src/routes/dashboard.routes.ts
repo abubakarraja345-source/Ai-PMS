@@ -162,6 +162,8 @@ router.get(
         totalGuestsResult,
         cleaningTasksResult,
         maintenanceTicketsResult,
+        inventoryResult,
+        integrationsResult,
       ] = await Promise.all([
         supabase
           .from("properties")
@@ -208,12 +210,22 @@ router.get(
 
         supabase
           .from("cleaning_tasks")
-          .select("id", { count: "exact", head: true })
+          .select("status")
           .eq("organization_id", organizationId),
 
         supabase
           .from("maintenance_tickets")
-          .select("id", { count: "exact", head: true })
+          .select("status, priority")
+          .eq("organization_id", organizationId),
+
+        supabase
+          .from("inventory_items")
+          .select("quantity, minimum_quantity")
+          .eq("organization_id", organizationId),
+
+        supabase
+          .from("integrations")
+          .select("status")
           .eq("organization_id", organizationId),
       ]);
 
@@ -231,6 +243,42 @@ router.get(
         throw cleaningTasksResult.error;
       if (maintenanceTicketsResult.error)
         throw maintenanceTicketsResult.error;
+      if (inventoryResult.error) throw inventoryResult.error;
+      if (integrationsResult.error) throw integrationsResult.error;
+
+      const cleaningTasks = cleaningTasksResult.data ?? [];
+      const cleaningSummary = {
+        total: cleaningTasks.length,
+        pending: cleaningTasks.filter((t) => t.status === "pending").length,
+        inProgress: cleaningTasks.filter((t) => t.status === "in_progress")
+          .length,
+      };
+
+      const maintenanceTickets = maintenanceTicketsResult.data ?? [];
+      const maintenanceSummary = {
+        total: maintenanceTickets.length,
+        open: maintenanceTickets.filter((t) => t.status === "open").length,
+        inProgress: maintenanceTickets.filter(
+          (t) => t.status === "in_progress"
+        ).length,
+        urgent: maintenanceTickets.filter(
+          (t) =>
+            t.priority === "urgent" &&
+            !["resolved", "closed", "cancelled"].includes(t.status ?? "")
+        ).length,
+      };
+
+      const inventoryItems = inventoryResult.data ?? [];
+      const lowStockCount = inventoryItems.filter(
+        (i) => i.quantity <= i.minimum_quantity
+      ).length;
+
+      const integrations = integrationsResult.data ?? [];
+      const integrationsSummary = {
+        total: integrations.length,
+        active: integrations.filter((i) => i.status === "active").length,
+        error: integrations.filter((i) => i.status === "error").length,
+      };
 
       const properties = propertiesResult.data ?? [];
       const totalProperties = properties.length;
@@ -333,10 +381,8 @@ router.get(
               pendingReservationsResult.count ?? 0,
             occupiedProperties,
             totalGuests: totalGuestsResult.count ?? 0,
-            cleaningTasks:
-              cleaningTasksResult.count ?? 0,
-            maintenanceTickets:
-              maintenanceTicketsResult.count ?? 0,
+            cleaningTasks: cleaningSummary.total,
+            maintenanceTickets: maintenanceSummary.total,
           },
           today: {
             date: today,
@@ -356,6 +402,13 @@ router.get(
             activeProperties,
             occupancyRate,
           },
+          cleaning: cleaningSummary,
+          maintenance: maintenanceSummary,
+          inventory: {
+            totalItems: inventoryItems.length,
+            lowStockCount,
+          },
+          integrations: integrationsSummary,
         },
       });
     } catch (error) {

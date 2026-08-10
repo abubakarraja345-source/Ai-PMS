@@ -15,6 +15,10 @@ export const NOTIFICATION_TYPES = [
   "member_role_changed",
   "member_removed",
   "organization_settings_changed",
+  "inventory_low_stock",
+  "integration_connected",
+  "integration_sync_failed",
+  "integration_sync_conflict",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

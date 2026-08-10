@@ -341,6 +341,7 @@ export interface MaintenanceTicketFilters {
   status?: MaintenanceStatus;
   priority?: MaintenancePriority;
   category?: string;
+  assignedTo?: string;
 }
 
 export function validateMaintenanceFilters(
@@ -411,6 +412,20 @@ export function validateMaintenanceFilters(
     }
 
     filters.category = query.category.trim();
+  }
+
+  if (
+    query.assigned_to !== undefined &&
+    query.assigned_to !== ""
+  ) {
+    if (
+      typeof query.assigned_to !== "string" ||
+      !query.assigned_to.trim()
+    ) {
+      throw new Error("assigned_to must be a valid string");
+    }
+
+    filters.assignedTo = query.assigned_to.trim();
   }
 
   return filters;

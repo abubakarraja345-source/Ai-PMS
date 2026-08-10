@@ -20,6 +20,33 @@ type Guest = {
   updated_at: string;
 };
 
+type GuestReservation = {
+  id: string;
+  property: { id: string; title: string } | null;
+  booking_reference: string | null;
+  source: string;
+  status: string | null;
+  check_in: string;
+  check_out: string;
+  total_amount: number | null;
+  currency: string | null;
+};
+
+function reservationStatusClasses(status: string | null) {
+  switch (status) {
+    case "confirmed":
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    case "pending":
+      return "bg-amber-50 text-amber-700 border-amber-200";
+    case "completed":
+      return "bg-blue-50 text-blue-700 border-blue-200";
+    case "cancelled":
+      return "bg-red-50 text-red-700 border-red-200";
+    default:
+      return "bg-slate-50 text-slate-700 border-slate-200";
+  }
+}
+
 export default function GuestDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -29,6 +56,9 @@ export default function GuestDetailsPage() {
   const [guest, setGuest] = useState<Guest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [reservations, setReservations] = useState<GuestReservation[]>([]);
+  const [reservationsLoading, setReservationsLoading] = useState(true);
 
   useEffect(() => {
     async function loadGuest() {
@@ -54,6 +84,28 @@ export default function GuestDetailsPage() {
 
     if (guestId) {
       loadGuest();
+    }
+  }, [guestId]);
+
+  useEffect(() => {
+    async function loadReservations() {
+      try {
+        setReservationsLoading(true);
+
+        const response = await apiFetch(
+          `/api/reservations?guest_id=${guestId}`
+        );
+
+        setReservations(response.data ?? []);
+      } catch {
+        setReservations([]);
+      } finally {
+        setReservationsLoading(false);
+      }
+    }
+
+    if (guestId) {
+      loadReservations();
     }
   }, [guestId]);
 
@@ -144,6 +196,68 @@ export default function GuestDetailsPage() {
               value={guest.language}
             />
           </div>
+        </section>
+
+        {/* Reservation History */}
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-900">
+            Reservation History
+          </h2>
+
+          {reservationsLoading ? (
+            <p className="mt-4 text-sm text-slate-500">
+              Loading reservations...
+            </p>
+          ) : reservations.length === 0 ? (
+            <p className="mt-4 text-sm text-slate-400">
+              No reservations for this guest yet.
+            </p>
+          ) : (
+            <div className="mt-5 overflow-x-auto">
+              <table className="w-full min-w-[560px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
+                    <th className="pb-3 pr-4 font-medium">Property</th>
+                    <th className="pb-3 pr-4 font-medium">Check-in</th>
+                    <th className="pb-3 pr-4 font-medium">Check-out</th>
+                    <th className="pb-3 pr-4 font-medium">Source</th>
+                    <th className="pb-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reservations.map((reservation) => (
+                    <tr
+                      key={reservation.id}
+                      className="cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50"
+                      onClick={() =>
+                        (window.location.href = `/reservations/${reservation.id}`)
+                      }
+                    >
+                      <td className="py-3 pr-4 font-medium text-slate-900">
+                        {reservation.property?.title ?? "Unknown property"}
+                      </td>
+                      <td className="py-3 pr-4 text-slate-700">
+                        {reservation.check_in}
+                      </td>
+                      <td className="py-3 pr-4 text-slate-700">
+                        {reservation.check_out}
+                      </td>
+                      <td className="py-3 pr-4 capitalize text-slate-700">
+                        {reservation.source}
+                      </td>
+                      <td className="py-3">
+                        <span
+                          className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${reservationStatusClasses(reservation.status)}`}
+                        >
+                          {reservation.status ?? "unknown"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         {/* Documents + Notes */}

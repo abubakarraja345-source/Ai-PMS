@@ -54,6 +54,41 @@ function getGuestName(guest: GuestSummary | null | undefined) {
   return `${guest.first_name} ${guest.last_name ?? ""}`.trim();
 }
 
+function isImportedReservation(bookingReference: string | null) {
+  return !!bookingReference && bookingReference.startsWith("ical:");
+}
+
+/**
+ * Client-side overlap check across the currently loaded reservations
+ * (already scoped to the visible date range / property filter) —
+ * flags any reservation whose dates overlap another reservation for
+ * the same property, so the calendar can visually surface conflicts
+ * without changing any create/update behavior.
+ */
+function findConflictingIds(
+  reservations: CalendarReservation[]
+): Set<string> {
+  const conflicting = new Set<string>();
+
+  for (let i = 0; i < reservations.length; i++) {
+    for (let j = i + 1; j < reservations.length; j++) {
+      const a = reservations[i];
+      const b = reservations[j];
+
+      if (a.property_id !== b.property_id) continue;
+
+      const overlaps = a.check_in < b.check_out && a.check_out > b.check_in;
+
+      if (overlaps) {
+        conflicting.add(a.id);
+        conflicting.add(b.id);
+      }
+    }
+  }
+
+  return conflicting;
+}
+
 function getStatusBadgeClasses(status: string | null) {
   switch (status) {
     case "confirmed":
@@ -235,22 +270,35 @@ export default function CalendarPage() {
     );
   }
 
+  const conflictingIds = findConflictingIds(reservations);
+
   const events: EventInput[] = reservations.map((r) => {
     const guestName = getGuestName(r.guest);
-    const title = r.booking_reference
-      ? `${r.booking_reference} · ${guestName}`
-      : guestName;
+    const imported = isImportedReservation(r.booking_reference);
+    const hasConflict = conflictingIds.has(r.id);
+
+    const titleParts = [
+      imported ? "⇄" : null,
+      hasConflict ? "⚠" : null,
+      r.booking_reference && !imported ? r.booking_reference : null,
+      guestName,
+    ].filter(Boolean);
 
     return {
       id: r.id,
-      title,
+      title: titleParts.join(" "),
       start: r.check_in,
       end: r.check_out,
       allDay: true,
-      classNames: getEventClassNames(r.status),
+      classNames: [
+        ...getEventClassNames(r.status),
+        ...(hasConflict ? ["!ring-2", "!ring-red-500"] : []),
+      ],
       extendedProps: {
         propertyTitle: r.property?.title ?? "Unknown property",
         status: r.status,
+        imported,
+        hasConflict,
       },
     };
   });
@@ -362,6 +410,12 @@ export default function CalendarPage() {
           className="bg-red-400"
           label="Cancelled (hidden)"
         />
+        <span className="flex items-center gap-1.5">
+          <span>⇄</span> Imported (iCal)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span>⚠</span> Overlapping dates
+        </span>
       </div>
 
       {error && (
@@ -422,13 +476,29 @@ export default function CalendarPage() {
                 )}
               </div>
 
-              <span
-                className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${getStatusBadgeClasses(
-                  selectedReservation.status
-                )}`}
-              >
-                {selectedReservation.status ?? "unknown"}
-              </span>
+              <div className="flex flex-col items-end gap-1.5">
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${getStatusBadgeClasses(
+                    selectedReservation.status
+                  )}`}
+                >
+                  {selectedReservation.status ?? "unknown"}
+                </span>
+
+                {isImportedReservation(
+                  selectedReservation.booking_reference
+                ) && (
+                  <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blue-700">
+                    Imported via iCal
+                  </span>
+                )}
+
+                {conflictingIds.has(selectedReservation.id) && (
+                  <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-red-700">
+                    Overlaps another reservation
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="mt-5 space-y-3 text-sm">
