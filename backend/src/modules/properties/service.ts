@@ -1,6 +1,7 @@
 import {
   CreatePropertyInput,
   validateCreateProperty,
+  validateUpdateProperty,
 } from "./validation";
 
 import {
@@ -64,7 +65,7 @@ export async function getProperty(
 export async function editProperty(
   organizationId: string,
   propertyId: string,
-  updates: Record<string, unknown>
+  rawUpdates: unknown
 ) {
   if (!organizationId) {
     throw new Error("Organization ID is required");
@@ -74,15 +75,11 @@ export async function editProperty(
     throw new Error("Property ID is required");
   }
 
-  if (!updates || Object.keys(updates).length === 0) {
-    throw new Error("No updates provided");
-  }
-
-  // Prevent clients from changing ownership/security fields
-  delete updates.id;
-  delete updates.organization_id;
-  delete updates.created_by;
-  delete updates.created_at;
+  // Validates types and allowlists fields — protected
+  // columns (id, organization_id, created_by, created_at)
+  // are never part of the allowlist, so they can't be
+  // written through this path.
+  const updates = validateUpdateProperty(rawUpdates);
 
   return updateProperty(
     organizationId,

@@ -11,6 +11,7 @@ import testRoutes from "./routes/test.routes";
 import propertyRoutes from "./modules/properties/routes";
 import { GuestsRouter } from "./modules/guests/routes";
 import { reservationRouter } from "./modules/reservations/routes";
+import calendarRoutes from "./modules/calendar/routes";
 
 const app = express();
 
@@ -34,5 +35,6 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/guests", GuestsRouter);
 app.use("/api/reservations", reservationRouter);
+app.use("/api/calendar", calendarRoutes);
 
 export default app;

@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Read(//tmp/**)",
+      "Bash(npx tsx *)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(cat /tmp/fe_tsc.txt)",
+      "Bash(npx eslint *)",
+      "Bash(rm _verify_resv.mjs)",
+      "Bash(rm _verify_calendar_live.mjs)",
+      "Bash(rm _verify_boundary.mjs)",
+      "Bash(rm _verify_boundary2.mjs)",
+      "Bash(rm _verify_org_isolation.mjs)",
+      "Bash(curl -sf http://localhost:5000/health)",
+      "Bash(break)",
+      "Bash(curl -s http://localhost:5000/health)",
+      "Bash(curl -s -o /tmp/cal_resp.json -w \"HTTP_STATUS:%{http_code}\\\\n\" \"http://localhost:5000/api/calendar?start=2026-08-01&end=2026-09-01\")",
+      "Bash(curl -sf http://localhost:3000/)",
+      "Bash(curl -s -o /tmp/fe_cal_resp.html -w \"HTTP_STATUS:%{http_code}\\\\n\" http://localhost:3000/calendar)",
+      "Bash(curl -s -D - -o /dev/null http://localhost:3000/dashboard)"
+    ]
+  }
+}

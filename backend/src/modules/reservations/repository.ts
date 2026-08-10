@@ -56,7 +56,118 @@ export async function findReservationsByOrganization(
     throw error;
   }
 
-  return data ?? [];
+  /*
+   * Supabase's untyped client (no Database generic passed
+   * to createClient) infers embedded relations as arrays by
+   * default. At runtime PostgREST returns a single object
+   * here because guest_id/property_id are many-to-one FKs —
+   * this assertion aligns the type with actual behavior.
+   */
+  return (data ?? []) as unknown as ReservationListItem[];
+}
+
+/**
+ * Reservations overlapping [start, end) for calendar/availability
+ * views. Checkout is treated as exclusive, matching how `nights`
+ * is already computed elsewhere (the checkout day itself is not
+ * occupied):
+ *
+ *   check_in < end AND check_out > start
+ *
+ * Cancelled reservations are excluded — they don't occupy the
+ * property.
+ */
+export async function findReservationsByOrganizationInRange(
+  organizationId: string,
+  start: string,
+  end: string,
+  propertyId?: string
+): Promise<ReservationListItem[]> {
+  let query = supabase
+    .from("reservations")
+    .select(RESERVATION_SELECT)
+    .eq("organization_id", organizationId)
+    .neq("status", "cancelled")
+    .lt("check_in", end)
+    .gt("check_out", start)
+    .order("check_in", {
+      ascending: true,
+    });
+
+  if (propertyId) {
+    query = query.eq("property_id", propertyId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as unknown as ReservationListItem[];
+}
+
+/**
+ * Reservations that are either currently staying or still
+ * upcoming, as of `fromDate` (inclusive). Drives the dashboard's
+ * "today" section and upcoming-reservations list from a single
+ * query instead of one query per metric.
+ *
+ * Only `confirmed`/`pending` reservations count — `cancelled`
+ * never occupied the property, and `completed` reservations
+ * checking out today/later would be a data inconsistency, not
+ * something the dashboard should present as active.
+ *
+ * Bounded to `limit` rows (ordered by check_in ascending, so a
+ * cap only ever drops the furthest-out reservations, not the
+ * ones the dashboard actually needs).
+ */
+export async function findActiveAndUpcomingReservations(
+  organizationId: string,
+  fromDate: string,
+  limit = 200
+): Promise<ReservationListItem[]> {
+  const { data, error } = await supabase
+    .from("reservations")
+    .select(RESERVATION_SELECT)
+    .eq("organization_id", organizationId)
+    .in("status", ["confirmed", "pending"])
+    .gte("check_out", fromDate)
+    .order("check_in", {
+      ascending: true,
+    })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as unknown as ReservationListItem[];
+}
+
+/**
+ * Most recently created reservations, for the dashboard's
+ * recent-activity feed. Includes every status — a cancellation
+ * is still activity worth showing.
+ */
+export async function findRecentReservations(
+  organizationId: string,
+  limit = 5
+): Promise<ReservationListItem[]> {
+  const { data, error } = await supabase
+    .from("reservations")
+    .select(RESERVATION_SELECT)
+    .eq("organization_id", organizationId)
+    .order("created_at", {
+      ascending: false,
+    })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as unknown as ReservationListItem[];
 }
 
 export async function findReservationById(
@@ -74,7 +185,7 @@ export async function findReservationById(
     throw error;
   }
 
-  return data;
+  return data as unknown as Reservation | null;
 }
 
 export async function createReservation(
@@ -140,7 +251,7 @@ export async function createReservation(
     throw error;
   }
 
-  return data;
+  return data as unknown as Reservation;
 }
 
 export async function updateReservation(
@@ -160,7 +271,7 @@ export async function updateReservation(
     throw error;
   }
 
-  return data;
+  return data as unknown as Reservation | null;
 }
 
 export async function deleteReservation(

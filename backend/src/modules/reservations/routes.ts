@@ -17,6 +17,30 @@ export const reservationRouter = Router();
 
 reservationRouter.use(requireAuth);
 
+/**
+ * Returns a client-safe error message.
+ *
+ * Our own validation code throws plain `Error`s with
+ * friendly, intentional messages — those are safe to
+ * forward. Supabase/Postgres failures throw PostgrestError
+ * (which also extends Error), whose `.message` can contain
+ * raw constraint/column/table names — those must not reach
+ * the client.
+ */
+function toClientErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  if (
+    error instanceof Error &&
+    error.name !== "PostgrestError"
+  ) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 async function getOrganizationId(userId: string) {
   const { data, error } = await supabase
     .from("organization_members")
@@ -169,10 +193,10 @@ reservationRouter.post(
 
       return res.status(400).json({
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to create reservation",
+        error: toClientErrorMessage(
+          error,
+          "Failed to create reservation"
+        ),
       });
     }
   }
@@ -225,10 +249,10 @@ reservationRouter.patch(
 
       return res.status(400).json({
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to update reservation",
+        error: toClientErrorMessage(
+          error,
+          "Failed to update reservation"
+        ),
       });
     }
   }

@@ -1,3 +1,23 @@
+/**
+ * Canonical values, matching what the frontend's status
+ * filter/badges and source dropdown already use
+ * (app/(dashboard)/reservations/page.tsx).
+ */
+export const RESERVATION_STATUSES = [
+  "confirmed",
+  "pending",
+  "completed",
+  "cancelled",
+] as const;
+
+export const RESERVATION_SOURCES = [
+  "direct",
+  "airbnb",
+  "booking.com",
+  "vrbo",
+  "other",
+] as const;
+
 export interface CreateReservationInput {
   property_id: string;
   guest_id: string;
@@ -30,7 +50,7 @@ export interface CreateReservationInput {
  * values such as:
  * 272026-11-10
  */
-function validateDate(
+export function validateDate(
   value: unknown,
   fieldName: string
 ): string {
@@ -50,6 +70,18 @@ function validateDate(
   const [year, month, day] = date
     .split("-")
     .map(Number);
+
+  // The regex above guarantees exactly 3 numeric segments,
+  // but the array type can't express that statically.
+  if (
+    year === undefined ||
+    month === undefined ||
+    day === undefined
+  ) {
+    throw new Error(
+      `${fieldName} must be a valid date in YYYY-MM-DD format`
+    );
+  }
 
   // Create UTC date to avoid timezone issues
   const parsed = new Date(
@@ -129,6 +161,32 @@ export function validateCreateReservation(
   ) {
     throw new Error(
       "Reservation source is required"
+    );
+  }
+
+  if (
+    !RESERVATION_SOURCES.includes(
+      data.source.trim() as (typeof RESERVATION_SOURCES)[number]
+    )
+  ) {
+    throw new Error(
+      `Reservation source must be one of: ${RESERVATION_SOURCES.join(", ")}`
+    );
+  }
+
+  // Status
+  if (
+    data.status !== undefined &&
+    data.status !== null &&
+    (
+      typeof data.status !== "string" ||
+      !RESERVATION_STATUSES.includes(
+        data.status.trim() as (typeof RESERVATION_STATUSES)[number]
+      )
+    )
+  ) {
+    throw new Error(
+      `Reservation status must be one of: ${RESERVATION_STATUSES.join(", ")}`
     );
   }
 

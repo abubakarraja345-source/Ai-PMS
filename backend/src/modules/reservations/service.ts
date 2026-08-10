@@ -10,6 +10,8 @@ import {
 
 import {
   CreateReservationInput,
+  RESERVATION_SOURCES,
+  RESERVATION_STATUSES,
 } from "./validation";
 
 export async function getReservations(
@@ -33,7 +35,7 @@ export async function getReservation(
 /**
  * Verify that a property belongs to the user's organization.
  */
-async function verifyProperty(
+export async function verifyProperty(
   organizationId: string,
   propertyId: string
 ) {
@@ -100,6 +102,18 @@ function validateDate(
   const [year, month, day] = date
     .split("-")
     .map(Number);
+
+  // The regex above guarantees exactly 3 numeric segments,
+  // but the array type can't express that statically.
+  if (
+    year === undefined ||
+    month === undefined ||
+    day === undefined
+  ) {
+    throw new Error(
+      `${fieldName} must be a valid date in YYYY-MM-DD format`
+    );
+  }
 
   const parsed = new Date(
     Date.UTC(year, month - 1, day)
@@ -402,6 +416,55 @@ export async function editReservation(
         );
       }
     }
+  }
+
+  /*
+   * Validate source, if supplied.
+   */
+  if (updates.source !== undefined) {
+    if (
+      typeof updates.source !== "string" ||
+      !updates.source.trim()
+    ) {
+      throw new Error(
+        "Reservation source is required"
+      );
+    }
+
+    const source = updates.source.trim();
+
+    if (
+      !RESERVATION_SOURCES.includes(
+        source as (typeof RESERVATION_SOURCES)[number]
+      )
+    ) {
+      throw new Error(
+        `Reservation source must be one of: ${RESERVATION_SOURCES.join(", ")}`
+      );
+    }
+
+    updates.source = source;
+  }
+
+  /*
+   * Validate status, if supplied.
+   */
+  if (
+    updates.status !== undefined &&
+    updates.status !== null
+  ) {
+    if (
+      typeof updates.status !== "string" ||
+      !RESERVATION_STATUSES.includes(
+        updates.status.trim() as (typeof RESERVATION_STATUSES)[number]
+      )
+    ) {
+      throw new Error(
+        `Reservation status must be one of: ${RESERVATION_STATUSES.join(", ")}`
+      );
+    }
+
+    updates.status = updates.status.trim();
   }
 
   /*

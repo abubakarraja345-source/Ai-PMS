@@ -88,3 +88,41 @@ export async function createGuest(
 
   return data;
 }
+
+export async function updateGuest(
+  organizationId: string,
+  guestId: string,
+  updates: Record<string, unknown>
+) {
+  const { data, error } = await supabase
+    .from("guests")
+    .update(updates)
+    .eq("id", guestId)
+    .eq("organization_id", organizationId)
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function deleteGuest(
+  organizationId: string,
+  guestId: string
+) {
+  const { data, error } = await supabase
+    .from("guests")
+    .delete()
+    .eq("id", guestId)
+    .eq("organization_id", organizationId)
+    .select("id");
+
+  if (error) {
+    throw error;
+  }
+
+  return !!data && data.length > 0;
+}

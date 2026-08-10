@@ -111,3 +111,153 @@ export function validateCreateProperty(
         : null,
   };
 }
+
+function validateOptionalString(
+  value: unknown,
+  fieldName: string
+): string | null {
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    throw new Error(`${fieldName} must be a string`);
+  }
+
+  return value;
+}
+
+function validateOptionalNumber(
+  value: unknown,
+  fieldName: string,
+  allowNegative = false
+): number | null {
+  if (value === null) {
+    return null;
+  }
+
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value)
+  ) {
+    throw new Error(
+      `${fieldName} must be a valid number`
+    );
+  }
+
+  if (!allowNegative && value < 0) {
+    throw new Error(
+      `${fieldName} cannot be negative`
+    );
+  }
+
+  return value;
+}
+
+const UPDATE_STRING_FIELDS = [
+  "description",
+  "address",
+  "city",
+  "state",
+  "country",
+  "postal_code",
+  "check_in_time",
+  "check_out_time",
+  "house_manual_url",
+  "status",
+] as const;
+
+const UPDATE_NUMBER_FIELDS = [
+  "bedrooms",
+  "bathrooms",
+  "beds",
+  "max_guests",
+] as const;
+
+/**
+ * Validates and allowlists PATCH fields for a property.
+ *
+ * Unlike CreatePropertyInput, every field is optional here,
+ * but any field that IS supplied must have the correct type.
+ * Only fields present on this allowlist are ever written —
+ * this also prevents unexpected/protected keys from reaching
+ * the database update.
+ */
+export function validateUpdateProperty(
+  input: unknown
+): Record<string, unknown> {
+  if (!input || typeof input !== "object") {
+    throw new Error("Invalid request body");
+  }
+
+  const data = input as Record<string, unknown>;
+  const updates: Record<string, unknown> = {};
+
+  if (data.title !== undefined) {
+    if (
+      typeof data.title !== "string" ||
+      !data.title.trim()
+    ) {
+      throw new Error(
+        "Property title cannot be empty"
+      );
+    }
+
+    updates.title = data.title.trim();
+  }
+
+  if (data.property_type !== undefined) {
+    if (
+      typeof data.property_type !== "string" ||
+      !data.property_type.trim()
+    ) {
+      throw new Error(
+        "Property type cannot be empty"
+      );
+    }
+
+    updates.property_type = data.property_type.trim();
+  }
+
+  for (const field of UPDATE_STRING_FIELDS) {
+    if (data[field] !== undefined) {
+      updates[field] = validateOptionalString(
+        data[field],
+        field
+      );
+    }
+  }
+
+  for (const field of UPDATE_NUMBER_FIELDS) {
+    if (data[field] !== undefined) {
+      updates[field] = validateOptionalNumber(
+        data[field],
+        field
+      );
+    }
+  }
+
+  if (data.latitude !== undefined) {
+    updates.latitude = validateOptionalNumber(
+      data.latitude,
+      "latitude",
+      true
+    );
+  }
+
+  if (data.longitude !== undefined) {
+    updates.longitude = validateOptionalNumber(
+      data.longitude,
+      "longitude",
+      true
+    );
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new Error(
+      "No valid fields provided to update"
+    );
+  }
+
+  return updates;
+}

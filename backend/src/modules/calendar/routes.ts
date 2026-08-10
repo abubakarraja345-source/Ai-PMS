@@ -1,6 +1,18 @@
-import { Router } from 'express';
-import { CalendarController } from './controller';
+import { Router } from "express";
 
-export const CalendarRouter = Router();
+import { requireAuth } from "../../middleware/auth.middleware";
+import { requireOrganization } from "../../middleware/organization.middleware";
 
-CalendarRouter.get('/', CalendarController.getAll);
+import { listCalendarReservations } from "./controller";
+
+const router = Router();
+
+// GET /api/calendar?start=YYYY-MM-DD&end=YYYY-MM-DD&property_id=
+router.get(
+  "/",
+  requireAuth,
+  requireOrganization,
+  listCalendarReservations
+);
+
+export default router;

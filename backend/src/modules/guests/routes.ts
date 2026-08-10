@@ -30,3 +30,15 @@ GuestsRouter.post(
   "/",
   GuestsController.create
 );
+
+// PATCH /api/guests/:id
+GuestsRouter.patch(
+  "/:id",
+  GuestsController.update
+);
+
+// DELETE /api/guests/:id
+GuestsRouter.delete(
+  "/:id",
+  GuestsController.remove
+);

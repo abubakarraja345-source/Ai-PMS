@@ -7,6 +7,8 @@ import {
   getGuests,
   getGuest,
   addGuest,
+  editGuest,
+  removeGuest,
 } from "./service";
 
 import {
@@ -181,6 +183,118 @@ export class GuestsController {
           error instanceof Error
             ? error.message
             : "Failed to create guest",
+      });
+    }
+  }
+
+  /**
+   * PATCH /api/guests/:id
+   */
+  static async update(
+    req: AuthenticatedRequest,
+    res: Response
+  ) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: "Authentication required",
+        });
+      }
+
+      const organizationId =
+        await getOrganizationId(req.user.id);
+
+      if (!organizationId) {
+        return res.status(403).json({
+          success: false,
+          error: "Organization not found",
+        });
+      }
+
+      const data = await editGuest(
+        organizationId,
+        req.params.id,
+        req.body
+      );
+
+      if (!data) {
+        return res.status(404).json({
+          success: false,
+          error: "Guest not found",
+        });
+      }
+
+      return res.json({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      console.error(
+        "Update guest error:",
+        error
+      );
+
+      return res.status(400).json({
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to update guest",
+      });
+    }
+  }
+
+  /**
+   * DELETE /api/guests/:id
+   */
+  static async remove(
+    req: AuthenticatedRequest,
+    res: Response
+  ) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: "Authentication required",
+        });
+      }
+
+      const organizationId =
+        await getOrganizationId(req.user.id);
+
+      if (!organizationId) {
+        return res.status(403).json({
+          success: false,
+          error: "Organization not found",
+        });
+      }
+
+      const deleted = await removeGuest(
+        organizationId,
+        req.params.id
+      );
+
+      if (!deleted) {
+        return res.status(404).json({
+          success: false,
+          error: "Guest not found",
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: "Guest deleted successfully",
+      });
+    } catch (error) {
+      console.error(
+        "Delete guest error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        error: "Failed to delete guest",
       });
     }
   }
