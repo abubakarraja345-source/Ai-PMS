@@ -243,8 +243,8 @@ export default function ReservationsPage() {
         guestResponse,
       ] = await Promise.all([
         apiFetch("/api/reservations"),
-        apiFetch("/api/properties"),
-        apiFetch("/api/guests"),
+        apiFetch("/api/properties?limit=100"),
+        apiFetch("/api/guests?limit=100"),
       ]);
 
       setReservations(

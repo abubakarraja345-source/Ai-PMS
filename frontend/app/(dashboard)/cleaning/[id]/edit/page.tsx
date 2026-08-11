@@ -67,7 +67,7 @@ export default function EditCleaningTaskPage() {
         const [taskRes, propertiesRes, reservationsRes] =
           await Promise.all([
             apiFetch(`/api/cleaning/${taskId}`),
-            apiFetch("/api/properties"),
+            apiFetch("/api/properties?limit=100"),
             apiFetch("/api/reservations"),
           ]);
 

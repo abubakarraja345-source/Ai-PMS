@@ -6,11 +6,13 @@ import {
   findReservationById,
   findReservationsByOrganization,
   findReservationsByOrganizationInRange,
+  findReservationStatusCounts,
   updateReservation,
 } from "./repository";
 
 import {
   CreateReservationInput,
+  ReservationFilters,
   RESERVATION_SOURCES,
   RESERVATION_STATUSES,
 } from "./validation";
@@ -22,16 +24,25 @@ import {
 
 export async function getReservations(
   organizationId: string,
-  filters: {
-    guestId?: string;
-    propertyId?: string;
-    status?: string;
-  } = {}
+  filters: ReservationFilters,
+  range: { from: number; to: number }
 ) {
   return findReservationsByOrganization(
     organizationId,
-    filters
+    filters,
+    range
   );
+}
+
+/**
+ * Status-tab counts, honoring every currently active filter except
+ * status itself.
+ */
+export async function getReservationStatusCounts(
+  organizationId: string,
+  filters: Omit<ReservationFilters, "status">
+) {
+  return findReservationStatusCounts(organizationId, filters);
 }
 
 /**

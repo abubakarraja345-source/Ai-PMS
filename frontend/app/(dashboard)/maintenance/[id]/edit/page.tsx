@@ -73,7 +73,7 @@ export default function EditMaintenanceTicketPage() {
         const [ticketRes, propertiesRes, reservationsRes] =
           await Promise.all([
             apiFetch(`/api/maintenance/${ticketId}`),
-            apiFetch("/api/properties"),
+            apiFetch("/api/properties?limit=100"),
             apiFetch("/api/reservations"),
           ]);
 

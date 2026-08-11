@@ -15,6 +15,12 @@ import {
   validateMaintenanceFilters,
 } from "./validation";
 
+import {
+  buildPaginationMeta,
+  getRange,
+  parsePagination,
+} from "../../utils/pagination";
+
 /**
  * Our own validation/ownership checks throw plain `Error`s
  * with friendly, intentional messages — safe to forward as
@@ -44,14 +50,20 @@ export async function listMaintenanceTickets(
       req.query as Record<string, unknown>
     );
 
-    const data = await getMaintenanceTickets(
+    const { page, limit } = parsePagination(
+      req.query as Record<string, unknown>
+    );
+
+    const { data, total } = await getMaintenanceTickets(
       req.organization.id,
-      filters
+      filters,
+      getRange(page, limit)
     );
 
     return res.status(200).json({
       success: true,
       data,
+      meta: buildPaginationMeta(page, limit, total),
     });
   } catch (error) {
     console.error("List maintenance tickets error:", error);

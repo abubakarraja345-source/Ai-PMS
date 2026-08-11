@@ -1,11 +1,13 @@
 import { supabase } from "../../config/supabase";
 
 export async function findGuestsByOrganization(
-  organizationId: string
+  organizationId: string,
+  range: { from: number; to: number }
 ) {
-  const { data, error } = await supabase
+  const { data, error, count } = await supabase
     .from("guests")
-    .select(`
+    .select(
+      `
       id,
       organization_id,
       first_name,
@@ -19,17 +21,20 @@ export async function findGuestsByOrganization(
       vip,
       created_at,
       updated_at
-    `)
+    `,
+      { count: "exact" }
+    )
     .eq("organization_id", organizationId)
     .order("created_at", {
       ascending: false,
-    });
+    })
+    .range(range.from, range.to);
 
   if (error) {
     throw error;
   }
 
-  return data ?? [];
+  return { data: data ?? [], total: count ?? 0 };
 }
 
 export async function findGuestById(

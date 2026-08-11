@@ -19,13 +19,14 @@ import { findDocumentPathsByProperty } from "../property-details/repository";
 import { DOCUMENTS_BUCKET } from "../property-details/validation";
 
 export async function getProperties(
-  organizationId: string
+  organizationId: string,
+  range: { from: number; to: number }
 ) {
   if (!organizationId) {
     throw new Error("Organization ID is required");
   }
 
-  return findPropertiesByOrganization(organizationId);
+  return findPropertiesByOrganization(organizationId, range);
 }
 
 export async function addProperty(

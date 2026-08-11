@@ -20,6 +20,14 @@ import { RESERVATION_STATUSES } from "../reservations/validation";
 
 import { monthBoundsUTC, todayUTC } from "./context";
 import { ToolProposal } from "./types";
+import { getRange } from "../../utils/pagination";
+
+/**
+ * Same rationale as context.ts's AI_FETCH_RANGE — these tools need
+ * "effectively everything matching," not a user-facing page, so this
+ * is a generous safety cap rather than a real pagination window.
+ */
+const AI_FETCH_RANGE = getRange(1, 500);
 
 export interface ToolContext {
   organizationId: string;
@@ -111,10 +119,12 @@ const getArrivalsDepartures: ToolExecutor = async (args, ctx) => {
 const getVacantProperties: ToolExecutor = async (_args, ctx) => {
   const today = todayUTC();
 
-  const [properties, reservations] = await Promise.all([
-    getProperties(ctx.organizationId),
+  const [propertiesResult, reservations] = await Promise.all([
+    getProperties(ctx.organizationId, AI_FETCH_RANGE),
     findActiveAndUpcomingReservations(ctx.organizationId, today),
   ]);
+
+  const properties = propertiesResult.data;
 
   // Same business rule as the dashboard summary: a property is
   // occupied "right now" if a confirmed/pending stay spans today.
@@ -142,10 +152,14 @@ const getReservationsList: ToolExecutor = async (args, ctx) => {
   if (typeof args.status === "string") filters.status = args.status;
   if (typeof args.propertyId === "string") filters.propertyId = args.propertyId;
 
-  const reservations = await getReservations(ctx.organizationId, filters);
+  const { data: reservations, total } = await getReservations(
+    ctx.organizationId,
+    filters,
+    AI_FETCH_RANGE
+  );
 
   return {
-    count: reservations.length,
+    count: total,
     reservations: reservations.slice(0, 30).map((r) => ({
       property: r.property?.title ?? "Unknown property",
       guest: guestName(r.guest),
@@ -161,12 +175,14 @@ const getReservationsList: ToolExecutor = async (args, ctx) => {
 };
 
 const getLowStockInventory: ToolExecutor = async (_args, ctx) => {
-  const items = await listInventoryForOrganization(ctx.organizationId, {
-    lowStockOnly: true,
-  });
+  const { data: items, total } = await listInventoryForOrganization(
+    ctx.organizationId,
+    { lowStockOnly: true },
+    AI_FETCH_RANGE
+  );
 
   return {
-    count: items.length,
+    count: total,
     items: items.slice(0, 30).map((i) => ({
       name: i.name,
       property: i.propertyTitle,
@@ -187,10 +203,14 @@ const getCleaningTasksTool: ToolExecutor = async (args, ctx) => {
     filters.status = args.status as (typeof CLEANING_STATUSES)[number];
   }
 
-  const tasks = await getCleaningTasks(ctx.organizationId, filters);
+  const { data: tasks, total } = await getCleaningTasks(
+    ctx.organizationId,
+    filters,
+    AI_FETCH_RANGE
+  );
 
   return {
-    count: tasks.length,
+    count: total,
     tasks: tasks.slice(0, 20).map((t) => ({
       property: t.property?.title ?? "Unknown property",
       status: t.status,
@@ -220,10 +240,14 @@ const getMaintenanceTicketsTool: ToolExecutor = async (args, ctx) => {
     filters.priority = args.priority as (typeof MAINTENANCE_PRIORITIES)[number];
   }
 
-  const tickets = await getMaintenanceTickets(ctx.organizationId, filters);
+  const { data: tickets, total } = await getMaintenanceTickets(
+    ctx.organizationId,
+    filters,
+    AI_FETCH_RANGE
+  );
 
   return {
-    count: tickets.length,
+    count: total,
     tickets: tickets.slice(0, 20).map((t) => ({
       title: t.title,
       property: t.property?.title ?? "Unknown property",
@@ -321,9 +345,11 @@ const proposeInventoryAdjustment: ToolExecutor = async (args, ctx) => {
     return { error: "quantityChange must be a nonzero whole number." };
   }
 
-  const matches = await listInventoryForOrganization(ctx.organizationId, {
-    search: itemName,
-  });
+  const { data: matches } = await listInventoryForOrganization(
+    ctx.organizationId,
+    { search: itemName },
+    AI_FETCH_RANGE
+  );
 
   if (matches.length === 0) {
     return { error: `No inventory item found matching "${itemName}".` };

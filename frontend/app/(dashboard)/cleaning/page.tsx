@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { PaginationControls } from "@/components/shared/pagination-controls";
 
 interface PropertyOption {
   id: string;
@@ -106,6 +107,22 @@ export default function CleaningPage() {
   const [endFilter, setEndFilter] = useState("");
   const [assignedToFilter, setAssignedToFilter] = useState("");
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Any filter change invalidates the current page — page 1 of a new
+  // filtered set is the only page guaranteed to exist.
+  useEffect(() => {
+    setPage(1);
+  }, [
+    propertyFilter,
+    statusFilter,
+    priorityFilter,
+    startFilter,
+    endFilter,
+    assignedToFilter,
+  ]);
+
   const loadTasks = useCallback(async () => {
     try {
       setLoading(true);
@@ -122,6 +139,7 @@ export default function CleaningPage() {
       if (endFilter) params.set("end", endFilter);
       if (assignedToFilter.trim())
         params.set("assigned_to", assignedToFilter.trim());
+      params.set("page", String(page));
 
       const query = params.toString();
 
@@ -130,6 +148,7 @@ export default function CleaningPage() {
       );
 
       setTasks(response.data ?? []);
+      setTotalPages(response.meta?.totalPages ?? 1);
     } catch (err) {
       setError(
         err instanceof Error
@@ -146,12 +165,13 @@ export default function CleaningPage() {
     startFilter,
     endFilter,
     assignedToFilter,
+    page,
   ]);
 
   useEffect(() => {
     async function loadProperties() {
       try {
-        const response = await apiFetch("/api/properties");
+        const response = await apiFetch("/api/properties?limit=100");
         setProperties(response.data ?? []);
       } catch {
         // Non-fatal — the property filter simply won't populate.
@@ -459,6 +479,12 @@ export default function CleaningPage() {
           </table>
         </div>
       )}
+
+      <PaginationControls
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
     </main>
   );
 }

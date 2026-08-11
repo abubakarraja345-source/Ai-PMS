@@ -40,11 +40,12 @@ const CLEANING_SELECT = `
 
 export async function findCleaningTasksByOrganization(
   organizationId: string,
-  filters: CleaningTaskFilters = {}
-): Promise<CleaningTask[]> {
+  filters: CleaningTaskFilters = {},
+  range?: { from: number; to: number }
+): Promise<{ data: CleaningTask[]; total: number }> {
   let query = supabase
     .from("cleaning_tasks")
-    .select(CLEANING_SELECT)
+    .select(CLEANING_SELECT, { count: "exact" })
     .eq("organization_id", organizationId);
 
   if (filters.propertyId) {
@@ -85,13 +86,20 @@ export async function findCleaningTasksByOrganization(
     })
     .order("created_at", { ascending: false });
 
-  const { data, error } = await query;
+  if (range) {
+    query = query.range(range.from, range.to);
+  }
+
+  const { data, error, count } = await query;
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []) as unknown as CleaningTask[];
+  return {
+    data: (data ?? []) as unknown as CleaningTask[],
+    total: count ?? 0,
+  };
 }
 
 export async function findCleaningTaskById(

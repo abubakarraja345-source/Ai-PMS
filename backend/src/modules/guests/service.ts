@@ -16,10 +16,12 @@ import {
  * Get all guests belonging to an organization.
  */
 export async function getGuests(
-  organizationId: string
+  organizationId: string,
+  range: { from: number; to: number }
 ) {
   return findGuestsByOrganization(
-    organizationId
+    organizationId,
+    range
   );
 }
 

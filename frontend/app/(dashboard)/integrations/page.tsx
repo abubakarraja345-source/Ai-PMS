@@ -89,7 +89,7 @@ export default function IntegrationsPage() {
 
       const [integrationsRes, propertiesRes] = await Promise.all([
         apiFetch("/api/integrations"),
-        apiFetch("/api/properties"),
+        apiFetch("/api/properties?limit=100"),
       ]);
 
       setIntegrations(integrationsRes.data ?? []);

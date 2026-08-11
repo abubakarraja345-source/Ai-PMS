@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import { PaginationControls } from "@/components/shared/pagination-controls";
 
 interface InventoryItem {
   id: string;
@@ -62,20 +63,37 @@ export default function InventoryPage() {
   const [search, setSearch] = useState("");
   const [lowStockOnly, setLowStockOnly] = useState(false);
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [modal, setModal] = useState<ModalState>(null);
+
+  // Any filter change invalidates the current page — page 1 of a new
+  // filtered set is the only page guaranteed to exist.
+  useEffect(() => {
+    setPage(1);
+  }, [propertyFilter, categoryFilter, search, lowStockOnly]);
 
   const loadAll = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
+      const params = new URLSearchParams();
+      if (propertyFilter) params.set("propertyId", propertyFilter);
+      if (categoryFilter) params.set("category", categoryFilter);
+      if (search.trim()) params.set("search", search.trim());
+      if (lowStockOnly) params.set("lowStockOnly", "true");
+      params.set("page", String(page));
+
       const [itemsRes, summaryRes, propertiesRes] = await Promise.all([
-        apiFetch("/api/inventory/items"),
+        apiFetch(`/api/inventory/items?${params.toString()}`),
         apiFetch("/api/inventory/summary"),
-        apiFetch("/api/properties"),
+        apiFetch("/api/properties?limit=100"),
       ]);
 
       setItems(itemsRes.data ?? []);
+      setTotalPages(itemsRes.meta?.totalPages ?? 1);
       setSummary(summaryRes.data ?? null);
       setProperties(
         (propertiesRes.data ?? []).map((p: { id: string; title: string }) => ({
@@ -90,7 +108,7 @@ export default function InventoryPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [propertyFilter, categoryFilter, search, lowStockOnly, page]);
 
   useEffect(() => {
     loadAll();
@@ -120,20 +138,6 @@ export default function InventoryPage() {
 
     loadRole();
   }, []);
-
-  const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      if (propertyFilter && item.propertyId !== propertyFilter) return false;
-      if (categoryFilter && item.category !== categoryFilter) return false;
-      if (lowStockOnly && !item.isLowStock) return false;
-      if (
-        search &&
-        !item.name.toLowerCase().includes(search.toLowerCase())
-      )
-        return false;
-      return true;
-    });
-  }, [items, propertyFilter, categoryFilter, lowStockOnly, search]);
 
   async function handleDelete(item: InventoryItem) {
     const confirmed = window.confirm(
@@ -254,13 +258,13 @@ export default function InventoryPage() {
       {/* List */}
       {loading ? (
         <div className="mt-10 text-slate-500">Loading inventory...</div>
-      ) : filteredItems.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="mt-10 rounded-2xl border bg-white p-10 text-center">
           <h2 className="text-2xl font-semibold text-slate-900">
             No inventory items found
           </h2>
           <p className="mt-2 text-slate-500">
-            {items.length === 0
+            {!summary || summary.totalItems === 0
               ? "Add your first inventory item to start tracking stock."
               : "Try adjusting your filters."}
           </p>
@@ -283,7 +287,7 @@ export default function InventoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item) => (
+                {items.map((item) => (
                   <tr key={item.id} className="border-b border-slate-100 last:border-0">
                     <td className="px-5 py-4 font-medium text-slate-900">{item.name}</td>
                     <td className="px-5 py-4 text-slate-600">{item.propertyTitle}</td>
@@ -344,6 +348,12 @@ export default function InventoryPage() {
           </div>
         </div>
       )}
+
+      <PaginationControls
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
 
       {modal?.mode === "add" && (
         <AddItemModal

@@ -6,11 +6,13 @@ import {
 import { CreatePropertyInput } from "./validation";
 
 export async function findPropertiesByOrganization(
-  organizationId: string
-): Promise<PropertyListItem[]> {
-  const { data, error } = await supabase
+  organizationId: string,
+  range: { from: number; to: number }
+): Promise<{ data: PropertyListItem[]; total: number }> {
+  const { data, error, count } = await supabase
     .from("properties")
-    .select(`
+    .select(
+      `
       id,
       title,
       property_type,
@@ -26,17 +28,20 @@ export async function findPropertiesByOrganization(
       status,
       created_at,
       updated_at
-    `)
+    `,
+      { count: "exact" }
+    )
     .eq("organization_id", organizationId)
     .order("created_at", {
       ascending: false,
-    });
+    })
+    .range(range.from, range.to);
 
   if (error) {
     throw error;
   }
 
-  return data ?? [];
+  return { data: data ?? [], total: count ?? 0 };
 }
 
 export async function createProperty(

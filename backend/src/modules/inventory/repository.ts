@@ -13,32 +13,74 @@ const ITEM_WITH_PROPERTY_SELECT = `
   property:properties(id, title)
 `;
 
+export interface InventoryQueryFilters {
+  category?: string;
+  search?: string;
+}
+
 export async function findItemsByProperty(
-  propertyId: string
-): Promise<InventoryItemRow[]> {
-  const { data, error } = await supabase
+  propertyId: string,
+  filters: InventoryQueryFilters = {},
+  range?: { from: number; to: number }
+): Promise<{ data: InventoryItemRow[]; total: number }> {
+  let query = supabase
     .from("inventory_items")
-    .select(ITEM_SELECT)
-    .eq("property_id", propertyId)
-    .order("item_name", { ascending: true });
+    .select(ITEM_SELECT, { count: "exact" })
+    .eq("property_id", propertyId);
+
+  if (filters.category) {
+    query = query.eq("category", filters.category);
+  }
+
+  if (filters.search) {
+    query = query.ilike("item_name", `%${filters.search}%`);
+  }
+
+  query = query.order("item_name", { ascending: true });
+
+  if (range) {
+    query = query.range(range.from, range.to);
+  }
+
+  const { data, error, count } = await query;
 
   if (error) throw error;
 
-  return data ?? [];
+  return { data: data ?? [], total: count ?? 0 };
 }
 
 export async function findItemsByOrganization(
-  organizationId: string
-): Promise<InventoryItemWithPropertyRow[]> {
-  const { data, error } = await supabase
+  organizationId: string,
+  filters: InventoryQueryFilters = {},
+  range?: { from: number; to: number }
+): Promise<{ data: InventoryItemWithPropertyRow[]; total: number }> {
+  let query = supabase
     .from("inventory_items")
-    .select(ITEM_WITH_PROPERTY_SELECT)
-    .eq("organization_id", organizationId)
-    .order("item_name", { ascending: true });
+    .select(ITEM_WITH_PROPERTY_SELECT, { count: "exact" })
+    .eq("organization_id", organizationId);
+
+  if (filters.category) {
+    query = query.eq("category", filters.category);
+  }
+
+  if (filters.search) {
+    query = query.ilike("item_name", `%${filters.search}%`);
+  }
+
+  query = query.order("item_name", { ascending: true });
+
+  if (range) {
+    query = query.range(range.from, range.to);
+  }
+
+  const { data, error, count } = await query;
 
   if (error) throw error;
 
-  return (data ?? []) as unknown as InventoryItemWithPropertyRow[];
+  return {
+    data: (data ?? []) as unknown as InventoryItemWithPropertyRow[],
+    total: count ?? 0,
+  };
 }
 
 export async function findItemById(

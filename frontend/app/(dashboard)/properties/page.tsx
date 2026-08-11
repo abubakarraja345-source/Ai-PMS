@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { PaginationControls } from "@/components/shared/pagination-controls";
 
 interface Property {
   id: string;
@@ -21,14 +22,18 @@ export default function PropertiesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  async function loadProperties() {
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const loadProperties = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await apiFetch("/api/properties");
+      const response = await apiFetch(`/api/properties?page=${page}`);
 
       setProperties(response.data ?? []);
+      setTotalPages(response.meta?.totalPages ?? 1);
     } catch (error) {
       setError(
         error instanceof Error
@@ -38,7 +43,7 @@ export default function PropertiesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page]);
 
   async function deleteProperty(propertyId: string) {
     const confirmed = window.confirm(
@@ -72,7 +77,7 @@ export default function PropertiesPage() {
 
   useEffect(() => {
     loadProperties();
-  }, []);
+  }, [loadProperties]);
 
   return (
     <main className="min-h-screen bg-slate-50 p-10">
@@ -205,6 +210,12 @@ export default function PropertiesPage() {
           ))}
         </div>
       )}
+
+      <PaginationControls
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
     </main>
   );
 }

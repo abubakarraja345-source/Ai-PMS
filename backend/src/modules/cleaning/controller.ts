@@ -15,6 +15,12 @@ import {
   validateCleaningFilters,
 } from "./validation";
 
+import {
+  buildPaginationMeta,
+  getRange,
+  parsePagination,
+} from "../../utils/pagination";
+
 /**
  * Our own validation/ownership checks throw plain `Error`s
  * with friendly, intentional messages — safe to forward as
@@ -44,14 +50,20 @@ export async function listCleaningTasks(
       req.query as Record<string, unknown>
     );
 
-    const data = await getCleaningTasks(
+    const { page, limit } = parsePagination(
+      req.query as Record<string, unknown>
+    );
+
+    const { data, total } = await getCleaningTasks(
       req.organization.id,
-      filters
+      filters,
+      getRange(page, limit)
     );
 
     return res.status(200).json({
       success: true,
       data,
+      meta: buildPaginationMeta(page, limit, total),
     });
   } catch (error) {
     console.error("List cleaning tasks error:", error);

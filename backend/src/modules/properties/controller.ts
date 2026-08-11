@@ -7,6 +7,11 @@ import {
   editProperty,
   removeProperty,
 } from "./service";
+import {
+  buildPaginationMeta,
+  getRange,
+  parsePagination,
+} from "../../utils/pagination";
 
 /**
  * Our own thrown `Error`s carry safe, intentional messages; a raw
@@ -34,13 +39,19 @@ export async function listProperties(
       });
     }
 
-    const properties = await getProperties(
-      req.organization.id
+    const { page, limit } = parsePagination(
+      req.query as Record<string, unknown>
+    );
+
+    const { data: properties, total } = await getProperties(
+      req.organization.id,
+      getRange(page, limit)
     );
 
     return res.status(200).json({
       success: true,
       data: properties,
+      meta: buildPaginationMeta(page, limit, total),
     });
   } catch (error) {
     console.error("List properties error:", error);

@@ -51,7 +51,7 @@ export default function NewMaintenanceTicketPage() {
       try {
         const [propertiesRes, reservationsRes] =
           await Promise.all([
-            apiFetch("/api/properties"),
+            apiFetch("/api/properties?limit=100"),
             apiFetch("/api/reservations"),
           ]);
 

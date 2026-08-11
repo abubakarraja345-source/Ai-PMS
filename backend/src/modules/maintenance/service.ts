@@ -23,11 +23,13 @@ import {
 
 export async function getMaintenanceTickets(
   organizationId: string,
-  filters: MaintenanceTicketFilters
+  filters: MaintenanceTicketFilters,
+  range: { from: number; to: number }
 ) {
   return findMaintenanceTicketsByOrganization(
     organizationId,
-    filters
+    filters,
+    range
   );
 }
 

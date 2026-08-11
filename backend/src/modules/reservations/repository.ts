@@ -3,7 +3,10 @@ import {
   Reservation,
   ReservationListItem,
 } from "./types";
-import { CreateReservationInput } from "./validation";
+import {
+  CreateReservationInput,
+  RESERVATION_STATUSES,
+} from "./validation";
 
 const RESERVATION_SELECT = `
   id,
@@ -41,34 +44,159 @@ const RESERVATION_SELECT = `
   )
 `;
 
-export async function findReservationsByOrganization(
+export interface ReservationListFilters {
+  guestId?: string;
+  propertyId?: string;
+  status?: string;
+  search?: string;
+  start?: string;
+  end?: string;
+}
+
+/**
+ * PostgREST's `.or()` takes a raw filter-grammar string that supabase-js
+ * does not escape — commas and parentheses are structurally significant
+ * (they separate conditions and delimit `in.(...)` lists), so a search
+ * term containing them could otherwise break out of the intended filter.
+ * None of those characters are meaningful in a booking reference, guest
+ * name, or property title, so stripping them is a safe, fail-closed
+ * sanitization rather than an attempt to reimplement PostgREST's quoting
+ * rules.
+ */
+function sanitizeForOrFilter(term: string): string {
+  return term.replace(/[,()]/g, "");
+}
+
+/**
+ * Resolves which guest/property ids match the free-text search, so the
+ * main reservations query can search across booking_reference/source
+ * (its own columns) plus guest name/email and property title (columns
+ * on joined tables, which PostgREST's `.or()` can't filter directly)
+ * without needing an embedded-table filter.
+ */
+async function resolveSearchMatches(
   organizationId: string,
-  filters: {
-    guestId?: string;
-    propertyId?: string;
-    status?: string;
-  } = {}
-): Promise<ReservationListItem[]> {
-  let query = supabase
-    .from("reservations")
-    .select(RESERVATION_SELECT)
-    .eq("organization_id", organizationId);
+  search: string
+): Promise<{ guestIds: string[]; propertyIds: string[] }> {
+  const pattern = `%${sanitizeForOrFilter(search)}%`;
+
+  const [guestsResult, propertiesResult] = await Promise.all([
+    supabase
+      .from("guests")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .or(
+        `first_name.ilike.${pattern},last_name.ilike.${pattern},email.ilike.${pattern}`
+      ),
+    supabase
+      .from("properties")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .ilike("title", pattern),
+  ]);
+
+  if (guestsResult.error) throw guestsResult.error;
+  if (propertiesResult.error) throw propertiesResult.error;
+
+  return {
+    guestIds: (guestsResult.data ?? []).map((g) => g.id),
+    propertyIds: (propertiesResult.data ?? []).map((p) => p.id),
+  };
+}
+
+interface SearchMatches {
+  guestIds: string[];
+  propertyIds: string[];
+}
+
+interface FilterableQuery<Q> {
+  eq(column: string, value: unknown): Q;
+  gte(column: string, value: unknown): Q;
+  lte(column: string, value: unknown): Q;
+  or(filters: string): Q;
+}
+
+/**
+ * Synchronous by design — `resolveSearchMatches` (the only part of
+ * filtering that needs a network round-trip) is resolved once by the
+ * caller and passed in, so this can build the filter chain in one
+ * pass without an async function returning a thenable query builder
+ * (which TypeScript/JS would otherwise flatten via `Promise` auto-
+ * unwrapping, since the builder itself is PromiseLike).
+ */
+function applyListFilters<Q extends FilterableQuery<Q>>(
+  organizationId: string,
+  filters: ReservationListFilters,
+  searchMatches: SearchMatches | null,
+  query: Q
+): Q {
+  let scoped: Q = query.eq("organization_id", organizationId);
 
   if (filters.guestId) {
-    query = query.eq("guest_id", filters.guestId);
+    scoped = scoped.eq("guest_id", filters.guestId);
   }
 
   if (filters.propertyId) {
-    query = query.eq("property_id", filters.propertyId);
+    scoped = scoped.eq("property_id", filters.propertyId);
   }
 
   if (filters.status) {
-    query = query.eq("status", filters.status);
+    scoped = scoped.eq("status", filters.status);
   }
 
-  const { data, error } = await query.order("check_in", {
-    ascending: true,
-  });
+  if (filters.start) {
+    scoped = scoped.gte("check_in", filters.start);
+  }
+
+  if (filters.end) {
+    scoped = scoped.lte("check_out", filters.end);
+  }
+
+  if (filters.search && searchMatches) {
+    const term = sanitizeForOrFilter(filters.search);
+    const orParts = [
+      `booking_reference.ilike.%${term}%`,
+      `source.ilike.%${term}%`,
+    ];
+
+    if (searchMatches.guestIds.length > 0) {
+      orParts.push(`guest_id.in.(${searchMatches.guestIds.join(",")})`);
+    }
+
+    if (searchMatches.propertyIds.length > 0) {
+      orParts.push(
+        `property_id.in.(${searchMatches.propertyIds.join(",")})`
+      );
+    }
+
+    scoped = scoped.or(orParts.join(","));
+  }
+
+  return scoped;
+}
+
+export async function findReservationsByOrganization(
+  organizationId: string,
+  filters: ReservationListFilters = {},
+  range?: { from: number; to: number }
+): Promise<{ data: ReservationListItem[]; total: number }> {
+  const searchMatches = filters.search
+    ? await resolveSearchMatches(organizationId, filters.search)
+    : null;
+
+  const base = supabase
+    .from("reservations")
+    .select(RESERVATION_SELECT, { count: "exact" });
+
+  let query = applyListFilters(organizationId, filters, searchMatches, base);
+
+  query = query.order("check_in", { ascending: true });
+
+  if (range) {
+    query = query.range(range.from, range.to);
+  }
+
+  const { data, error, count } = await query;
 
   if (error) {
     throw error;
@@ -81,7 +209,51 @@ export async function findReservationsByOrganization(
    * here because guest_id/property_id are many-to-one FKs —
    * this assertion aligns the type with actual behavior.
    */
-  return (data ?? []) as unknown as ReservationListItem[];
+  return {
+    data: (data ?? []) as unknown as ReservationListItem[],
+    total: count ?? 0,
+  };
+}
+
+/**
+ * Per-status counts for the reservations list's status tabs, honoring
+ * every active filter except `status` itself (a tab's count reflects
+ * how many reservations *would* show if that tab were selected, not
+ * how many match the currently-selected one). `head: true` skips
+ * fetching rows entirely — only the exact count is needed. The search
+ * lookup is resolved once and reused across all four status queries
+ * rather than repeating the guest/property name lookup per status.
+ */
+export async function findReservationStatusCounts(
+  organizationId: string,
+  filters: Omit<ReservationListFilters, "status">
+): Promise<Record<string, number>> {
+  const searchMatches = filters.search
+    ? await resolveSearchMatches(organizationId, filters.search)
+    : null;
+
+  const counts = await Promise.all(
+    RESERVATION_STATUSES.map(async (status) => {
+      const base = supabase
+        .from("reservations")
+        .select("id", { count: "exact", head: true });
+
+      const query = applyListFilters(
+        organizationId,
+        { ...filters, status },
+        searchMatches,
+        base
+      );
+
+      const { error, count } = await query;
+
+      if (error) throw error;
+
+      return [status, count ?? 0] as const;
+    })
+  );
+
+  return Object.fromEntries(counts);
 }
 
 /**

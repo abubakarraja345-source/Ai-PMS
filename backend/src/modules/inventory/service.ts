@@ -12,6 +12,7 @@ import {
   findItemsByOrganization,
   findItemsByProperty,
   findTransactionsByItem,
+  InventoryQueryFilters,
   updateItemRow,
 } from "./repository";
 
@@ -80,62 +81,119 @@ function toClientTransaction(
   };
 }
 
-function applyFilters(
-  items: InventoryItem[],
-  filters: InventoryFilters
-): InventoryItem[] {
-  let result = items;
+/**
+ * category/search are pushed down to the database query (simple
+ * literal comparisons PostgREST can express directly). lowStockOnly
+ * is `quantity <= minimum_quantity` — a column-to-column comparison
+ * PostgREST's filter syntax can't express without a schema change —
+ * so it's applied here, in memory, after the (already category/
+ * search-filtered) rows come back.
+ */
+function applyLowStockFilter<T extends InventoryItem>(
+  items: T[],
+  lowStockOnly?: boolean
+): T[] {
+  return lowStockOnly ? items.filter((item) => item.isLowStock) : items;
+}
 
-  if (filters.category) {
-    result = result.filter(
-      (item) =>
-        item.category?.toLowerCase() === filters.category!.toLowerCase()
-    );
-  }
+function toQueryFilters(filters: InventoryFilters): InventoryQueryFilters {
+  const queryFilters: InventoryQueryFilters = {};
 
-  if (filters.lowStockOnly) {
-    result = result.filter((item) => item.isLowStock);
-  }
+  if (filters.category) queryFilters.category = filters.category;
+  if (filters.search) queryFilters.search = filters.search;
 
-  if (filters.search) {
-    const term = filters.search.toLowerCase();
-    result = result.filter((item) => item.name.toLowerCase().includes(term));
-  }
+  return queryFilters;
+}
 
-  return result;
+/**
+ * Paginates an already-filtered in-memory array. Only used for the
+ * lowStockOnly path, where the low-stock comparison must run before
+ * pagination can slice a correct page — everything else is paginated
+ * at the database level via `.range()` instead.
+ */
+function paginateInMemory<T>(
+  items: T[],
+  range: { from: number; to: number }
+): { data: T[]; total: number } {
+  return {
+    data: items.slice(range.from, range.to + 1),
+    total: items.length,
+  };
 }
 
 export async function listInventoryForProperty(
   organizationId: string,
   propertyId: string,
-  filters: InventoryFilters
-): Promise<InventoryItem[]> {
+  filters: InventoryFilters,
+  range: { from: number; to: number }
+): Promise<{ data: InventoryItem[]; total: number }> {
   await assertPropertyInOrganization(organizationId, propertyId);
 
-  const rows = await findItemsByProperty(propertyId);
+  const queryFilters = toQueryFilters(filters);
 
-  return applyFilters(rows.map(toClientItem), filters);
+  if (filters.lowStockOnly) {
+    const { data: rows } = await findItemsByProperty(
+      propertyId,
+      queryFilters
+    );
+    const items = applyLowStockFilter(rows.map(toClientItem), true);
+
+    return paginateInMemory(items, range);
+  }
+
+  const { data: rows, total } = await findItemsByProperty(
+    propertyId,
+    queryFilters,
+    range
+  );
+
+  return { data: rows.map(toClientItem), total };
 }
 
 export async function listInventoryForOrganization(
   organizationId: string,
-  filters: InventoryFilters
-): Promise<InventoryItemWithProperty[]> {
-  const rows = await findItemsByOrganization(organizationId);
+  filters: InventoryFilters,
+  range: { from: number; to: number }
+): Promise<{ data: InventoryItemWithProperty[]; total: number }> {
+  const queryFilters = toQueryFilters(filters);
 
-  let items = rows.map(toClientItemWithProperty);
+  if (filters.lowStockOnly || filters.propertyId) {
+    // propertyId can't be pushed into the org-scoped query without
+    // adding a new repository filter for a narrow, rarely-used case
+    // (the frontend inventory list doesn't send it today); folding it
+    // into the same in-memory path as lowStockOnly keeps this correct
+    // without adding a third code path.
+    const { data: rows } = await findItemsByOrganization(
+      organizationId,
+      queryFilters
+    );
 
-  if (filters.propertyId) {
-    items = items.filter((item) => item.propertyId === filters.propertyId);
+    let items = rows.map(toClientItemWithProperty);
+
+    if (filters.propertyId) {
+      items = items.filter(
+        (item) => item.propertyId === filters.propertyId
+      );
+    }
+
+    items = applyLowStockFilter(items, filters.lowStockOnly);
+
+    return paginateInMemory(items, range);
   }
 
-  return applyFilters(items, filters) as InventoryItemWithProperty[];
+  const { data: rows, total } = await findItemsByOrganization(
+    organizationId,
+    queryFilters,
+    range
+  );
+
+  return { data: rows.map(toClientItemWithProperty), total };
 }
 
 export async function getInventorySummary(
   organizationId: string
 ): Promise<InventorySummary> {
-  const rows = await findItemsByOrganization(organizationId);
+  const { data: rows } = await findItemsByOrganization(organizationId);
   const items = rows.map(toClientItem);
 
   const categories = Array.from(

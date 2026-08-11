@@ -315,6 +315,9 @@ export interface ReservationFilters {
   guestId?: string;
   propertyId?: string;
   status?: string;
+  search?: string;
+  start?: string;
+  end?: string;
 }
 
 /**
@@ -359,6 +362,22 @@ export function validateReservationFilters(
     }
 
     filters.status = query.status.trim();
+  }
+
+  if (query.search !== undefined && query.search !== "") {
+    if (typeof query.search !== "string" || !query.search.trim()) {
+      throw new Error("search must be a valid string");
+    }
+
+    filters.search = query.search.trim();
+  }
+
+  if (query.start !== undefined && query.start !== "") {
+    filters.start = validateDate(query.start, "start");
+  }
+
+  if (query.end !== undefined && query.end !== "") {
+    filters.end = validateDate(query.end, "end");
   }
 
   return filters;

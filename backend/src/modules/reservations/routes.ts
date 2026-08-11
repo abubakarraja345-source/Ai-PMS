@@ -17,8 +17,14 @@ import {
   findConflictingReservations,
   getReservation,
   getReservations,
+  getReservationStatusCounts,
   removeReservation,
 } from "./service";
+import {
+  buildPaginationMeta,
+  getRange,
+  parsePagination,
+} from "../../utils/pagination";
 
 export const reservationRouter = Router();
 
@@ -73,14 +79,45 @@ reservationRouter.get(
         req.query as Record<string, unknown>
       );
 
-      const data = await getReservations(
-        req.organization.id,
-        filters
+      const { page, limit } = parsePagination(
+        req.query as Record<string, unknown>
       );
+
+      const filtersWithoutStatus: Omit<
+        typeof filters,
+        "status"
+      > = {};
+
+      if (filters.guestId !== undefined)
+        filtersWithoutStatus.guestId = filters.guestId;
+      if (filters.propertyId !== undefined)
+        filtersWithoutStatus.propertyId = filters.propertyId;
+      if (filters.search !== undefined)
+        filtersWithoutStatus.search = filters.search;
+      if (filters.start !== undefined)
+        filtersWithoutStatus.start = filters.start;
+      if (filters.end !== undefined)
+        filtersWithoutStatus.end = filters.end;
+
+      const [{ data, total }, statusCounts] = await Promise.all([
+        getReservations(
+          req.organization.id,
+          filters,
+          getRange(page, limit)
+        ),
+        getReservationStatusCounts(
+          req.organization.id,
+          filtersWithoutStatus
+        ),
+      ]);
 
       return res.json({
         success: true,
         data,
+        meta: {
+          ...buildPaginationMeta(page, limit, total),
+          statusCounts,
+        },
       });
     } catch (error) {
       console.error(

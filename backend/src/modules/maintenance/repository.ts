@@ -44,11 +44,12 @@ const MAINTENANCE_SELECT = `
 
 export async function findMaintenanceTicketsByOrganization(
   organizationId: string,
-  filters: MaintenanceTicketFilters = {}
-): Promise<MaintenanceTicket[]> {
+  filters: MaintenanceTicketFilters = {},
+  range?: { from: number; to: number }
+): Promise<{ data: MaintenanceTicket[]; total: number }> {
   let query = supabase
     .from("maintenance_tickets")
-    .select(MAINTENANCE_SELECT)
+    .select(MAINTENANCE_SELECT, { count: "exact" })
     .eq("organization_id", organizationId);
 
   if (filters.propertyId) {
@@ -80,13 +81,20 @@ export async function findMaintenanceTicketsByOrganization(
 
   query = query.order("created_at", { ascending: false });
 
-  const { data, error } = await query;
+  if (range) {
+    query = query.range(range.from, range.to);
+  }
+
+  const { data, error, count } = await query;
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []) as unknown as MaintenanceTicket[];
+  return {
+    data: (data ?? []) as unknown as MaintenanceTicket[],
+    total: count ?? 0,
+  };
 }
 
 export async function findMaintenanceTicketById(

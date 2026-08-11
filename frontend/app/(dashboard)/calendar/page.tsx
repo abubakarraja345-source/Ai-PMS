@@ -183,7 +183,7 @@ export default function CalendarPage() {
   useEffect(() => {
     async function loadProperties() {
       try {
-        const response = await apiFetch("/api/properties");
+        const response = await apiFetch("/api/properties?limit=100");
         setProperties(response.data ?? []);
       } catch {
         // Non-fatal — the property filter simply won't

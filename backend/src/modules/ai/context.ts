@@ -3,6 +3,16 @@ import { getReportsSummary } from "../reports/service";
 import { listIntegrations } from "../integrations/service";
 import { getProperties } from "../properties/service";
 import { getOrganizationSettings } from "../settings/service";
+import { getRange } from "../../utils/pagination";
+
+/**
+ * AI context/tool calls need "effectively everything for this org,"
+ * not a user-facing page — this is a generous safety cap (not the
+ * `parsePagination`/`MAX_LIMIT=100` clamp used for real pagination
+ * requests), chosen to comfortably exceed any realistic single
+ * organization's row count rather than to genuinely paginate.
+ */
+const AI_FETCH_RANGE = getRange(1, 500);
 
 /** UTC month boundaries, matching dashboard.routes.ts's todayUTC()
  * convention and the frontend reports page's "this month" preset
@@ -48,14 +58,16 @@ export async function buildBaseContext(
 ): Promise<AiContextResult> {
   const thisMonth = monthBoundsUTC(0);
 
-  const [settings, dashboard, properties, integrations, reportsThisMonth] =
+  const [settings, dashboard, propertiesResult, integrations, reportsThisMonth] =
     await Promise.all([
       getOrganizationSettings(organizationId),
       getDashboardSummary(organizationId),
-      getProperties(organizationId),
+      getProperties(organizationId, AI_FETCH_RANGE),
       listIntegrations(organizationId),
       getReportsSummary(organizationId, thisMonth.start, thisMonth.end),
     ]);
+
+  const properties = propertiesResult.data;
 
   const sectionsUsed: string[] = [];
   const context: Record<string, unknown> = {};

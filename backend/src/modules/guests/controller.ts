@@ -13,6 +13,12 @@ import {
   validateCreateGuest,
 } from "./validation";
 
+import {
+  buildPaginationMeta,
+  getRange,
+  parsePagination,
+} from "../../utils/pagination";
+
 /**
  * Our own thrown `Error`s carry safe, intentional messages; a raw
  * PostgrestError's `.message` can leak column/table/constraint names
@@ -43,13 +49,19 @@ export class GuestsController {
         });
       }
 
-      const data = await getGuests(
-        req.organization.id
+      const { page, limit } = parsePagination(
+        req.query as Record<string, unknown>
+      );
+
+      const { data, total } = await getGuests(
+        req.organization.id,
+        getRange(page, limit)
       );
 
       return res.json({
         success: true,
         data,
+        meta: buildPaginationMeta(page, limit, total),
       });
     } catch (error) {
       console.error(

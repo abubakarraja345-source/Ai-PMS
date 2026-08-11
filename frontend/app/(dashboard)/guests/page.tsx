@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { PaginationControls } from "@/components/shared/pagination-controls";
 
 interface Guest {
   id: string;
@@ -19,14 +20,18 @@ export default function GuestsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  async function loadGuests() {
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const loadGuests = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await apiFetch("/api/guests");
+      const response = await apiFetch(`/api/guests?page=${page}`);
 
       setGuests(response.data ?? []);
+      setTotalPages(response.meta?.totalPages ?? 1);
     } catch (error) {
       setError(
         error instanceof Error
@@ -36,7 +41,7 @@ export default function GuestsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page]);
 
   async function deleteGuest(guestId: string) {
     const confirmed = window.confirm(
@@ -70,7 +75,7 @@ export default function GuestsPage() {
 
   useEffect(() => {
     loadGuests();
-  }, []);
+  }, [loadGuests]);
 
   return (
     <main className="min-h-screen bg-slate-50 p-10">
@@ -190,6 +195,12 @@ export default function GuestsPage() {
           ))}
         </div>
       )}
+
+      <PaginationControls
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
     </main>
   );
 }

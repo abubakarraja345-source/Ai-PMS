@@ -23,11 +23,13 @@ import {
 
 export async function getCleaningTasks(
   organizationId: string,
-  filters: CleaningTaskFilters
+  filters: CleaningTaskFilters,
+  range: { from: number; to: number }
 ) {
   return findCleaningTasksByOrganization(
     organizationId,
-    filters
+    filters,
+    range
   );
 }
 

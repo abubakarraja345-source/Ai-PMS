@@ -20,6 +20,12 @@ import {
   validateUpdateInventoryItem,
 } from "./validation";
 
+import {
+  buildPaginationMeta,
+  getRange,
+  parsePagination,
+} from "../../utils/pagination";
+
 function isKnownError(error: unknown): error is Error {
   return error instanceof Error && error.name !== "PostgrestError";
 }
@@ -46,14 +52,20 @@ export async function listPropertyInventoryController(
     }
 
     const filters = validateInventoryFilters(req.query as Record<string, unknown>);
+    const { page, limit } = parsePagination(req.query as Record<string, unknown>);
 
-    const data = await listInventoryForProperty(
+    const { data, total } = await listInventoryForProperty(
       req.organization.id,
       requirePropertyId(req),
-      filters
+      filters,
+      getRange(page, limit)
     );
 
-    return res.status(200).json({ success: true, data });
+    return res.status(200).json({
+      success: true,
+      data,
+      meta: buildPaginationMeta(page, limit, total),
+    });
   } catch (error) {
     console.error("List property inventory error:", error);
 
@@ -265,10 +277,19 @@ export async function listOrganizationInventoryController(
     }
 
     const filters = validateInventoryFilters(req.query as Record<string, unknown>);
+    const { page, limit } = parsePagination(req.query as Record<string, unknown>);
 
-    const data = await listInventoryForOrganization(req.organization.id, filters);
+    const { data, total } = await listInventoryForOrganization(
+      req.organization.id,
+      filters,
+      getRange(page, limit)
+    );
 
-    return res.status(200).json({ success: true, data });
+    return res.status(200).json({
+      success: true,
+      data,
+      meta: buildPaginationMeta(page, limit, total),
+    });
   } catch (error) {
     console.error("List organization inventory error:", error);
 
