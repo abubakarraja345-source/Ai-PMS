@@ -23,6 +23,21 @@ import {
 const ALREADY_HAS_ORGANIZATION_MESSAGE =
   "You already belong to an organization";
 
+/**
+ * Postgres SQLSTATE 23505 (unique_violation). The Supabase JS client
+ * surfaces Postgres errors as plain objects with a `.code` field rather
+ * than a typed exception class, so this is a structural check rather
+ * than an `instanceof`.
+ */
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "23505"
+  );
+}
+
 function slugify(name: string): string {
   const base = name
     .toLowerCase()
@@ -63,33 +78,21 @@ async function generateUniqueSlug(name: string): Promise<string> {
 /**
  * Onboarding's "Create Workspace" action.
  *
- * KNOWN LIMITATION (confirmed by live testing, not just theorized):
- * there is no stored procedure/RPC in this schema and no unique
- * constraint on organization_members.user_id, and the Supabase JS
- * client (used everywhere else in this codebase) has no multi-
- * statement transaction primitive across two tables through
- * PostgREST — adding either would mean a schema migration, which
- * requires explicit approval and was not made in this phase.
- *
- * This function uses check-then-act with a second re-check
- * immediately before the membership insert, plus a compensating
- * delete of the organization if anything after its creation fails.
- * That fully closes a *sequential* double-submit (confirmed: a
- * second request after the first completes correctly gets 409). It
- * does NOT close a genuinely *concurrent* double-submit — two
- * requests arriving together can both pass the pre-check before
- * either has inserted anything, and both succeed, leaving the user
- * with two organizations and two membership rows (confirmed by a
- * live concurrent test, not just a theoretical race). The frontend
- * onboarding form disables its submit button while a request is in
- * flight, which prevents this via normal UI use (a click, or a page
- * refresh, cannot fire two overlapping requests) — this gap is only
- * reachable by a client that deliberately fires simultaneous raw API
- * requests. Closing it properly needs a database-level unique
- * constraint on organization_members.user_id (recommended) or a
- * transactional RPC function; either is a schema change outside this
- * phase's approval and is flagged in the final report instead of
- * being added unilaterally.
+ * The application-level check-then-act below (pre-check, re-check
+ * immediately before the membership insert, compensating delete of the
+ * organization if a later step fails) fully handles the *sequential*
+ * double-submit case on its own and gives it a fast, friendly 409
+ * without ever reaching the database constraint. It does NOT by itself
+ * close a genuinely *concurrent* double-submit — two requests arriving
+ * together can both pass the pre-check before either has inserted
+ * anything. The actual source of truth for that case is the
+ * `organization_members_user_id_key` UNIQUE constraint (see
+ * supabase/migrations/20260812000000_organization_members_user_id_unique.sql):
+ * when two concurrent requests both reach the membership insert, Postgres
+ * itself accepts exactly one and rejects the other with a 23505
+ * unique_violation, which the catch block below converts into the same
+ * 409 the sequential case returns — never a 500, and never a raw
+ * Postgres error reaching the client.
  */
 export async function createOrganization(
   userId: string,
@@ -135,6 +138,14 @@ export async function createOrganization(
         cleanupError
       );
     });
+
+    // A concurrent request won the race and inserted this user's
+    // membership first — the database constraint (not just our earlier
+    // in-memory checks) is what caught it. Same friendly message and
+    // status as every other "already have an organization" case.
+    if (isUniqueViolation(membershipError)) {
+      throw new Error(ALREADY_HAS_ORGANIZATION_MESSAGE);
+    }
 
     throw membershipError;
   }

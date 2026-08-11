@@ -132,6 +132,7 @@ storage/
 # Database Dumps
 # ==========================
 *.sql
+!supabase/migrations/*.sql
 *.sqlite
 *.db
 
