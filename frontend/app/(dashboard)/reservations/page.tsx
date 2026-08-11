@@ -218,47 +218,72 @@ export default function ReservationsPage() {
   const [startFilter, setStartFilter] = useState("");
   const [endFilter, setEndFilter] = useState("");
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>(
+    {}
+  );
+
   const [form, setForm] =
     useState<ReservationForm>(initialForm);
 
   /*
-   * Load reservations + properties + guests.
-   *
-   * Reservations now already contain:
-   *
-   * reservation.property
-   * reservation.guest
-   *
-   * Properties and guests are still loaded
-   * because the Create Reservation form needs
-   * them for dropdowns.
+   * Properties/guests are only needed for the Create Reservation
+   * form's dropdowns — loaded once, independent of the reservations
+   * list's filters/pagination below.
    */
-  async function loadData() {
+  useEffect(() => {
+    async function loadDropdownData() {
+      try {
+        const [propertyResponse, guestResponse] = await Promise.all([
+          apiFetch("/api/properties?limit=100"),
+          apiFetch("/api/guests?limit=100"),
+        ]);
+
+        setProperties(propertyResponse.data ?? []);
+        setGuests(guestResponse.data ?? []);
+      } catch {
+        // Non-fatal — the create-reservation dropdowns simply won't
+        // populate; the list itself doesn't depend on this.
+      }
+    }
+
+    loadDropdownData();
+  }, []);
+
+  // Any filter change invalidates the current page — page 1 of a new
+  // filtered set is the only page guaranteed to exist.
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter, propertyFilter, startFilter, endFilter]);
+
+  /*
+   * Reservations now already contain reservation.property and
+   * reservation.guest. Search/status/property/date filtering and
+   * pagination all happen server-side now — see backend Phase J
+   * (reservations/repository.ts's findReservationsByOrganization).
+   */
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const [
-        reservationResponse,
-        propertyResponse,
-        guestResponse,
-      ] = await Promise.all([
-        apiFetch("/api/reservations"),
-        apiFetch("/api/properties?limit=100"),
-        apiFetch("/api/guests?limit=100"),
-      ]);
+      const params = new URLSearchParams();
+      if (search.trim()) params.set("search", search.trim());
+      if (statusFilter !== "all") params.set("status", statusFilter);
+      if (propertyFilter !== "all")
+        params.set("property_id", propertyFilter);
+      if (startFilter) params.set("start", startFilter);
+      if (endFilter) params.set("end", endFilter);
+      params.set("page", String(page));
 
-      setReservations(
-        reservationResponse.data ?? []
+      const response = await apiFetch(
+        `/api/reservations?${params.toString()}`
       );
 
-      setProperties(
-        propertyResponse.data ?? []
-      );
-
-      setGuests(
-        guestResponse.data ?? []
-      );
+      setReservations(response.data ?? []);
+      setTotalPages(response.meta?.totalPages ?? 1);
+      setStatusCounts(response.meta?.statusCounts ?? {});
     } catch (err) {
       setError(
         err instanceof Error
@@ -268,80 +293,11 @@ export default function ReservationsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [search, statusFilter, propertyFilter, startFilter, endFilter, page]);
 
   useEffect(() => {
     loadData();
-  }, []);
-
-  /*
-   * Filter reservations.
-   *
-   * IMPORTANT:
-   * We now use reservation.property and
-   * reservation.guest directly.
-   */
-  const filteredReservations = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    return reservations.filter((reservation) => {
-      const propertyName =
-        reservation.property?.title ?? "";
-
-      const guestName =
-        getGuestName(reservation.guest);
-
-      const guestEmail =
-        reservation.guest?.email ?? "";
-
-      const matchesSearch =
-        !query ||
-        reservation.booking_reference
-          ?.toLowerCase()
-          .includes(query) ||
-        propertyName
-          .toLowerCase()
-          .includes(query) ||
-        guestName
-          .toLowerCase()
-          .includes(query) ||
-        guestEmail
-          .toLowerCase()
-          .includes(query) ||
-        reservation.source
-          ?.toLowerCase()
-          .includes(query);
-
-      const matchesStatus =
-        statusFilter === "all" ||
-        reservation.status === statusFilter;
-
-      const matchesProperty =
-        propertyFilter === "all" ||
-        reservation.property_id === propertyFilter;
-
-      const matchesStart =
-        !startFilter || reservation.check_in >= startFilter;
-
-      const matchesEnd =
-        !endFilter || reservation.check_out <= endFilter;
-
-      return Boolean(
-        matchesSearch &&
-          matchesStatus &&
-          matchesProperty &&
-          matchesStart &&
-          matchesEnd
-      );
-    });
-  }, [
-    reservations,
-    search,
-    statusFilter,
-    propertyFilter,
-    startFilter,
-    endFilter,
-  ]);
+  }, [loadData]);
 
   function updateForm(
     field: keyof ReservationForm,
@@ -828,7 +784,10 @@ export default function ReservationsPage() {
           </p>
 
           <p className="mt-2 text-2xl font-semibold text-slate-900">
-            {reservations.length}
+            {Object.values(statusCounts).reduce(
+              (sum, count) => sum + count,
+              0
+            )}
           </p>
         </div>
 
@@ -838,12 +797,7 @@ export default function ReservationsPage() {
           </p>
 
           <p className="mt-2 text-2xl font-semibold text-emerald-600">
-            {
-              reservations.filter(
-                (item) =>
-                  item.status === "confirmed"
-              ).length
-            }
+            {statusCounts.confirmed ?? 0}
           </p>
         </div>
 
@@ -853,12 +807,7 @@ export default function ReservationsPage() {
           </p>
 
           <p className="mt-2 text-2xl font-semibold text-amber-600">
-            {
-              reservations.filter(
-                (item) =>
-                  item.status === "pending"
-              ).length
-            }
+            {statusCounts.pending ?? 0}
           </p>
         </div>
 
@@ -868,12 +817,7 @@ export default function ReservationsPage() {
           </p>
 
           <p className="mt-2 text-2xl font-semibold text-red-600">
-            {
-              reservations.filter(
-                (item) =>
-                  item.status === "cancelled"
-              ).length
-            }
+            {statusCounts.cancelled ?? 0}
           </p>
         </div>
 
@@ -890,7 +834,7 @@ export default function ReservationsPage() {
               Loading reservations...
             </p>
           </div>
-        ) : filteredReservations.length === 0 ? (
+        ) : reservations.length === 0 ? (
           <div className="p-12 text-center">
 
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
@@ -961,7 +905,7 @@ export default function ReservationsPage() {
 
               <tbody className="divide-y">
 
-                {filteredReservations.map(
+                {reservations.map(
                   (reservation) => {
 
                     const guestName =
@@ -1171,6 +1115,12 @@ export default function ReservationsPage() {
           </div>
         )}
       </div>
+
+      <PaginationControls
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
 
       {/* Create Reservation Modal */}
       {showCreateModal && (

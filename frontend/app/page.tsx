@@ -1,592 +1,371 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import {
-  ArrowRight,
-  BarChart3,
-  Bell,
-  Building2,
-  CalendarDays,
-  CheckCircle2,
-  ChevronRight,
-  ClipboardList,
-  Globe2,
-  LayoutDashboard,
-  MessageSquare,
-  ShieldCheck,
-  Sparkles,
-  Users,
-  Wrench,
-  Zap,
-} from "lucide-react";
+
+const features = [
+  {
+    title: "Property Management",
+    description:
+      "Manage properties, availability, details, and operations from one centralized workspace.",
+    icon: "🏠",
+  },
+  {
+    title: "Reservations",
+    description:
+      "Track bookings, guests, dates, status, and reservation activity with a unified workflow.",
+    icon: "📅",
+  },
+  {
+    title: "Guest Management",
+    description:
+      "Keep guest information organized and accessible across your property operations.",
+    icon: "👥",
+  },
+  {
+    title: "Cleaning & Maintenance",
+    description:
+      "Coordinate cleaning tasks and maintenance tickets so nothing gets missed.",
+    icon: "🛠️",
+  },
+  {
+    title: "Inventory",
+    description:
+      "Monitor supplies, stock levels, categories, and low-stock items across properties.",
+    icon: "📦",
+  },
+  {
+    title: "Reports & Insights",
+    description:
+      "Turn operational data into useful insights for better property management decisions.",
+    icon: "📊",
+  },
+];
+
+const stats = [
+  ["01", "Centralized platform"],
+  ["02", "Property operations"],
+  ["03", "Guest & booking management"],
+  ["04", "AI-ready workflows"],
+];
 
 export default function HomePage() {
-  const [checkingAuth, setCheckingAuth] = useState(true);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const checkAuth = async () => {
-      try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (user) {
-          window.location.href = "/dashboard";
-          return;
-        }
-      } catch {
-        // Public landing page should remain accessible
-      } finally {
-        if (mounted) {
-          setCheckingAuth(false);
-        }
-      }
-    };
-
-    checkAuth();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  if (checkingAuth) {
-    return (
-      <main className="min-h-screen bg-[#f5f7fb] flex items-center justify-center">
-        <div className="flex items-center gap-3 text-slate-600">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
-          <span className="text-sm">Loading...</span>
-        </div>
-      </main>
-    );
-  }
-
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f5f7fb] text-slate-900">
-      {/* Background decoration */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute left-1/2 top-[-300px] h-[650px] w-[900px] -translate-x-1/2 rounded-full bg-blue-100/60 blur-3xl" />
-        <div className="absolute right-[-200px] top-[500px] h-[500px] w-[500px] rounded-full bg-indigo-100/50 blur-3xl" />
-      </div>
-
+    <main className="landing-page">
       {/* NAVBAR */}
-      <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white shadow-lg shadow-slate-900/10">
-              <Building2 className="h-5 w-5" />
-            </div>
-
-            <div>
-              <div className="text-lg font-bold tracking-tight">AI PMS</div>
-              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
-                Property Management
-              </div>
-            </div>
+      <header className="landing-nav">
+        <div className="landing-container nav-inner">
+          <Link href="/" className="brand">
+            <span className="brand-mark">AI</span>
+            <span>AI-PMS</span>
           </Link>
 
-          {/* Navigation */}
-          <nav className="hidden items-center gap-8 md:flex">
-            <a
-              href="#features"
-              className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
-            >
-              Features
-            </a>
-
-            <a
-              href="#platform"
-              className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
-            >
-              Platform
-            </a>
-
-            <a
-              href="#about"
-              className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
-            >
-              About
-            </a>
+          <nav className="desktop-nav">
+            <a href="#features">Features</a>
+            <a href="#workflow">How it works</a>
+            <a href="#about">About</a>
           </nav>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/auth/login"
-              className="hidden rounded-lg px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:inline-flex"
-            >
-              Sign in
+          <div className="nav-actions">
+            <Link href="/auth/login" className="login-link">
+              Login
             </Link>
 
-            <Link
-              href="/auth/login"
-              className="group inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800"
-            >
+            <Link href="/auth/login" className="nav-button">
               Get Started
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
             </Link>
           </div>
         </div>
       </header>
 
       {/* HERO */}
-      <section className="relative">
-        <div className="mx-auto max-w-7xl px-6 pb-20 pt-20 lg:px-8 lg:pb-28 lg:pt-28">
-          <div className="grid items-center gap-16 lg:grid-cols-[1.05fr_.95fr]">
-            {/* Left */}
-            <div>
-              <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
-                <Sparkles className="h-4 w-4" />
-                Smarter property management
-              </div>
+      <section className="hero-section">
+        <div className="hero-glow glow-one" />
+        <div className="hero-glow glow-two" />
 
-              <h1 className="max-w-4xl text-5xl font-bold leading-[1.05] tracking-[-0.04em] text-slate-950 sm:text-6xl lg:text-7xl">
-                Run your properties.
-                <span className="block bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Smarter with AI.
-                </span>
-              </h1>
+        <div className="landing-container hero-grid">
+          <div className="hero-content">
+            <div className="eyebrow">
+              <span className="eyebrow-dot" />
+              Intelligent Property Management
+            </div>
 
-              <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-                AI PMS brings your properties, reservations, guests, cleaning,
-                maintenance, inventory, reports and AI-powered operations into
-                one modern workspace.
-              </p>
+            <h1>
+              Manage your properties.
+              <span> Smarter.</span>
+            </h1>
 
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/auth/login"
-                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-7 py-3.5 text-sm font-semibold text-white shadow-xl shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800"
-                >
-                  Access your workspace
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                </Link>
+            <p className="hero-description">
+              AI-PMS brings property management, reservations, guests,
+              cleaning, maintenance, inventory and reporting together in one
+              powerful workspace.
+            </p>
 
-                <a
-                  href="#features"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-7 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                >
-                  Explore platform
-                  <ChevronRight className="h-4 w-4" />
-                </a>
-              </div>
+            <div className="hero-actions">
+              <Link href="/auth/login" className="primary-button">
+                Get Started
+                <span>→</span>
+              </Link>
 
-              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-slate-500">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  Centralized operations
+              <a href="#features" className="secondary-button">
+                Explore Platform
+              </a>
+            </div>
+
+            <div className="hero-note">
+              <span>✓</span>
+              Built for modern property management teams
+            </div>
+          </div>
+
+          {/* PRODUCT PREVIEW */}
+          <div className="dashboard-preview">
+            <div className="preview-window">
+              <div className="preview-topbar">
+                <div className="window-dots">
+                  <i />
+                  <i />
+                  <i />
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  Role-based access
+                <div className="preview-url">
+                  ai-pms.app/dashboard
                 </div>
+              </div>
 
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  AI-assisted workflows
+              <div className="preview-body">
+                <aside className="preview-sidebar">
+                  <div className="mini-logo">AI</div>
+
+                  <div className="mini-menu active">
+                    <span>▦</span>
+                    Dashboard
+                  </div>
+
+                  <div className="mini-menu">
+                    <span>⌂</span>
+                    Properties
+                  </div>
+
+                  <div className="mini-menu">
+                    <span>◷</span>
+                    Reservations
+                  </div>
+
+                  <div className="mini-menu">
+                    <span>♙</span>
+                    Guests
+                  </div>
+
+                  <div className="mini-menu">
+                    <span>✓</span>
+                    Cleaning
+                  </div>
+                </aside>
+
+                <div className="preview-main">
+                  <div className="preview-heading">
+                    <div>
+                      <small>Overview</small>
+                      <h3>Dashboard</h3>
+                    </div>
+
+                    <div className="preview-avatar">A</div>
+                  </div>
+
+                  <div className="mini-stats">
+                    <div>
+                      <small>Properties</small>
+                      <strong>24</strong>
+                      <em>+12%</em>
+                    </div>
+
+                    <div>
+                      <small>Reservations</small>
+                      <strong>138</strong>
+                      <em>+18%</em>
+                    </div>
+
+                    <div>
+                      <small>Guests</small>
+                      <strong>421</strong>
+                      <em>+9%</em>
+                    </div>
+                  </div>
+
+                  <div className="mini-chart">
+                    <div className="chart-header">
+                      <span>Reservation activity</span>
+                      <small>Last 30 days</small>
+                    </div>
+
+                    <div className="chart-bars">
+                      <i style={{ height: "38%" }} />
+                      <i style={{ height: "52%" }} />
+                      <i style={{ height: "45%" }} />
+                      <i style={{ height: "67%" }} />
+                      <i style={{ height: "58%" }} />
+                      <i style={{ height: "78%" }} />
+                      <i style={{ height: "70%" }} />
+                      <i style={{ height: "90%" }} />
+                      <i style={{ height: "82%" }} />
+                      <i style={{ height: "96%" }} />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Dashboard preview */}
-            <div className="relative">
-              <div className="absolute -inset-5 rounded-[2rem] bg-gradient-to-br from-blue-200/50 to-indigo-200/40 blur-2xl" />
-
-              <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10">
-                {/* Fake browser header */}
-                <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
-                  <div className="flex gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                  </div>
-
-                  <div className="rounded-md bg-white px-10 py-1.5 text-[10px] text-slate-400 shadow-sm">
-                    app.ai-pms.com
-                  </div>
-
-                  <div className="w-10" />
-                </div>
-
-                <div className="grid min-h-[430px] grid-cols-[150px_1fr]">
-                  {/* Sidebar */}
-                  <aside className="border-r border-slate-200 bg-slate-950 p-4 text-white">
-                    <div className="mb-8 flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600">
-                        <Building2 className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="text-xs font-semibold">AI PMS</span>
-                    </div>
-
-                    <div className="space-y-1">
-                      {[
-                        ["Dashboard", LayoutDashboard],
-                        ["Properties", Building2],
-                        ["Reservations", CalendarDays],
-                        ["Guests", Users],
-                        ["Cleaning", Sparkles],
-                        ["Maintenance", Wrench],
-                      ].map(([label, Icon]) => (
-                        <div
-                          key={String(label)}
-                          className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-[10px] ${
-                            label === "Dashboard"
-                              ? "bg-white/10 text-white"
-                              : "text-slate-400"
-                          }`}
-                        >
-                          <Icon className="h-3.5 w-3.5" />
-                          {label}
-                        </div>
-                      ))}
-                    </div>
-                  </aside>
-
-                  {/* Dashboard content */}
-                  <div className="bg-[#f8fafc] p-5">
-                    <div className="mb-5 flex items-center justify-between">
-                      <div>
-                        <div className="text-lg font-bold text-slate-900">
-                          Good morning
-                        </div>
-                        <div className="mt-1 text-[10px] text-slate-500">
-                          Here's what's happening across your properties.
-                        </div>
-                      </div>
-
-                      <div className="h-8 w-8 rounded-full bg-blue-100" />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        ["Properties", "24", Building2],
-                        ["Reservations", "86", CalendarDays],
-                        ["Guests", "143", Users],
-                        ["Tasks", "18", ClipboardList],
-                      ].map(([title, value, Icon]) => (
-                        <div
-                          key={String(title)}
-                          className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="text-[9px] font-medium text-slate-500">
-                              {String(title)}
-                            </div>
-                            <Icon className="h-3.5 w-3.5 text-blue-500" />
-                          </div>
-
-                          <div className="mt-2 text-xl font-bold text-slate-900">
-                            {String(value)}
-                          </div>
-
-                          <div className="mt-1 text-[8px] text-emerald-600">
-                            ↑ 12.4% this month
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-[1.4fr_1fr] gap-3">
-                      <div className="rounded-xl border border-slate-200 bg-white p-4">
-                        <div className="text-[10px] font-semibold">
-                          Revenue overview
-                        </div>
-
-                        <div className="mt-5 flex h-24 items-end gap-2">
-                          {[35, 52, 42, 67, 55, 78, 88, 72, 94, 82].map(
-                            (height, index) => (
-                              <div
-                                key={index}
-                                className="flex-1 rounded-t bg-gradient-to-t from-blue-600 to-blue-300"
-                                style={{ height: `${height}%` }}
-                              />
-                            )
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="rounded-xl border border-slate-200 bg-white p-4">
-                        <div className="text-[10px] font-semibold">
-                          Today's activity
-                        </div>
-
-                        <div className="mt-4 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-5 w-5 rounded-full bg-emerald-100" />
-                            <div className="h-2 w-20 rounded bg-slate-100" />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="h-5 w-5 rounded-full bg-blue-100" />
-                            <div className="h-2 w-24 rounded bg-slate-100" />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="h-5 w-5 rounded-full bg-orange-100" />
-                            <div className="h-2 w-16 rounded bg-slate-100" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            <div className="floating-card floating-one">
+              <span>●</span>
+              <div>
+                <small>Occupancy</small>
+                <strong>87.4%</strong>
               </div>
+            </div>
 
-              {/* Floating AI card */}
-              <div className="absolute -bottom-7 -left-7 hidden w-64 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl sm:block">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <Sparkles className="h-4 w-4" />
-                  </div>
-
-                  <div>
-                    <div className="text-xs font-semibold text-slate-900">
-                      AI Assistant
-                    </div>
-                    <p className="mt-1 text-[10px] leading-4 text-slate-500">
-                      Analyze operations, generate insights and assist with
-                      property management tasks.
-                    </p>
-                  </div>
-                </div>
+            <div className="floating-card floating-two">
+              <span>✓</span>
+              <div>
+                <small>Tasks completed</small>
+                <strong>94 today</strong>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* TRUST / PLATFORM STRIP */}
-      <section className="border-y border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-6 py-7 lg:px-8">
-          <div className="text-sm font-medium text-slate-500">
-            One platform for your entire operation
-          </div>
+      {/* TRUST / INTRO */}
+      <section className="intro-section" id="about">
+        <div className="landing-container">
+          <div className="section-label">ONE PLATFORM</div>
 
-          <div className="flex flex-wrap gap-6 text-sm font-semibold text-slate-400">
-            <span>PROPERTIES</span>
-            <span>RESERVATIONS</span>
-            <span>GUESTS</span>
-            <span>OPERATIONS</span>
-            <span>AI</span>
+          <div className="intro-grid">
+            <h2>
+              Everything your property
+              <br />
+              operation needs.
+            </h2>
+
+            <p>
+              AI-PMS is designed to simplify the day-to-day work behind
+              successful property operations. Instead of switching between
+              spreadsheets, booking tools, task lists and separate systems,
+              your team can manage everything from one connected platform.
+            </p>
           </div>
         </div>
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
-        <div className="max-w-2xl">
-          <div className="text-sm font-semibold text-blue-600">
-            Everything connected
+      <section className="features-section" id="features">
+        <div className="landing-container">
+          <div className="section-heading">
+            <div>
+              <div className="section-label">THE PLATFORM</div>
+              <h2>Built around your workflow.</h2>
+            </div>
+
+            <p>
+              Powerful tools designed to make property operations organized,
+              visible and easier to manage.
+            </p>
           </div>
 
-          <h2 className="mt-3 text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-            Everything you need to manage properties efficiently.
-          </h2>
-
-          <p className="mt-5 text-lg leading-8 text-slate-600">
-            Replace scattered tools and manual workflows with one centralized
-            platform designed for modern property operations.
-          </p>
-        </div>
-
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              icon: LayoutDashboard,
-              title: "Centralized Dashboard",
-              text: "Get a clear operational overview of your properties, reservations, guests and daily activity.",
-            },
-            {
-              icon: Building2,
-              title: "Property Management",
-              text: "Manage your properties, media, information and operational details from one place.",
-            },
-            {
-              icon: CalendarDays,
-              title: "Reservations",
-              text: "Keep bookings, dates, guests and reservation activity organized in a single workflow.",
-            },
-            {
-              icon: Users,
-              title: "Guest Management",
-              text: "Maintain guest information and connect guest activity directly with reservations.",
-            },
-            {
-              icon: Wrench,
-              title: "Operations",
-              text: "Coordinate cleaning and maintenance tasks while keeping operational work visible.",
-            },
-            {
-              icon: Sparkles,
-              title: "AI Assistance",
-              text: "Use AI-powered capabilities to analyze information and assist with operational decisions.",
-            },
-          ].map((feature) => {
-            const Icon = feature.icon;
-
-            return (
-              <div
-                key={feature.title}
-                className="group rounded-2xl border border-slate-200 bg-white p-7 transition duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5"
-              >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
-                  <Icon className="h-5 w-5" />
+          <div className="features-grid">
+            {features.map((feature, index) => (
+              <div className="feature-card" key={feature.title}>
+                <div className="feature-number">
+                  0{index + 1}
                 </div>
 
-                <h3 className="mt-6 text-lg font-bold text-slate-950">
-                  {feature.title}
-                </h3>
+                <div className="feature-icon">
+                  {feature.icon}
+                </div>
 
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  {feature.text}
-                </p>
+                <h3>{feature.title}</h3>
+
+                <p>{feature.description}</p>
+
+                <span className="feature-arrow">↗</span>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* PLATFORM */}
-      <section id="platform" className="bg-slate-950 text-white">
-        <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
-          <div className="grid items-center gap-16 lg:grid-cols-2">
-            <div>
-              <div className="text-sm font-semibold text-blue-400">
-                Built for operations
-              </div>
+      {/* WORKFLOW */}
+      <section className="workflow-section" id="workflow">
+        <div className="landing-container">
+          <div className="workflow-card">
+            <div className="workflow-content">
+              <div className="section-label">HOW IT WORKS</div>
 
-              <h2 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
-                From reservations to maintenance, keep everything connected.
+              <h2>
+                One workspace.
+                <br />
+                Complete visibility.
               </h2>
 
-              <p className="mt-6 max-w-xl text-lg leading-8 text-slate-400">
-                AI PMS gives property teams a shared operational workspace so
-                important information doesn't get lost between spreadsheets,
-                messages and disconnected tools.
+              <p>
+                From the moment a reservation arrives to the final operational
+                task, AI-PMS keeps your team connected and your information in
+                one place.
               </p>
 
-              <div className="mt-8 space-y-4">
-                {[
-                  "Role-based access for teams",
-                  "Organization-level data isolation",
-                  "Operational notifications",
-                  "Inventory and property management",
-                  "Reports and AI-powered insights",
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-blue-400" />
-                    <span className="text-sm text-slate-300">{item}</span>
-                  </div>
-                ))}
-              </div>
+              <Link href="/auth/login" className="primary-button">
+                Enter AI-PMS
+                <span>→</span>
+              </Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                {
-                  icon: ShieldCheck,
-                  title: "Secure",
-                  text: "Role-based access and protected APIs.",
-                },
-                {
-                  icon: Zap,
-                  title: "Efficient",
-                  text: "Designed around real operational workflows.",
-                },
-                {
-                  icon: BarChart3,
-                  title: "Insights",
-                  text: "Understand what's happening across your business.",
-                },
-                {
-                  icon: MessageSquare,
-                  title: "AI Ready",
-                  text: "AI assistance integrated into your workspace.",
-                },
-              ].map((item) => {
-                const Icon = item.icon;
-
-                return (
-                  <div
-                    key={item.title}
-                    className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur transition hover:bg-white/[0.07]"
-                  >
-                    <Icon className="h-6 w-6 text-blue-400" />
-
-                    <h3 className="mt-5 font-semibold">{item.title}</h3>
-
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
-                      {item.text}
-                    </p>
-                  </div>
-                );
-              })}
+            <div className="workflow-steps">
+              {stats.map(([number, title]) => (
+                <div className="workflow-step" key={number}>
+                  <span>{number}</span>
+                  <strong>{title}</strong>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* ABOUT / CTA */}
-      <section id="about" className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
-        <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 px-8 py-14 text-white shadow-2xl shadow-blue-900/20 sm:px-14">
-          <div className="max-w-3xl">
-            <div className="text-sm font-semibold text-blue-100">
-              Ready to manage smarter?
-            </div>
+      {/* CTA */}
+      <section className="cta-section">
+        <div className="landing-container">
+          <div className="cta-content">
+            <div className="section-label">READY TO START?</div>
 
-            <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-              Your property operations deserve one intelligent workspace.
+            <h2>
+              Take control of
+              <br />
+              your properties.
             </h2>
 
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-blue-100">
-              Sign in to access your AI PMS workspace and manage your
-              properties, reservations, guests and operations from one place.
+            <p>
+              Sign in to your AI-PMS workspace and manage your operations from
+              one place.
             </p>
 
-            <Link
-              href="/auth/login"
-              className="group mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-blue-700 transition hover:-translate-y-0.5 hover:bg-blue-50"
-            >
-              Enter AI PMS
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+            <Link href="/auth/login" className="primary-button large">
+              Go to Login
+              <span>→</span>
             </Link>
           </div>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-6 py-8 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-950 text-white">
-                <Building2 className="h-4 w-4" />
-              </div>
-              <span className="font-bold">AI PMS</span>
-            </div>
+      <footer className="landing-footer">
+        <div className="landing-container footer-inner">
+          <Link href="/" className="brand">
+            <span className="brand-mark">AI</span>
+            <span>AI-PMS</span>
+          </Link>
 
-            <p className="mt-2 text-xs text-slate-500">
-              Intelligent property management for modern teams.
-            </p>
-          </div>
+          <p>
+            Intelligent property management for modern operations.
+          </p>
 
-          <div className="flex items-center gap-6 text-sm text-slate-500">
-            <a href="#features" className="hover:text-slate-900">
-              Features
-            </a>
-
-            <a href="#platform" className="hover:text-slate-900">
-              Platform
-            </a>
-
-            <Link href="/auth/login" className="hover:text-slate-900">
-              Sign in
-            </Link>
-          </div>
+          <span>© {new Date().getFullYear()} AI-PMS</span>
         </div>
       </footer>
     </main>
