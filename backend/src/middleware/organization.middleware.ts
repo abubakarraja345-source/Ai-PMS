@@ -47,11 +47,6 @@ export async function requireOrganization(
       });
     }
 
-    // DEBUG
-    console.log("Organization lookup");
-    console.log("User ID:", req.user.id);
-    console.log("User email:", req.user.email);
-
     // 1. Find user's organization membership
     const { data: membership, error: membershipError } = await supabase
       .from("organization_members")
@@ -59,9 +54,6 @@ export async function requireOrganization(
       .eq("user_id", req.user.id)
       .limit(1)
       .maybeSingle();
-
-    console.log("Membership:", membership);
-    console.log("Membership error:", membershipError);
 
     if (membershipError) {
       console.error(
@@ -89,9 +81,6 @@ export async function requireOrganization(
         .select("id, name")
         .eq("id", membership.organization_id)
         .maybeSingle();
-
-    console.log("Organization:", organization);
-    console.log("Organization error:", organizationError);
 
     if (organizationError) {
       console.error(
@@ -137,8 +126,6 @@ export async function requireOrganization(
       name: organization.name,
       role,
     };
-
-    console.log("Organization attached:", req.organization);
 
     next();
   } catch (error) {

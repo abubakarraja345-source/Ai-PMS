@@ -130,11 +130,12 @@ export default function NewGuestPage() {
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="first_name" className="mb-2 block text-sm font-medium text-slate-700">
                   First Name *
                 </label>
 
                 <input
+                  id="first_name"
                   type="text"
                   value={form.first_name}
                   onChange={(e) =>
@@ -147,11 +148,12 @@ export default function NewGuestPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="last_name" className="mb-2 block text-sm font-medium text-slate-700">
                   Last Name
                 </label>
 
                 <input
+                  id="last_name"
                   type="text"
                   value={form.last_name}
                   onChange={(e) =>
@@ -163,11 +165,12 @@ export default function NewGuestPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
                   Email
                 </label>
 
                 <input
+                  id="email"
                   type="email"
                   value={form.email}
                   onChange={(e) =>
@@ -179,11 +182,12 @@ export default function NewGuestPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="phone" className="mb-2 block text-sm font-medium text-slate-700">
                   Phone
                 </label>
 
                 <input
+                  id="phone"
                   type="tel"
                   value={form.phone}
                   onChange={(e) =>
@@ -204,11 +208,12 @@ export default function NewGuestPage() {
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="country" className="mb-2 block text-sm font-medium text-slate-700">
                   Country
                 </label>
 
                 <input
+                  id="country"
                   type="text"
                   value={form.country}
                   onChange={(e) =>
@@ -220,11 +225,12 @@ export default function NewGuestPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="language" className="mb-2 block text-sm font-medium text-slate-700">
                   Preferred Language
                 </label>
 
                 <input
+                  id="language"
                   type="text"
                   value={form.language}
                   onChange={(e) =>
@@ -236,11 +242,12 @@ export default function NewGuestPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="passport_number" className="mb-2 block text-sm font-medium text-slate-700">
                   Passport Number
                 </label>
 
                 <input
+                  id="passport_number"
                   type="text"
                   value={form.passport_number}
                   onChange={(e) =>
@@ -254,11 +261,12 @@ export default function NewGuestPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="notes" className="mb-2 block text-sm font-medium text-slate-700">
                   Notes
                 </label>
 
                 <textarea
+                  id="notes"
                   value={form.notes}
                   onChange={(e) =>
                     updateField("notes", e.target.value)

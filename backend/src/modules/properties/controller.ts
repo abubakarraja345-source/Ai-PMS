@@ -8,6 +8,20 @@ import {
   removeProperty,
 } from "./service";
 
+/**
+ * Our own thrown `Error`s carry safe, intentional messages; a raw
+ * PostgrestError's `.message` can leak column/table/constraint names
+ * and must not reach the client — same convention used across every
+ * other module in this codebase (e.g. reservations/routes.ts).
+ */
+function toClientErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.name !== "PostgrestError") {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 export async function listProperties(
   req: OrganizationRequest,
   res: Response
@@ -70,14 +84,9 @@ export async function createPropertyController(
   } catch (error) {
     console.error("Create property error:", error);
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to create property";
-
     return res.status(400).json({
       success: false,
-      error: message,
+      error: toClientErrorMessage(error, "Unable to create property"),
     });
   }
 }
@@ -154,10 +163,7 @@ export async function updatePropertyController(
 
     return res.status(400).json({
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unable to update property",
+      error: toClientErrorMessage(error, "Unable to update property"),
     });
   }
 }

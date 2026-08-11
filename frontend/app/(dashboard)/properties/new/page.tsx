@@ -191,11 +191,12 @@ export default function NewPropertyPage() {
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="title" className="mb-2 block text-sm font-medium text-slate-700">
                   Property Title *
                 </label>
 
                 <input
+                  id="title"
                   type="text"
                   value={form.title}
                   onChange={(e) =>
@@ -208,11 +209,12 @@ export default function NewPropertyPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="property_type" className="mb-2 block text-sm font-medium text-slate-700">
                   Property Type *
                 </label>
 
                 <select
+                  id="property_type"
                   value={form.property_type}
                   onChange={(e) =>
                     updateField(
@@ -235,11 +237,12 @@ export default function NewPropertyPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="description" className="mb-2 block text-sm font-medium text-slate-700">
                   Description
                 </label>
 
                 <textarea
+                  id="description"
                   value={form.description}
                   onChange={(e) =>
                     updateField(
@@ -267,11 +270,12 @@ export default function NewPropertyPage() {
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="address" className="mb-2 block text-sm font-medium text-slate-700">
                   Address
                 </label>
 
                 <input
+                  id="address"
                   type="text"
                   value={form.address}
                   onChange={(e) =>
@@ -283,11 +287,12 @@ export default function NewPropertyPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="city" className="mb-2 block text-sm font-medium text-slate-700">
                   City
                 </label>
 
                 <input
+                  id="city"
                   type="text"
                   value={form.city}
                   onChange={(e) =>
@@ -299,11 +304,12 @@ export default function NewPropertyPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="state" className="mb-2 block text-sm font-medium text-slate-700">
                   State / Province
                 </label>
 
                 <input
+                  id="state"
                   type="text"
                   value={form.state}
                   onChange={(e) =>
@@ -315,11 +321,12 @@ export default function NewPropertyPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="prop_country" className="mb-2 block text-sm font-medium text-slate-700">
                   Country
                 </label>
 
                 <input
+                  id="prop_country"
                   type="text"
                   value={form.country}
                   onChange={(e) =>
@@ -331,11 +338,12 @@ export default function NewPropertyPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="postal_code" className="mb-2 block text-sm font-medium text-slate-700">
                   Postal Code
                 </label>
 
                 <input
+                  id="postal_code"
                   type="text"
                   value={form.postal_code}
                   onChange={(e) =>
@@ -359,6 +367,7 @@ export default function NewPropertyPage() {
 
             <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <NumberField
+                id="bedrooms"
                 label="Bedrooms"
                 value={form.bedrooms}
                 onChange={(value) =>
@@ -367,6 +376,7 @@ export default function NewPropertyPage() {
               />
 
               <NumberField
+                id="bathrooms"
                 label="Bathrooms"
                 value={form.bathrooms}
                 onChange={(value) =>
@@ -375,6 +385,7 @@ export default function NewPropertyPage() {
               />
 
               <NumberField
+                id="beds"
                 label="Beds"
                 value={form.beds}
                 onChange={(value) =>
@@ -383,6 +394,7 @@ export default function NewPropertyPage() {
               />
 
               <NumberField
+                id="max_guests"
                 label="Maximum Guests"
                 value={form.max_guests}
                 onChange={(value) =>
@@ -400,11 +412,12 @@ export default function NewPropertyPage() {
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="check_in_time" className="mb-2 block text-sm font-medium text-slate-700">
                   Check-in Time
                 </label>
 
                 <input
+                  id="check_in_time"
                   type="time"
                   value={form.check_in_time}
                   onChange={(e) =>
@@ -418,11 +431,12 @@ export default function NewPropertyPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="check_out_time" className="mb-2 block text-sm font-medium text-slate-700">
                   Check-out Time
                 </label>
 
                 <input
+                  id="check_out_time"
                   type="time"
                   value={form.check_out_time}
                   onChange={(e) =>
@@ -445,11 +459,12 @@ export default function NewPropertyPage() {
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="house_manual_url" className="mb-2 block text-sm font-medium text-slate-700">
                   House Manual URL
                 </label>
 
                 <input
+                  id="house_manual_url"
                   type="url"
                   value={form.house_manual_url}
                   onChange={(e) =>
@@ -464,6 +479,7 @@ export default function NewPropertyPage() {
               </div>
 
               <NumberField
+                id="latitude"
                 label="Latitude"
                 value={form.latitude}
                 onChange={(value) =>
@@ -473,6 +489,7 @@ export default function NewPropertyPage() {
               />
 
               <NumberField
+                id="longitude"
                 label="Longitude"
                 value={form.longitude}
                 onChange={(value) =>
@@ -482,11 +499,12 @@ export default function NewPropertyPage() {
               />
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="status" className="mb-2 block text-sm font-medium text-slate-700">
                   Status
                 </label>
 
                 <select
+                  id="status"
                   value={form.status}
                   onChange={(e) =>
                     updateField("status", e.target.value)
@@ -526,11 +544,13 @@ export default function NewPropertyPage() {
 }
 
 function NumberField({
+  id,
   label,
   value,
   onChange,
   step = "1",
 }: {
+  id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -538,11 +558,12 @@ function NumberField({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
+      <label htmlFor={id} className="mb-2 block text-sm font-medium text-slate-700">
         {label}
       </label>
 
       <input
+        id={id}
         type="number"
         min="0"
         step={step}

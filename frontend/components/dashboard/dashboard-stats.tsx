@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Building2,
   CalendarDays,
@@ -16,6 +17,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import AiInsights from "./ai-insights";
 
 interface GuestSummary {
   first_name: string;
@@ -310,6 +312,9 @@ export default function DashboardStats() {
         })}
       </div>
 
+      {/* AI Insights */}
+      <AiInsights />
+
       {/* Today + Occupancy + Revenue */}
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Today */}
@@ -475,7 +480,7 @@ export default function DashboardStats() {
           </p>
 
           <div className="mt-5 space-y-3">
-            <a
+            <Link
               href="/cleaning"
               className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
             >
@@ -487,9 +492,9 @@ export default function DashboardStats() {
                   summary.cleaning.inProgress}{" "}
                 active
               </span>
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/maintenance"
               className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
             >
@@ -510,9 +515,9 @@ export default function DashboardStats() {
                   ? ` (${summary.maintenance.urgent} urgent)`
                   : ""}
               </span>
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/inventory"
               className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
             >
@@ -529,9 +534,9 @@ export default function DashboardStats() {
                 {summary.inventory.lowStockCount} item
                 {summary.inventory.lowStockCount === 1 ? "" : "s"}
               </span>
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/integrations"
               className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
             >
@@ -550,7 +555,7 @@ export default function DashboardStats() {
                   ? `, ${summary.integrations.error} error`
                   : ""}
               </span>
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -828,7 +833,7 @@ function QuickAction({
   primary?: boolean;
 }) {
   return (
-    <a
+    <Link
       href={href}
       className={`flex items-center justify-between rounded-xl p-4 transition ${
         primary
@@ -842,6 +847,6 @@ function QuickAction({
       </span>
 
       <ArrowUpRight size={17} />
-    </a>
+    </Link>
   );
 }

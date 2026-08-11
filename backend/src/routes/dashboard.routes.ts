@@ -142,14 +142,15 @@ router.get(
  * - Occupancy rate is occupied-properties ÷ active-properties
  *   (inactive listings aren't part of the rentable pool).
  */
-router.get(
-  "/summary",
-  requireAuth,
-  requireOrganization,
-  async (req: OrganizationRequest, res: Response) => {
-    try {
-      const organizationId = req.organization!.id;
-      const today = todayUTC();
+/**
+ * Builds the same consolidated payload as GET /summary below, as a
+ * plain function so other server-side callers (the AI context layer)
+ * can reuse these exact business rules — occupancy, revenue-by-
+ * currency, low-stock, etc. — instead of recomputing a second,
+ * potentially conflicting definition.
+ */
+export async function getDashboardSummary(organizationId: string) {
+  const today = todayUTC();
 
       const [
         propertiesResult,
@@ -369,47 +370,64 @@ router.get(
         )
         .slice(0, 8);
 
+      return {
+        stats: {
+          totalProperties,
+          activeProperties,
+          totalReservations:
+            totalReservationsResult.count ?? 0,
+          pendingReservations:
+            pendingReservationsResult.count ?? 0,
+          occupiedProperties,
+          totalGuests: totalGuestsResult.count ?? 0,
+          cleaningTasks: cleaningSummary.total,
+          maintenanceTickets: maintenanceSummary.total,
+        },
+        today: {
+          date: today,
+          checkIns: todayCheckIns,
+          checkOuts: todayCheckOuts,
+          currentStaysCount: currentStays.length,
+          pendingReservations:
+            pendingReservationsResult.count ?? 0,
+        },
+        upcomingReservations,
+        recentActivity,
+        revenue: {
+          byCurrency: revenue,
+        },
+        occupancy: {
+          occupiedProperties,
+          activeProperties,
+          occupancyRate,
+        },
+        cleaning: cleaningSummary,
+        maintenance: maintenanceSummary,
+        inventory: {
+          totalItems: inventoryItems.length,
+          lowStockCount,
+        },
+        integrations: integrationsSummary,
+      };
+}
+
+export type DashboardSummary = Awaited<
+  ReturnType<typeof getDashboardSummary>
+>;
+
+router.get(
+  "/summary",
+  requireAuth,
+  requireOrganization,
+  async (req: OrganizationRequest, res: Response) => {
+    try {
+      const data = await getDashboardSummary(
+        req.organization!.id
+      );
+
       return res.json({
         success: true,
-        data: {
-          stats: {
-            totalProperties,
-            activeProperties,
-            totalReservations:
-              totalReservationsResult.count ?? 0,
-            pendingReservations:
-              pendingReservationsResult.count ?? 0,
-            occupiedProperties,
-            totalGuests: totalGuestsResult.count ?? 0,
-            cleaningTasks: cleaningSummary.total,
-            maintenanceTickets: maintenanceSummary.total,
-          },
-          today: {
-            date: today,
-            checkIns: todayCheckIns,
-            checkOuts: todayCheckOuts,
-            currentStaysCount: currentStays.length,
-            pendingReservations:
-              pendingReservationsResult.count ?? 0,
-          },
-          upcomingReservations,
-          recentActivity,
-          revenue: {
-            byCurrency: revenue,
-          },
-          occupancy: {
-            occupiedProperties,
-            activeProperties,
-            occupancyRate,
-          },
-          cleaning: cleaningSummary,
-          maintenance: maintenanceSummary,
-          inventory: {
-            totalItems: inventoryItems.length,
-            lowStockCount,
-          },
-          integrations: integrationsSummary,
-        },
+        data,
       });
     } catch (error) {
       console.error("Dashboard summary error:", error);

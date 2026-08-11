@@ -6,6 +6,7 @@ import {
   requireOrganization,
   OrganizationRequest,
 } from "../../middleware/organization.middleware";
+import { requireRole } from "../../middleware/role.middleware";
 import {
   validateCreateReservation,
   validateReservationFilters,
@@ -23,6 +24,14 @@ export const reservationRouter = Router();
 
 reservationRouter.use(requireAuth);
 reservationRouter.use(requireOrganization);
+
+/**
+ * Only permanent deletion is restricted — creating/editing
+ * reservations remains open to every role, since that's the core
+ * front-desk workflow. This was a pre-existing gap: any "member"
+ * could previously delete any reservation with no role check.
+ */
+const destructive = requireRole("owner", "company_admin");
 
 /**
  * Returns a client-safe error message.
@@ -78,6 +87,16 @@ reservationRouter.get(
         "Get reservations error:",
         error
       );
+
+      if (
+        error instanceof Error &&
+        error.name !== "PostgrestError"
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+        });
+      }
 
       return res.status(500).json({
         success: false,
@@ -237,6 +256,7 @@ reservationRouter.patch(
 // DELETE /api/reservations/:id
 reservationRouter.delete(
   "/:id",
+  destructive,
   async (req: OrganizationRequest, res) => {
     try {
       if (!req.organization) {

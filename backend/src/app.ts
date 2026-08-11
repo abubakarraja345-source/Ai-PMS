@@ -25,15 +25,35 @@ import {
   organizationInventoryRoutes,
 } from "./modules/inventory/routes";
 import integrationsRoutes from "./modules/integrations/routes";
+import aiRoutes from "./modules/ai/routes";
+import { apiRateLimiter } from "./middleware/rateLimiter";
+import { env } from "./config/env";
 
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+
+/**
+ * In production, restrict to the known frontend origin if configured
+ * (FRONTEND_URL). Left open in development (no FRONTEND_URL set by
+ * default) to avoid breaking local dev against varying ports/hosts.
+ * Auth is Bearer-token based, not cookie based, so an open dev CORS
+ * policy doesn't itself enable session hijacking — this is
+ * defense-in-depth for production, not a fix for an active exploit.
+ */
+app.use(
+  cors(
+    env.nodeEnv === "production" && env.frontendUrl
+      ? { origin: env.frontendUrl }
+      : {}
+  )
+);
+
 app.use(compression());
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
+app.use(apiRateLimiter);
 
 app.get("/health", (req, res) => {
   res.json({
@@ -43,7 +63,10 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.use("/api/test", testRoutes);
+// Debug/introspection routes — dev-only, not part of the product API.
+if (env.nodeEnv !== "production") {
+  app.use("/api/test", testRoutes);
+}
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/guests", GuestsRouter);
@@ -60,5 +83,6 @@ app.use("/api/properties/:propertyId", propertyDetailsRoutes);
 app.use("/api/properties/:propertyId/inventory", propertyInventoryRoutes);
 app.use("/api/inventory", organizationInventoryRoutes);
 app.use("/api/integrations", integrationsRoutes);
+app.use("/api/ai", aiRoutes);
 
 export default app;

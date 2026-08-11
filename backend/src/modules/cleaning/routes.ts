@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { requireAuth } from "../../middleware/auth.middleware";
 import { requireOrganization } from "../../middleware/organization.middleware";
+import { requireRole } from "../../middleware/role.middleware";
 
 import {
   listCleaningTasks,
@@ -12,6 +13,15 @@ import {
 } from "./controller";
 
 const router = Router();
+
+/**
+ * Only permanent deletion is restricted — creating/updating cleaning
+ * tasks (including status transitions) remains open to every role,
+ * since that's routine housekeeping work. This was a pre-existing
+ * gap: any "member" could previously delete any cleaning task with
+ * no role check.
+ */
+const destructive = requireRole("owner", "company_admin");
 
 router.get(
   "/",
@@ -45,6 +55,7 @@ router.delete(
   "/:id",
   requireAuth,
   requireOrganization,
+  destructive,
   deleteCleaningTaskController
 );
 

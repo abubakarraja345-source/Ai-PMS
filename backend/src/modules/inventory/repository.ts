@@ -57,6 +57,25 @@ export async function findItemById(
   return data;
 }
 
+/** Organization-scoped lookup (not property-scoped) — used by the
+ * AI action executor, which only knows an item id and must resolve
+ * its property itself rather than trusting a client-supplied one. */
+export async function findItemByIdForOrganization(
+  organizationId: string,
+  itemId: string
+): Promise<InventoryItemWithPropertyRow | null> {
+  const { data, error } = await supabase
+    .from("inventory_items")
+    .select(ITEM_WITH_PROPERTY_SELECT)
+    .eq("id", itemId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return data as unknown as InventoryItemWithPropertyRow | null;
+}
+
 /** Case-insensitive exact-name match within a property, used to
  * prevent silent duplicate items. `ilike` with no wildcards is an
  * exact case-insensitive comparison in Postgres. */

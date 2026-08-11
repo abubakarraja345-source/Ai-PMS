@@ -111,9 +111,13 @@ storage/
 
 # ==========================
 # Generated Reports
+# (anchored to the repo root — an unanchored "reports/" also
+# matched backend/src/modules/reports/ and
+# frontend/app/(dashboard)/reports/, silently excluding those
+# source directories from git)
 # ==========================
-reports/
-exports/
+/reports/
+/exports/
 
 # ==========================
 # Secrets

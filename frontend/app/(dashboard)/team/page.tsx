@@ -166,8 +166,8 @@ export default function TeamPage() {
           </h2>
         </div>
       ) : (
-        <div className="mt-10 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full text-left text-sm">
+        <div className="mt-10 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <table className="w-full min-w-[700px] text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
                 <th className="px-6 py-4 font-medium text-slate-500">
@@ -211,8 +211,8 @@ export default function TeamPage() {
                     key={member.id}
                     className="border-b border-slate-100 last:border-0"
                   >
-                    <td className="px-6 py-4">
-                      <p className="font-medium text-slate-900">
+                    <td className="max-w-[260px] px-6 py-4">
+                      <p className="truncate font-medium text-slate-900">
                         {member.email ?? "Unknown email"}
                         {isSelf && (
                           <span className="ml-2 text-xs font-normal text-slate-400">
