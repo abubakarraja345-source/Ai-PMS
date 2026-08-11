@@ -27,6 +27,7 @@ import {
 import integrationsRoutes from "./modules/integrations/routes";
 import aiRoutes from "./modules/ai/routes";
 import { apiRateLimiter } from "./middleware/rateLimiter";
+import { errorMiddleware, notFoundHandler } from "./middleware/error.middleware";
 import { env } from "./config/env";
 
 const app = express();
@@ -84,5 +85,8 @@ app.use("/api/properties/:propertyId/inventory", propertyInventoryRoutes);
 app.use("/api/inventory", organizationInventoryRoutes);
 app.use("/api/integrations", integrationsRoutes);
 app.use("/api/ai", aiRoutes);
+
+app.use(notFoundHandler);
+app.use(errorMiddleware);
 
 export default app;
