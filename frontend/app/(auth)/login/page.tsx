@@ -1,8 +1,11 @@
-export default function LoginPage() {
-  return (
-    <div>
-      <h1>Login</h1>
-      <p>Sign in to continue.</p>
-    </div>
-  );
+import { redirect } from "next/navigation";
+
+/**
+ * This route (`/login`) was a dead stub with no functionality and no
+ * incoming links anywhere in the app — the real login page has always
+ * been `/auth/login`. Redirecting rather than deleting keeps anyone
+ * who bookmarked or indexed `/login` from hitting a broken page.
+ */
+export default function LoginRedirectPage() {
+  redirect("/auth/login");
 }
