@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { PaginationControls } from "@/components/shared/pagination-controls";
 
 interface PropertySummary {
   id: string;
