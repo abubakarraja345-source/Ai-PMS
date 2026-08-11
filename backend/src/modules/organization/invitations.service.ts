@@ -124,6 +124,41 @@ export async function listInvitations(organizationId: string) {
   return rows.map(toSummary);
 }
 
+/**
+ * Public, unauthenticated preview by raw token — lets the frontend
+ * show "you've been invited to X as Y" before the visitor logs in, so
+ * they know what they're accepting before going through the magic-link
+ * flow. Safe to leave unauthenticated: possessing the 256-bit random
+ * token is already the credential (same principle as a password-reset
+ * link), and this reveals nothing beyond what the invitation email
+ * itself already told its recipient. Never returns token_hash — the
+ * repository row is destructured field-by-field, never spread.
+ */
+export async function previewInvitation(rawToken: string) {
+  const tokenHash = hashToken(rawToken);
+  const invitation = await findInvitationByTokenHash(tokenHash);
+
+  if (!invitation) {
+    throw new Error("Invitation not found or invalid");
+  }
+
+  const organization = await findOrganizationById(invitation.organization_id);
+
+  const isExpired = new Date(invitation.expires_at).getTime() <= Date.now();
+  const effectiveStatus =
+    invitation.status === "pending" && isExpired
+      ? "expired"
+      : invitation.status;
+
+  return {
+    organizationName: organization?.name ?? "Unknown organization",
+    email: invitation.email,
+    role: invitation.role,
+    expiresAt: invitation.expires_at,
+    status: effectiveStatus,
+  };
+}
+
 export async function createInvitation(
   organizationId: string,
   organizationName: string,

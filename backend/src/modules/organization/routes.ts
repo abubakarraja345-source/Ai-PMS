@@ -19,6 +19,7 @@ import {
   resendInvitationController,
   revokeInvitationController,
   acceptInvitationController,
+  previewInvitationController,
 } from "./invitations.controller";
 
 const router = Router();
@@ -49,6 +50,14 @@ router.get(
   manageInvitations,
   listInvitationsController
 );
+
+// GET /api/organization/invitations/:token
+// Deliberately public — see previewInvitationController's own comment
+// for why. Registered after the exact-literal "/invitations" list
+// route above so Express never has to disambiguate between them (a
+// bare "/invitations" request always matches the list route; anything
+// with a second path segment falls through to this one).
+router.get("/invitations/:token", previewInvitationController);
 
 // POST /api/organization/invitations
 router.post(

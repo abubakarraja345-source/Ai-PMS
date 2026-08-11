@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { OrganizationRequest } from "../../middleware/organization.middleware";
 import { AuthenticatedRequest } from "../../middleware/auth.middleware";
 
@@ -8,6 +8,7 @@ import {
   resendInvitation,
   revokeInvitation,
   acceptInvitation,
+  previewInvitation,
 } from "./invitations.service";
 
 /**
@@ -40,6 +41,10 @@ function statusForAcceptError(message: string): number {
     return 409;
   }
 
+  if (message === "This invitation has expired") {
+    return 410;
+  }
+
   return 400;
 }
 
@@ -69,6 +74,44 @@ export async function listInvitationsController(
     return res.status(500).json({
       success: false,
       error: "Unable to load invitations",
+    });
+  }
+}
+
+/**
+ * GET /api/organization/invitations/:token — deliberately public (no
+ * requireAuth). Lets the frontend show invitation details (org, role,
+ * email, expiry) before the visitor authenticates. Never returns
+ * token_hash — previewInvitation (service.ts) only ever returns a
+ * hand-built safe object, never the raw repository row.
+ */
+export async function previewInvitationController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const token = req.params.token;
+
+    if (!token || typeof token !== "string" || !token.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "Invitation token is required",
+      });
+    }
+
+    const data = await previewInvitation(token.trim());
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Preview invitation error:", error);
+
+    if (isKnownError(error)) {
+      return res.status(404).json({ success: false, error: error.message });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: "Unable to load invitation",
     });
   }
 }
