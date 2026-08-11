@@ -197,11 +197,12 @@ export default function NewMaintenanceTicketPage() {
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="title" className="mb-2 block text-sm font-medium text-slate-700">
                   Title *
                 </label>
 
                 <input
+                  id="title"
                   type="text"
                   required
                   value={form.title}
@@ -214,11 +215,12 @@ export default function NewMaintenanceTicketPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="property_id" className="mb-2 block text-sm font-medium text-slate-700">
                   Property *
                 </label>
 
                 <select
+                  id="property_id"
                   required
                   value={form.property_id}
                   onChange={(e) =>
@@ -242,11 +244,12 @@ export default function NewMaintenanceTicketPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="reservation_id" className="mb-2 block text-sm font-medium text-slate-700">
                   Reservation
                 </label>
 
                 <select
+                  id="reservation_id"
                   value={form.reservation_id}
                   onChange={(e) =>
                     updateField(
@@ -286,11 +289,12 @@ export default function NewMaintenanceTicketPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="category" className="mb-2 block text-sm font-medium text-slate-700">
                   Category
                 </label>
 
                 <input
+                  id="category"
                   type="text"
                   value={form.category}
                   onChange={(e) =>
@@ -302,11 +306,12 @@ export default function NewMaintenanceTicketPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="priority" className="mb-2 block text-sm font-medium text-slate-700">
                   Priority
                 </label>
 
                 <select
+                  id="priority"
                   value={form.priority}
                   onChange={(e) =>
                     updateField("priority", e.target.value)
@@ -321,11 +326,12 @@ export default function NewMaintenanceTicketPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="assigned_to" className="mb-2 block text-sm font-medium text-slate-700">
                   Assigned To
                 </label>
 
                 <input
+                  id="assigned_to"
                   type="text"
                   value={form.assigned_to}
                   onChange={(e) =>
@@ -340,11 +346,12 @@ export default function NewMaintenanceTicketPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="estimated_cost" className="mb-2 block text-sm font-medium text-slate-700">
                   Estimated Cost
                 </label>
 
                 <input
+                  id="estimated_cost"
                   type="number"
                   min="0"
                   step="0.01"
@@ -361,11 +368,12 @@ export default function NewMaintenanceTicketPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="description" className="mb-2 block text-sm font-medium text-slate-700">
                   Description
                 </label>
 
                 <textarea
+                  id="description"
                   value={form.description}
                   onChange={(e) =>
                     updateField(

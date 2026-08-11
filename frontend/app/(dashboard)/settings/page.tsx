@@ -254,10 +254,11 @@ export default function SettingsPage() {
           </p>
 
           <div className="mt-5">
-            <label className="text-sm font-medium text-slate-700">
+            <label htmlFor="org-name" className="text-sm font-medium text-slate-700">
               Organization Name
             </label>
             <input
+              id="org-name"
               type="text"
               value={form.name}
               disabled={!canEdit}
@@ -281,10 +282,11 @@ export default function SettingsPage() {
 
           <div className="mt-5 grid gap-5 sm:grid-cols-3">
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="timezone" className="text-sm font-medium text-slate-700">
                 Timezone
               </label>
               <input
+                id="timezone"
                 type="text"
                 value={form.timezone}
                 disabled={!canEdit}
@@ -297,10 +299,11 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="currency" className="text-sm font-medium text-slate-700">
                 Currency
               </label>
               <input
+                id="currency"
                 type="text"
                 value={form.currency}
                 disabled={!canEdit}
@@ -316,10 +319,11 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="language" className="text-sm font-medium text-slate-700">
                 Language
               </label>
               <input
+                id="language"
                 type="text"
                 value={form.language}
                 disabled={!canEdit}
@@ -346,10 +350,11 @@ export default function SettingsPage() {
 
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="checkInTime" className="text-sm font-medium text-slate-700">
                 Check-in Time
               </label>
               <input
+                id="checkInTime"
                 type="time"
                 value={form.checkInTime}
                 disabled={!canEdit}
@@ -361,10 +366,11 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="checkOutTime" className="text-sm font-medium text-slate-700">
                 Check-out Time
               </label>
               <input
+                id="checkOutTime"
                 type="time"
                 value={form.checkOutTime}
                 disabled={!canEdit}
@@ -377,10 +383,11 @@ export default function SettingsPage() {
           </div>
 
           <div className="mt-5">
-            <label className="text-sm font-medium text-slate-700">
+            <label htmlFor="guestMessageTemplate" className="text-sm font-medium text-slate-700">
               Guest Message Template
             </label>
             <textarea
+              id="guestMessageTemplate"
               rows={5}
               value={form.guestMessageTemplate}
               disabled={!canEdit}

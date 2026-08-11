@@ -1207,11 +1207,12 @@ export default function ReservationsPage() {
               <div className="grid gap-5 md:grid-cols-2">
 
                 <div>
-                  <label className="text-sm font-medium text-slate-700">
+                  <label htmlFor="create-property_id" className="text-sm font-medium text-slate-700">
                     Property *
                   </label>
 
                   <select
+                    id="create-property_id"
                     required
                     value={form.property_id}
                     onChange={(event) =>
@@ -1240,11 +1241,12 @@ export default function ReservationsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-slate-700">
+                  <label htmlFor="create-guest_id" className="text-sm font-medium text-slate-700">
                     Guest *
                   </label>
 
                   <select
+                    id="create-guest_id"
                     required
                     value={form.guest_id}
                     onChange={(event) =>
@@ -1280,11 +1282,12 @@ export default function ReservationsPage() {
               <div className="grid gap-5 md:grid-cols-3">
 
                 <div>
-                  <label className="text-sm font-medium text-slate-700">
+                  <label htmlFor="create-booking_reference" className="text-sm font-medium text-slate-700">
                     Booking Reference
                   </label>
 
                   <input
+                    id="create-booking_reference"
                     value={form.booking_reference}
                     onChange={(event) =>
                       updateForm(
@@ -1298,11 +1301,12 @@ export default function ReservationsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-slate-700">
+                  <label htmlFor="create-source" className="text-sm font-medium text-slate-700">
                     Source
                   </label>
 
                   <select
+                    id="create-source"
                     value={form.source}
                     onChange={(event) =>
                       updateForm(
@@ -1335,11 +1339,12 @@ export default function ReservationsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-slate-700">
+                  <label htmlFor="create-status" className="text-sm font-medium text-slate-700">
                     Status
                   </label>
 
                   <select
+                    id="create-status"
                     value={form.status}
                     onChange={(event) =>
                       updateForm(
@@ -1371,11 +1376,12 @@ export default function ReservationsPage() {
                 <div className="mt-4 grid gap-5 md:grid-cols-3">
 
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label htmlFor="create-check_in" className="text-sm font-medium text-slate-700">
                       Check-in *
                     </label>
 
                     <input
+                      id="create-check_in"
                       required
                       type="date"
                       value={form.check_in}
@@ -1390,11 +1396,12 @@ export default function ReservationsPage() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label htmlFor="create-check_out" className="text-sm font-medium text-slate-700">
                       Check-out *
                     </label>
 
                     <input
+                      id="create-check_out"
                       required
                       type="date"
                       value={form.check_out}
@@ -1457,11 +1464,12 @@ export default function ReservationsPage() {
                     ([field, label, min]) => (
                       <div key={field}>
 
-                        <label className="text-sm font-medium text-slate-700">
+                        <label htmlFor={`create-${field}`} className="text-sm font-medium text-slate-700">
                           {label}
                         </label>
 
                         <input
+                          id={`create-${field}`}
                           type="number"
                           min={Number(min)}
                           value={
@@ -1497,11 +1505,12 @@ export default function ReservationsPage() {
                 <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
 
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label htmlFor="create-total_amount" className="text-sm font-medium text-slate-700">
                       Total Amount
                     </label>
 
                     <input
+                      id="create-total_amount"
                       type="number"
                       min={0}
                       step="0.01"
@@ -1518,11 +1527,12 @@ export default function ReservationsPage() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label htmlFor="create-cleaning_fee" className="text-sm font-medium text-slate-700">
                       Cleaning Fee
                     </label>
 
                     <input
+                      id="create-cleaning_fee"
                       type="number"
                       min={0}
                       step="0.01"
@@ -1538,11 +1548,12 @@ export default function ReservationsPage() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label htmlFor="create-taxes" className="text-sm font-medium text-slate-700">
                       Taxes
                     </label>
 
                     <input
+                      id="create-taxes"
                       type="number"
                       min={0}
                       step="0.01"
@@ -1558,11 +1569,12 @@ export default function ReservationsPage() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label htmlFor="create-currency" className="text-sm font-medium text-slate-700">
                       Currency
                     </label>
 
                     <select
+                      id="create-currency"
                       value={form.currency}
                       onChange={(event) =>
                         updateForm(
@@ -1596,11 +1608,12 @@ export default function ReservationsPage() {
               {/* Requests */}
               <div>
 
-                <label className="text-sm font-medium text-slate-700">
+                <label htmlFor="create-special_requests" className="text-sm font-medium text-slate-700">
                   Special Requests
                 </label>
 
                 <textarea
+                  id="create-special_requests"
                   rows={4}
                   value={form.special_requests}
                   onChange={(event) =>
@@ -1928,11 +1941,12 @@ export default function ReservationsPage() {
                     <div className="grid gap-5 sm:grid-cols-2">
 
                       <div>
-                        <label className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-check_in" className="text-sm font-medium text-slate-700">
                           Check-in
                         </label>
 
                         <input
+                          id="edit-check_in"
                           type="date"
                           value={
                             selectedReservation.check_in
@@ -1948,11 +1962,12 @@ export default function ReservationsPage() {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-check_out" className="text-sm font-medium text-slate-700">
                           Check-out
                         </label>
 
                         <input
+                          id="edit-check_out"
                           type="date"
                           min={
                             selectedReservation.check_in
@@ -1971,11 +1986,12 @@ export default function ReservationsPage() {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-adults" className="text-sm font-medium text-slate-700">
                           Adults
                         </label>
 
                         <input
+                          id="edit-adults"
                           type="number"
                           min={1}
                           value={
@@ -1994,11 +2010,12 @@ export default function ReservationsPage() {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-children" className="text-sm font-medium text-slate-700">
                           Children
                         </label>
 
                         <input
+                          id="edit-children"
                           type="number"
                           min={0}
                           value={
@@ -2017,11 +2034,12 @@ export default function ReservationsPage() {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-infants" className="text-sm font-medium text-slate-700">
                           Infants
                         </label>
 
                         <input
+                          id="edit-infants"
                           type="number"
                           min={0}
                           value={
@@ -2040,11 +2058,12 @@ export default function ReservationsPage() {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-pets" className="text-sm font-medium text-slate-700">
                           Pets
                         </label>
 
                         <input
+                          id="edit-pets"
                           type="number"
                           min={0}
                           value={
@@ -2063,11 +2082,12 @@ export default function ReservationsPage() {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-total_amount" className="text-sm font-medium text-slate-700">
                           Total Amount
                         </label>
 
                         <input
+                          id="edit-total_amount"
                           type="number"
                           min={0}
                           step="0.01"
@@ -2091,11 +2111,12 @@ export default function ReservationsPage() {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-status" className="text-sm font-medium text-slate-700">
                           Status
                         </label>
 
                         <select
+                          id="edit-status"
                           value={
                             selectedReservation.status
                           }

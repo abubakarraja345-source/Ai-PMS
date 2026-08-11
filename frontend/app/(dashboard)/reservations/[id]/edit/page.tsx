@@ -345,11 +345,12 @@ export default function EditReservationPage() {
 
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="booking_reference" className="text-sm font-medium text-slate-700">
                 Booking Reference
               </label>
 
               <input
+                id="booking_reference"
                 value={form.booking_reference}
                 onChange={(e) =>
                   updateField(
@@ -363,11 +364,12 @@ export default function EditReservationPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="source" className="text-sm font-medium text-slate-700">
                 Source
               </label>
 
               <select
+                id="source"
                 value={form.source}
                 onChange={(e) =>
                   updateField(
@@ -400,11 +402,12 @@ export default function EditReservationPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="status" className="text-sm font-medium text-slate-700">
                 Status
               </label>
 
               <select
+                id="status"
                 value={form.status}
                 onChange={(e) =>
                   updateField(
@@ -443,11 +446,12 @@ export default function EditReservationPage() {
 
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="check_in" className="text-sm font-medium text-slate-700">
                 Check-in
               </label>
 
               <input
+                id="check_in"
                 type="date"
                 value={form.check_in}
                 onChange={(e) =>
@@ -462,11 +466,12 @@ export default function EditReservationPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="check_out" className="text-sm font-medium text-slate-700">
                 Check-out
               </label>
 
               <input
+                id="check_out"
                 type="date"
                 value={form.check_out}
                 onChange={(e) =>
@@ -497,11 +502,12 @@ export default function EditReservationPage() {
               ["pets", "Pets"],
             ].map(([field, label]) => (
               <div key={field}>
-                <label className="text-sm font-medium text-slate-700">
+                <label htmlFor={field} className="text-sm font-medium text-slate-700">
                   {label}
                 </label>
 
                 <input
+                  id={field}
                   type="number"
                   min="0"
                   value={
@@ -531,11 +537,12 @@ export default function EditReservationPage() {
 
           <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="total_amount" className="text-sm font-medium text-slate-700">
                 Total Amount
               </label>
 
               <input
+                id="total_amount"
                 type="number"
                 min="0"
                 step="0.01"
@@ -551,11 +558,12 @@ export default function EditReservationPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="cleaning_fee" className="text-sm font-medium text-slate-700">
                 Cleaning Fee
               </label>
 
               <input
+                id="cleaning_fee"
                 type="number"
                 min="0"
                 step="0.01"
@@ -571,11 +579,12 @@ export default function EditReservationPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="taxes" className="text-sm font-medium text-slate-700">
                 Taxes
               </label>
 
               <input
+                id="taxes"
                 type="number"
                 min="0"
                 step="0.01"
@@ -591,11 +600,12 @@ export default function EditReservationPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700">
+              <label htmlFor="currency" className="text-sm font-medium text-slate-700">
                 Currency
               </label>
 
               <select
+                id="currency"
                 value={form.currency}
                 onChange={(e) =>
                   updateField(

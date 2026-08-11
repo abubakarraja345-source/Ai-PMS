@@ -539,8 +539,9 @@ function AddItemModal({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-slate-500">Starting Quantity</label>
+            <label htmlFor="add-initial-quantity" className="text-xs text-slate-500">Starting Quantity</label>
             <input
+              id="add-initial-quantity"
               type="number"
               min={0}
               value={initialQuantity}
@@ -549,8 +550,9 @@ function AddItemModal({
             />
           </div>
           <div>
-            <label className="text-xs text-slate-500">Minimum Threshold</label>
+            <label htmlFor="add-minimum-quantity" className="text-xs text-slate-500">Minimum Threshold</label>
             <input
+              id="add-minimum-quantity"
               type="number"
               min={0}
               value={minimumQuantity}
@@ -654,8 +656,9 @@ function EditItemModal({
         />
 
         <div>
-          <label className="text-xs text-slate-500">Minimum Threshold</label>
+          <label htmlFor="edit-minimum-quantity" className="text-xs text-slate-500">Minimum Threshold</label>
           <input
+            id="edit-minimum-quantity"
             type="number"
             min={0}
             value={minimumQuantity}

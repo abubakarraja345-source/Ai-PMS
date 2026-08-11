@@ -294,6 +294,7 @@ export default function EditPropertyPage() {
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <Field
+                id="title"
                 label="Property Title *"
                 value={form.title}
                 onChange={(value) =>
@@ -303,11 +304,12 @@ export default function EditPropertyPage() {
               />
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="property_type" className="mb-2 block text-sm font-medium text-slate-700">
                   Property Type *
                 </label>
 
                 <select
+                  id="property_type"
                   value={form.property_type}
                   onChange={(e) =>
                     updateField(
@@ -333,11 +335,12 @@ export default function EditPropertyPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="description" className="mb-2 block text-sm font-medium text-slate-700">
                   Description
                 </label>
 
                 <textarea
+                  id="description"
                   value={form.description}
                   onChange={(e) =>
                     updateField(
@@ -361,6 +364,7 @@ export default function EditPropertyPage() {
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div className="md:col-span-2">
                 <Field
+                  id="address"
                   label="Address"
                   value={form.address}
                   onChange={(value) =>
@@ -370,6 +374,7 @@ export default function EditPropertyPage() {
               </div>
 
               <Field
+                id="city"
                 label="City"
                 value={form.city}
                 onChange={(value) =>
@@ -378,6 +383,7 @@ export default function EditPropertyPage() {
               />
 
               <Field
+                id="state"
                 label="State / Province"
                 value={form.state}
                 onChange={(value) =>
@@ -386,6 +392,7 @@ export default function EditPropertyPage() {
               />
 
               <Field
+                id="country"
                 label="Country"
                 value={form.country}
                 onChange={(value) =>
@@ -394,6 +401,7 @@ export default function EditPropertyPage() {
               />
 
               <Field
+                id="postal_code"
                 label="Postal Code"
                 value={form.postal_code}
                 onChange={(value) =>
@@ -411,6 +419,7 @@ export default function EditPropertyPage() {
 
             <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <NumberField
+                id="bedrooms"
                 label="Bedrooms"
                 value={form.bedrooms}
                 onChange={(value) =>
@@ -419,6 +428,7 @@ export default function EditPropertyPage() {
               />
 
               <NumberField
+                id="bathrooms"
                 label="Bathrooms"
                 value={form.bathrooms}
                 onChange={(value) =>
@@ -428,6 +438,7 @@ export default function EditPropertyPage() {
               />
 
               <NumberField
+                id="beds"
                 label="Beds"
                 value={form.beds}
                 onChange={(value) =>
@@ -436,6 +447,7 @@ export default function EditPropertyPage() {
               />
 
               <NumberField
+                id="max_guests"
                 label="Maximum Guests"
                 value={form.max_guests}
                 onChange={(value) =>
@@ -453,11 +465,12 @@ export default function EditPropertyPage() {
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="check_in_time" className="mb-2 block text-sm font-medium text-slate-700">
                   Check-in Time
                 </label>
 
                 <input
+                  id="check_in_time"
                   type="time"
                   value={form.check_in_time}
                   onChange={(e) =>
@@ -471,11 +484,12 @@ export default function EditPropertyPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="check_out_time" className="mb-2 block text-sm font-medium text-slate-700">
                   Check-out Time
                 </label>
 
                 <input
+                  id="check_out_time"
                   type="time"
                   value={form.check_out_time}
                   onChange={(e) =>
@@ -499,6 +513,7 @@ export default function EditPropertyPage() {
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div className="md:col-span-2">
                 <Field
+                  id="house_manual_url"
                   label="House Manual URL"
                   value={form.house_manual_url}
                   onChange={(value) =>
@@ -512,6 +527,7 @@ export default function EditPropertyPage() {
               </div>
 
               <NumberField
+                id="latitude"
                 label="Latitude"
                 value={form.latitude}
                 onChange={(value) =>
@@ -521,6 +537,7 @@ export default function EditPropertyPage() {
               />
 
               <NumberField
+                id="longitude"
                 label="Longitude"
                 value={form.longitude}
                 onChange={(value) =>
@@ -530,11 +547,12 @@ export default function EditPropertyPage() {
               />
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="status" className="mb-2 block text-sm font-medium text-slate-700">
                   Status
                 </label>
 
                 <select
+                  id="status"
                   value={form.status}
                   onChange={(e) =>
                     updateField(
@@ -585,6 +603,7 @@ export default function EditPropertyPage() {
 }
 
 function Field({
+  id,
   label,
   value,
   onChange,
@@ -592,6 +611,7 @@ function Field({
   required = false,
   step,
 }: {
+  id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -601,11 +621,12 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
+      <label htmlFor={id} className="mb-2 block text-sm font-medium text-slate-700">
         {label}
       </label>
 
       <input
+        id={id}
         type={type}
         value={value}
         required={required}
@@ -618,11 +639,13 @@ function Field({
 }
 
 function NumberField({
+  id,
   label,
   value,
   onChange,
   step = "1",
 }: {
+  id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -630,6 +653,7 @@ function NumberField({
 }) {
   return (
     <Field
+      id={id}
       label={label}
       value={value}
       onChange={onChange}

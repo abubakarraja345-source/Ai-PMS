@@ -236,11 +236,12 @@ export default function EditCleaningTaskPage() {
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="property_id" className="mb-2 block text-sm font-medium text-slate-700">
                   Property *
                 </label>
 
                 <select
+                  id="property_id"
                   required
                   value={form.property_id}
                   onChange={(e) =>
@@ -264,11 +265,12 @@ export default function EditCleaningTaskPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="reservation_id" className="mb-2 block text-sm font-medium text-slate-700">
                   Reservation
                 </label>
 
                 <select
+                  id="reservation_id"
                   value={form.reservation_id}
                   onChange={(e) =>
                     updateField(
@@ -304,11 +306,12 @@ export default function EditCleaningTaskPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="scheduled_date" className="mb-2 block text-sm font-medium text-slate-700">
                   Scheduled Date
                 </label>
 
                 <input
+                  id="scheduled_date"
                   type="date"
                   value={form.scheduled_date}
                   onChange={(e) =>
@@ -322,11 +325,12 @@ export default function EditCleaningTaskPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="priority" className="mb-2 block text-sm font-medium text-slate-700">
                   Priority
                 </label>
 
                 <select
+                  id="priority"
                   value={form.priority}
                   onChange={(e) =>
                     updateField("priority", e.target.value)
@@ -341,11 +345,12 @@ export default function EditCleaningTaskPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="assigned_to" className="mb-2 block text-sm font-medium text-slate-700">
                   Assigned To
                 </label>
 
                 <input
+                  id="assigned_to"
                   type="text"
                   value={form.assigned_to}
                   onChange={(e) =>
@@ -360,11 +365,12 @@ export default function EditCleaningTaskPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="notes" className="mb-2 block text-sm font-medium text-slate-700">
                   Notes
                 </label>
 
                 <textarea
+                  id="notes"
                   value={form.notes}
                   onChange={(e) =>
                     updateField("notes", e.target.value)

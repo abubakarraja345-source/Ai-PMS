@@ -30,9 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
 , "middleware.ts.backup"  ],
-  "exclude": [
-    "node_modules",
-    "app/test-api",
-    "store"
-  ]
+  "exclude": ["node_modules"]
 }
