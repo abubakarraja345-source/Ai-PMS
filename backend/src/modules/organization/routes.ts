@@ -3,6 +3,7 @@ import { Router } from "express";
 import { requireAuth } from "../../middleware/auth.middleware";
 import { requireOrganization } from "../../middleware/organization.middleware";
 import { requireRole } from "../../middleware/role.middleware";
+import { invitationRateLimiter } from "../../middleware/rateLimiter";
 
 import {
   listMembersController,
@@ -12,7 +13,71 @@ import {
   createOrganizationController,
 } from "./controller";
 
+import {
+  listInvitationsController,
+  createInvitationController,
+  resendInvitationController,
+  revokeInvitationController,
+  acceptInvitationController,
+} from "./invitations.controller";
+
 const router = Router();
+
+/**
+ * Only owner/company_admin may invite, list, resend, or revoke
+ * invitations — same coarse gate as member management just below.
+ */
+const manageInvitations = requireRole("owner", "company_admin");
+
+// POST /api/organization/invitations/accept
+// Authenticated only, deliberately NOT requireOrganization — the
+// caller may not have an organization yet, which is the whole point.
+// Registered before the /invitations collection routes purely for
+// readability; Express matches this literal path independently of
+// the /invitations/:id/* routes below (no collision either way).
+router.post(
+  "/invitations/accept",
+  requireAuth,
+  acceptInvitationController
+);
+
+// GET /api/organization/invitations
+router.get(
+  "/invitations",
+  requireAuth,
+  requireOrganization,
+  manageInvitations,
+  listInvitationsController
+);
+
+// POST /api/organization/invitations
+router.post(
+  "/invitations",
+  requireAuth,
+  requireOrganization,
+  manageInvitations,
+  invitationRateLimiter,
+  createInvitationController
+);
+
+// POST /api/organization/invitations/:id/resend
+router.post(
+  "/invitations/:id/resend",
+  requireAuth,
+  requireOrganization,
+  manageInvitations,
+  invitationRateLimiter,
+  resendInvitationController
+);
+
+// POST /api/organization/invitations/:id/revoke
+router.post(
+  "/invitations/:id/revoke",
+  requireAuth,
+  requireOrganization,
+  manageInvitations,
+  revokeInvitationController
+);
 
 // POST /api/organization
 // Onboarding only — deliberately gated by requireAuth alone, not

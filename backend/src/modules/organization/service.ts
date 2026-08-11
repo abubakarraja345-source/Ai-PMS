@@ -20,16 +20,18 @@ import {
   notifyMemberRoleChanged,
 } from "../notifications/service";
 
-const ALREADY_HAS_ORGANIZATION_MESSAGE =
+export const ALREADY_HAS_ORGANIZATION_MESSAGE =
   "You already belong to an organization";
 
 /**
  * Postgres SQLSTATE 23505 (unique_violation). The Supabase JS client
  * surfaces Postgres errors as plain objects with a `.code` field rather
  * than a typed exception class, so this is a structural check rather
- * than an `instanceof`.
+ * than an `instanceof`. Exported for reuse by invitations.service.ts,
+ * which hits the same constraint via a different code path (accepting
+ * an invitation also inserts an organization_members row).
  */
-function isUniqueViolation(error: unknown): boolean {
+export function isUniqueViolation(error: unknown): boolean {
   return (
     typeof error === "object" &&
     error !== null &&
@@ -158,8 +160,10 @@ export async function createOrganization(
  * human-readable email requires the Supabase Auth admin API.
  * Run in parallel; a lookup failure for one user degrades to a
  * null email for that row rather than failing the whole list.
+ * Exported for reuse by invitations.service.ts (resolving the
+ * inviter's email for invitation emails and duplicate-member checks).
  */
-async function resolveEmail(
+export async function resolveEmail(
   userId: string
 ): Promise<string | null> {
   try {

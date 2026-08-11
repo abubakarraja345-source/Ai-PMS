@@ -38,3 +38,20 @@ export const aiChatRateLimiter = rateLimit({
     "Too many AI requests — please wait a few minutes and try again."
   ),
 });
+
+/**
+ * Applied to invitation create + resend — both send an email, so both
+ * are the abuse surface (spamming an arbitrary inbox with invitation
+ * emails). Generous enough for genuine team-building (a real org
+ * inviting its whole team in one sitting) while bounding rapid-fire
+ * abuse.
+ */
+export const invitationRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: rateLimitResponse(
+    "Too many invitation requests — please wait a few minutes and try again."
+  ),
+});

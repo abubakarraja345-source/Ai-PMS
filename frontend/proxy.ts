@@ -15,6 +15,12 @@ function isPublicPath(pathname: string): boolean {
     pathname === "/" ||
     pathname === "/login" ||
     pathname.startsWith("/auth") ||
+    // Public so the page itself can render "please log in" (with the
+    // token preserved) instead of the proxy silently redirecting an
+    // unauthenticated visitor away before they ever see what
+    // invitation they were sent — see
+    // app/invitations/accept/page.tsx.
+    pathname === "/invitations/accept" ||
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico"
   );

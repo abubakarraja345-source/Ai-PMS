@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { isSafeInternalPath } from "@/lib/safe-redirect";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -17,10 +18,28 @@ export default function LoginPage() {
     setMessage("");
 
     try {
+      // Preserves where the user was trying to go (e.g. accepting a
+      // team invitation) across the magic-link email round trip.
+      // Validated again on the way back in app/auth/callback/route.ts
+      // — this is only ever a same-origin relative path, never an
+      // external URL.
+      const next = new URLSearchParams(window.location.search).get(
+        "next"
+      );
+
+      const redirectTo = new URL(
+        "/auth/callback",
+        window.location.origin
+      );
+
+      if (next && isSafeInternalPath(next)) {
+        redirectTo.searchParams.set("next", next);
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: redirectTo.toString(),
         },
       });
 
