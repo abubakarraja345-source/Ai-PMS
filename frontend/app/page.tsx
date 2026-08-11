@@ -68,7 +68,7 @@ export default function HomePage() {
               Login
             </Link>
 
-            <Link href="/auth/login" className="nav-button">
+            <Link href="/auth/register" className="nav-button">
               Get Started
             </Link>
           </div>
@@ -99,7 +99,7 @@ export default function HomePage() {
             </p>
 
             <div className="hero-actions">
-              <Link href="/auth/login" className="primary-button">
+              <Link href="/auth/register" className="primary-button">
                 Get Started
                 <span>→</span>
               </Link>
@@ -310,7 +310,7 @@ export default function HomePage() {
                 one place.
               </p>
 
-              <Link href="/auth/login" className="primary-button">
+              <Link href="/auth/register" className="primary-button">
                 Enter AI-PMS
                 <span>→</span>
               </Link>

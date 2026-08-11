@@ -3,9 +3,20 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import NotificationBell from "@/components/notifications/notification-bell";
+import { apiFetch } from "@/lib/api";
+
+/**
+ * requireOrganization's exact 403 message (backend/src/middleware/
+ * organization.middleware.ts) — matched literally rather than just
+ * checking "any error" because this layout needs to tell "no
+ * organization yet" apart from a transient/network failure, unlike
+ * the onboarding page's own check where any failure safely falls
+ * through to showing the create-workspace form either way.
+ */
+const NOT_A_MEMBER_MESSAGE = "User is not a member of an organization";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard" },
@@ -28,8 +39,52 @@ export default function DashboardLayout({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const [orgCheckReady, setOrgCheckReady] = useState(false);
+
+  // The backend (never the client) resolves organization membership —
+  // proxy.ts can only gate on authentication (the anon Postgres role
+  // has no table grants), so this is the actual enforcement point for
+  // "authenticated but no organization yet" across every dashboard
+  // route. A user who fails this check is sent to onboarding instead
+  // of ever seeing dashboard content.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkOrganization() {
+      try {
+        await apiFetch("/api/organization/me");
+
+        if (!cancelled) {
+          setOrgCheckReady(true);
+        }
+      } catch (err) {
+        if (cancelled) return;
+
+        if (
+          err instanceof Error &&
+          err.message === NOT_A_MEMBER_MESSAGE
+        ) {
+          router.replace("/onboarding");
+          return;
+        }
+
+        // Any other failure (network hiccup, transient auth refresh)
+        // shouldn't trap the user on a blank screen — render normally
+        // and let the page's own data calls surface a real error if
+        // something is genuinely wrong.
+        setOrgCheckReady(true);
+      }
+    }
+
+    checkOrganization();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {
@@ -110,6 +165,14 @@ export default function DashboardLayout({
       </Link>
     </>
   );
+
+  if (!orgCheckReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-slate-500">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">

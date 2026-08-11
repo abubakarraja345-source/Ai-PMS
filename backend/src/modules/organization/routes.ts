@@ -8,9 +8,29 @@ import {
   listMembersController,
   changeMemberRoleController,
   removeMemberController,
+  getMyOrganizationController,
+  createOrganizationController,
 } from "./controller";
 
 const router = Router();
+
+// POST /api/organization
+// Onboarding only — deliberately gated by requireAuth alone, not
+// requireOrganization, since the whole point is the caller doesn't
+// have one yet. createOrganization (service.ts) itself rejects a
+// caller who already belongs to an organization.
+router.post("/", requireAuth, createOrganizationController);
+
+// GET /api/organization/me
+// Resolves the authenticated user's organization context (or the
+// same 403 requireOrganization already returns everywhere else),
+// used by the frontend to decide dashboard vs. onboarding.
+router.get(
+  "/me",
+  requireAuth,
+  requireOrganization,
+  getMyOrganizationController
+);
 
 // GET /api/organization/members
 // Viewing the roster isn't a "manage" action — every role may

@@ -1,6 +1,114 @@
 import { supabase } from "../../config/supabase";
 import { OrganizationMemberRow } from "./types";
 
+/**
+ * Existence check used by onboarding: does this user already belong
+ * to any organization at all (not scoped to a specific org, since
+ * the point is to find out which one, if any). Mirrors the same
+ * `.limit(1).maybeSingle()` shape `requireOrganization` already uses.
+ */
+export async function findMembershipByUserId(
+  userId: string
+): Promise<OrganizationMemberRow | null> {
+  const { data, error } = await supabase
+    .from("organization_members")
+    .select("id, organization_id, user_id, role, created_at")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function findOrganizationBySlug(
+  slug: string
+): Promise<{ id: string } | null> {
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function insertOrganization(input: {
+  name: string;
+  slug: string;
+  country: string | null;
+  timezone: string | null;
+}) {
+  const insertData: Record<string, unknown> = {
+    name: input.name,
+    slug: input.slug,
+  };
+
+  if (input.country) insertData.country = input.country;
+  if (input.timezone) insertData.timezone = input.timezone;
+
+  const { data, error } = await supabase
+    .from("organizations")
+    .insert(insertData)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function insertMembership(
+  organizationId: string,
+  userId: string,
+  role: string
+): Promise<OrganizationMemberRow> {
+  const { data, error } = await supabase
+    .from("organization_members")
+    .insert({
+      organization_id: organizationId,
+      user_id: userId,
+      role,
+    })
+    .select("id, organization_id, user_id, role, created_at")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Compensating rollback for the no-true-transaction race-protection
+ * strategy in service.ts's createOrganization — deletes an
+ * organization created moments ago after a later step fails, so a
+ * failed onboarding attempt never leaves an orphaned organization
+ * with no members behind.
+ */
+export async function deleteOrganizationById(
+  organizationId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("organizations")
+    .delete()
+    .eq("id", organizationId);
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function findMembersByOrganization(
   organizationId: string
 ): Promise<OrganizationMemberRow[]> {

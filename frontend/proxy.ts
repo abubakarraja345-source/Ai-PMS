@@ -55,13 +55,29 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const isLoginPath = pathname === "/auth/login" || pathname === "/login";
+  const isAuthEntryPath =
+    pathname === "/auth/login" ||
+    pathname === "/login" ||
+    pathname === "/auth/register";
 
   if (!isPublicPath(pathname) && !user) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  if (isLoginPath && user) {
+  /*
+   * Organization membership can't be checked here — the anon/
+   * authenticated Postgres role has no grants on any table
+   * (confirmed during Phase G's security audit; the Express
+   * backend's service-role client is the only path to that data),
+   * so this proxy can only ever gate on authentication. An
+   * authenticated user with no organization still lands on
+   * /dashboard here; (dashboard)/layout.tsx then resolves their
+   * organization via the backend (the actual source of truth) and
+   * redirects to /onboarding if none exists. /onboarding itself is
+   * intentionally NOT in isPublicPath, so an unauthenticated visitor
+   * is still sent to /auth/login by the check above.
+   */
+  if (isAuthEntryPath && user) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

@@ -1,10 +1,12 @@
 import { Response } from "express";
 import { OrganizationRequest } from "../../middleware/organization.middleware";
+import { AuthenticatedRequest } from "../../middleware/auth.middleware";
 
 import {
   listMembers,
   changeMemberRole,
   removeMember,
+  createOrganization,
 } from "./service";
 
 import { validateChangeRole } from "./validation";
@@ -141,6 +143,76 @@ export async function removeMemberController(
     return res.status(500).json({
       success: false,
       error: "Unable to remove member",
+    });
+  }
+}
+
+/**
+ * GET /api/organization/me — thin wrapper around requireOrganization,
+ * which has already resolved (or rejected, with its own 401/403)
+ * the caller's organization context by the time this runs. Used by
+ * the frontend to decide dashboard vs. onboarding without duplicating
+ * that resolution logic client-side.
+ */
+export async function getMyOrganizationController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  if (!req.organization) {
+    return res.status(403).json({
+      success: false,
+      error: "Organization context is required",
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: req.organization,
+  });
+}
+
+/**
+ * POST /api/organization — onboarding's "Create Workspace" action.
+ * Deliberately runs after only `requireAuth`, not `requireOrganization`
+ * (the caller must NOT already have an organization to reach here at
+ * all) — see createOrganization in service.ts for why.
+ */
+export async function createOrganizationController(
+  req: AuthenticatedRequest,
+  res: Response
+) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required",
+      });
+    }
+
+    const organization = await createOrganization(req.user.id, req.body);
+
+    return res.status(201).json({
+      success: true,
+      data: organization,
+    });
+  } catch (error) {
+    console.error("Create organization error:", error);
+
+    if (isKnownError(error)) {
+      const status =
+        error.message === "You already belong to an organization"
+          ? 409
+          : 400;
+
+      return res.status(status).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: "Unable to create organization",
     });
   }
 }

@@ -1,11 +1,17 @@
 import {
   findMembersByOrganization,
   findMemberById,
+  findMembershipByUserId,
+  findOrganizationBySlug,
+  insertOrganization,
+  insertMembership,
+  deleteOrganizationById,
   updateMemberRole,
   deleteMember,
 } from "./repository";
 
 import { OrganizationMember } from "./types";
+import { CreateOrganizationInput, validateCreateOrganization } from "./validation";
 import { supabase } from "../../config/supabase";
 import { isOrganizationRole } from "../../middleware/organization.middleware";
 
@@ -13,6 +19,128 @@ import {
   notifyMemberRemoved,
   notifyMemberRoleChanged,
 } from "../notifications/service";
+
+const ALREADY_HAS_ORGANIZATION_MESSAGE =
+  "You already belong to an organization";
+
+function slugify(name: string): string {
+  const base = name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+
+  return base || "workspace";
+}
+
+/**
+ * Appends a short random suffix on collision rather than an
+ * incrementing counter — avoids an extra COUNT query and is
+ * sufficiently unique for a field that only needs to avoid
+ * accidental collisions between similarly-named organizations, not
+ * cryptographic uniqueness.
+ */
+async function generateUniqueSlug(name: string): Promise<string> {
+  const base = slugify(name);
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const candidate =
+      attempt === 0
+        ? base
+        : `${base}-${Math.random().toString(36).slice(2, 7)}`;
+
+    const existing = await findOrganizationBySlug(candidate);
+
+    if (!existing) {
+      return candidate;
+    }
+  }
+
+  return `${base}-${Date.now()}`;
+}
+
+/**
+ * Onboarding's "Create Workspace" action.
+ *
+ * KNOWN LIMITATION (confirmed by live testing, not just theorized):
+ * there is no stored procedure/RPC in this schema and no unique
+ * constraint on organization_members.user_id, and the Supabase JS
+ * client (used everywhere else in this codebase) has no multi-
+ * statement transaction primitive across two tables through
+ * PostgREST — adding either would mean a schema migration, which
+ * requires explicit approval and was not made in this phase.
+ *
+ * This function uses check-then-act with a second re-check
+ * immediately before the membership insert, plus a compensating
+ * delete of the organization if anything after its creation fails.
+ * That fully closes a *sequential* double-submit (confirmed: a
+ * second request after the first completes correctly gets 409). It
+ * does NOT close a genuinely *concurrent* double-submit — two
+ * requests arriving together can both pass the pre-check before
+ * either has inserted anything, and both succeed, leaving the user
+ * with two organizations and two membership rows (confirmed by a
+ * live concurrent test, not just a theoretical race). The frontend
+ * onboarding form disables its submit button while a request is in
+ * flight, which prevents this via normal UI use (a click, or a page
+ * refresh, cannot fire two overlapping requests) — this gap is only
+ * reachable by a client that deliberately fires simultaneous raw API
+ * requests. Closing it properly needs a database-level unique
+ * constraint on organization_members.user_id (recommended) or a
+ * transactional RPC function; either is a schema change outside this
+ * phase's approval and is flagged in the final report instead of
+ * being added unilaterally.
+ */
+export async function createOrganization(
+  userId: string,
+  rawInput: unknown
+) {
+  const input: CreateOrganizationInput =
+    validateCreateOrganization(rawInput);
+
+  const existingMembership = await findMembershipByUserId(userId);
+
+  if (existingMembership) {
+    throw new Error(ALREADY_HAS_ORGANIZATION_MESSAGE);
+  }
+
+  const slug = await generateUniqueSlug(input.name);
+
+  const organization = await insertOrganization({
+    name: input.name,
+    slug,
+    country: input.country,
+    timezone: input.timezone,
+  });
+
+  const raceCheck = await findMembershipByUserId(userId);
+
+  if (raceCheck) {
+    await deleteOrganizationById(organization.id).catch((cleanupError) => {
+      console.error(
+        "Failed to roll back orphaned organization after a race-losing create:",
+        cleanupError
+      );
+    });
+
+    throw new Error(ALREADY_HAS_ORGANIZATION_MESSAGE);
+  }
+
+  try {
+    await insertMembership(organization.id, userId, "owner");
+  } catch (membershipError) {
+    await deleteOrganizationById(organization.id).catch((cleanupError) => {
+      console.error(
+        "Failed to roll back organization after a failed membership insert:",
+        cleanupError
+      );
+    });
+
+    throw membershipError;
+  }
+
+  return organization;
+}
 
 /**
  * organization_members only stores user_id — resolving a
