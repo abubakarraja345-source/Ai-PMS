@@ -8,6 +8,7 @@ import PropertyImagesSection from "@/components/properties/property-images-secti
 import PropertyAmenitiesSection from "@/components/properties/property-amenities-section";
 import PropertyRulesSection from "@/components/properties/property-rules-section";
 import PropertyDocumentsSection from "@/components/properties/property-documents-section";
+import PropertyChannelLinksSection from "@/components/properties/property-channel-links-section";
 
 type Property = {
   id: string;
@@ -343,6 +344,11 @@ export default function PropertyDetailsPage() {
         </section>
 
         <PropertyDocumentsSection
+          propertyId={property.id}
+          canManage={canManage}
+        />
+
+        <PropertyChannelLinksSection
           propertyId={property.id}
           canManage={canManage}
         />

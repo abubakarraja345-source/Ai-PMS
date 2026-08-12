@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import ReservationReviewBanner from "@/components/reservations/reservation-review-banner";
 
 type Reservation = {
   id: string;
@@ -28,6 +29,7 @@ type Reservation = {
 
   currency: string | null;
   special_requests: string | null;
+  needs_review: boolean;
 
   created_at: string;
   updated_at: string;
@@ -195,6 +197,11 @@ export default async function ReservationViewPage({
 
       {/* Main */}
       <main className="mx-auto max-w-7xl px-6 py-8">
+        <ReservationReviewBanner
+          reservationId={reservation.id}
+          initialNeedsReview={reservation.needs_review}
+        />
+
         {/* Top Summary */}
         <div className="mb-6 grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

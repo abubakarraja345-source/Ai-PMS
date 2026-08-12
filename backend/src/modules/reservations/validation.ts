@@ -315,9 +315,11 @@ export interface ReservationFilters {
   guestId?: string;
   propertyId?: string;
   status?: string;
+  source?: string;
   search?: string;
   start?: string;
   end?: string;
+  needsReview?: boolean;
 }
 
 /**
@@ -378,6 +380,25 @@ export function validateReservationFilters(
 
   if (query.end !== undefined && query.end !== "") {
     filters.end = validateDate(query.end, "end");
+  }
+
+  if (query.source !== undefined && query.source !== "") {
+    if (
+      typeof query.source !== "string" ||
+      !RESERVATION_SOURCES.includes(
+        query.source.trim() as (typeof RESERVATION_SOURCES)[number]
+      )
+    ) {
+      throw new Error(
+        `source must be one of: ${RESERVATION_SOURCES.join(", ")}`
+      );
+    }
+
+    filters.source = query.source.trim();
+  }
+
+  if (query.needs_review === "true") {
+    filters.needsReview = true;
   }
 
   return filters;

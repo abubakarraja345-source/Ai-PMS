@@ -13,6 +13,7 @@ import {
 } from "./validation";
 import {
   addReservation,
+  clearReviewFlag,
   editReservation,
   findConflictingReservations,
   getReservation,
@@ -285,6 +286,63 @@ reservationRouter.patch(
           error,
           "Failed to update reservation"
         ),
+      });
+    }
+  }
+);
+
+// PATCH /api/reservations/:id/review
+// Clears needs_review after staff have looked at a sync-flagged
+// reservation. Same coarse gate as permanent deletion — owner/
+// company_admin only, matching this router's one existing role-gated
+// action (DELETE below). A 2-segment path, so this can never collide
+// with the general "PATCH /:id" route above regardless of order.
+reservationRouter.patch(
+  "/:id/review",
+  destructive,
+  async (req: OrganizationRequest, res) => {
+    try {
+      if (!req.organization) {
+        return res.status(403).json({
+          success: false,
+          error: "Organization context is required",
+        });
+      }
+
+      const reservationId = req.params.id;
+
+      if (!reservationId) {
+        return res.status(400).json({
+          success: false,
+          error: "Reservation ID is required",
+        });
+      }
+
+      const data = await clearReviewFlag(
+        req.organization.id,
+        reservationId
+      );
+
+      if (!data) {
+        return res.status(404).json({
+          success: false,
+          error: "Reservation not found",
+        });
+      }
+
+      return res.json({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      console.error(
+        "Clear reservation review flag error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        error: "Failed to update reservation",
       });
     }
   }

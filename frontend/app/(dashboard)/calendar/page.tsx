@@ -40,6 +40,7 @@ interface CalendarReservation {
   nights: number | null;
   total_amount: number | null;
   currency: string | null;
+  needs_review: boolean;
 }
 
 function toDateOnlyString(date: Date): string {
@@ -279,6 +280,7 @@ export default function CalendarPage() {
 
     const titleParts = [
       imported ? "⇄" : null,
+      r.needs_review ? "🔖" : null,
       hasConflict ? "⚠" : null,
       r.booking_reference && !imported ? r.booking_reference : null,
       guestName,
@@ -292,6 +294,7 @@ export default function CalendarPage() {
       allDay: true,
       classNames: [
         ...getEventClassNames(r.status),
+        ...(r.needs_review ? ["!ring-2", "!ring-amber-500"] : []),
         ...(hasConflict ? ["!ring-2", "!ring-red-500"] : []),
       ],
       extendedProps: {
@@ -299,6 +302,7 @@ export default function CalendarPage() {
         status: r.status,
         imported,
         hasConflict,
+        needsReview: r.needs_review,
       },
     };
   });
@@ -414,6 +418,9 @@ export default function CalendarPage() {
           <span>⇄</span> Imported (iCal)
         </span>
         <span className="flex items-center gap-1.5">
+          <span>🔖</span> Needs review
+        </span>
+        <span className="flex items-center gap-1.5">
           <span>⚠</span> Overlapping dates
         </span>
       </div>
@@ -490,6 +497,12 @@ export default function CalendarPage() {
                 ) && (
                   <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blue-700">
                     Imported via iCal
+                  </span>
+                )}
+
+                {selectedReservation.needs_review && (
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700">
+                    Needs Review
                   </span>
                 )}
 

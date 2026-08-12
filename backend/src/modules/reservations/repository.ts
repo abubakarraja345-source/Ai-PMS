@@ -49,9 +49,11 @@ export interface ReservationListFilters {
   guestId?: string;
   propertyId?: string;
   status?: string;
+  source?: string;
   search?: string;
   start?: string;
   end?: string;
+  needsReview?: boolean;
 }
 
 /**
@@ -145,12 +147,20 @@ function applyListFilters<Q extends FilterableQuery<Q>>(
     scoped = scoped.eq("status", filters.status);
   }
 
+  if (filters.source) {
+    scoped = scoped.eq("source", filters.source);
+  }
+
   if (filters.start) {
     scoped = scoped.gte("check_in", filters.start);
   }
 
   if (filters.end) {
     scoped = scoped.lte("check_out", filters.end);
+  }
+
+  if (filters.needsReview) {
+    scoped = scoped.eq("needs_review", true);
   }
 
   if (filters.search && searchMatches) {

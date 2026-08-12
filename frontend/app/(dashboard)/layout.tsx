@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import NotificationBell from "@/components/notifications/notification-bell";
+import ReviewCountBadge from "@/components/reservations/review-count-badge";
 import { apiFetch } from "@/lib/api";
 
 /**
@@ -22,6 +23,7 @@ const navItems = [
   { name: "Dashboard", href: "/dashboard" },
   { name: "Properties", href: "/properties" },
   { name: "Reservations", href: "/reservations" },
+  { name: "Review", href: "/reservations/review" },
   { name: "Calendar", href: "/calendar" },
   { name: "Guests", href: "/guests" },
   { name: "Cleaning", href: "/cleaning" },
@@ -139,13 +141,14 @@ export default function DashboardLayout({
             key={item.href}
             href={item.href}
             onClick={onNavigate}
-            className={`mt-1 block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+            className={`mt-1 flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition ${
               active
                 ? "bg-white/10 text-white"
                 : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
           >
             {item.name}
+            {item.href === "/reservations/review" && <ReviewCountBadge />}
           </Link>
         );
       })}

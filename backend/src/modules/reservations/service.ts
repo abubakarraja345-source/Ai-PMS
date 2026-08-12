@@ -592,3 +592,31 @@ export async function removeReservation(
     reservationId
   );
 }
+
+/**
+ * Clears needs_review after a staff member has looked at a
+ * sync-flagged reservation (see integrations/sync.service.ts, which
+ * is the only thing that ever sets this flag to true). Deliberately
+ * its own narrow function rather than going through the general
+ * editReservation path — needs_review must never be settable via the
+ * general PATCH /api/reservations/:id body (see validation.ts's
+ * allowlist, which does not include it), so clearing it needs its own
+ * controlled entry point instead.
+ */
+export async function clearReviewFlag(
+  organizationId: string,
+  reservationId: string
+) {
+  const existing = await findReservationById(
+    organizationId,
+    reservationId
+  );
+
+  if (!existing) {
+    return null;
+  }
+
+  return updateReservation(organizationId, reservationId, {
+    needs_review: false,
+  });
+}
