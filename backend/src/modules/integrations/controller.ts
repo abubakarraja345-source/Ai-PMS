@@ -376,6 +376,8 @@ export async function syncHistoryController(
         errorMessage:
           typeof response.errorMessage === "string" ? response.errorMessage : null,
         syncedAt: row.synced_at,
+        startedAt: row.started_at,
+        durationMs: row.duration_ms,
       };
     });
 

@@ -20,34 +20,129 @@ import {
 import { getProviderAdapter } from "./providers/registry";
 import {
   isSupportedProvider,
+  ProviderAdapter,
   ProviderId,
   providerToReservationSource,
 } from "./providers/types";
 
 import {
   notifyIntegrationSyncConflict,
+  notifyIntegrationSyncEscalation,
   notifyIntegrationSyncFailed,
+  notifyIntegrationSyncRecovered,
 } from "../notifications/service";
 
-import { SyncResult } from "./types";
+import { computeConnectionHealth } from "./health";
+import { withIntegrationLock } from "./syncLock";
+import { ConnectionHealth, SyncResult } from "./types";
+
+export type SyncTrigger = "manual" | "scheduled";
 
 /**
- * Runs a manual sync for one integration against ONE property,
- * chosen by the caller at sync time. The `integrations` table has
- * no persistent property_id column (flagged in the Phase B report),
- * so there is no way to store "this feed always means property X"
- * across syncs yet — for the manual-sync use case this is
- * sufficient and safe: the caller picks the property every time
- * they click "Sync Now", exactly like every other property-scoped
- * write in this app already requires a propertyId. Automatic/
- * scheduled sync (not in scope for Phase B) would need the
- * persistent link.
+ * Transient failures (network blips, timeouts, unresolved DNS, 5xx
+ * responses) are worth retrying a few times — the feed will likely
+ * work on the next attempt with no user action needed. Permanent
+ * failures (SSRF-blocked address, malformed/non-iCal content, 4xx
+ * client errors, oversized feed) are never retried: retrying a feed
+ * that's genuinely broken or blocked just delays the real error
+ * uselessly, and retrying an SSRF rejection specifically must never
+ * happen regardless of backoff — that would be a security bypass via
+ * persistence, not a resilience feature.
+ */
+function isRetryableSyncError(message: string): boolean {
+  const lower = message.toLowerCase();
+
+  if (lower.includes("local or private address")) return false; // SSRF — never retry
+  if (lower.includes("not valid")) return false; // malformed iCal / not a valid URL
+  if (lower.includes("must use http or https")) return false;
+  if (lower.includes("too large")) return false;
+
+  if (lower.includes("timed out")) return true;
+  if (lower.includes("could not be resolved")) return true;
+  if (lower.includes("fetch failed")) return true;
+
+  const statusMatch = lower.match(/status (\d\d\d)/);
+  if (statusMatch && statusMatch[1]) {
+    return statusMatch[1].startsWith("5");
+  }
+
+  // Unknown error shape — fail closed (don't retry something we can't
+  // classify as safe to retry).
+  return false;
+}
+
+const MAX_SYNC_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 1000;
+
+/**
+ * Retries only the fetch+parse step, never anything after it — the
+ * event-processing/conflict-detection loop below still runs exactly
+ * once per successful fetch, so a retried sync can never produce
+ * duplicate reservations (there is nothing to duplicate until a fetch
+ * actually succeeds).
+ */
+async function fetchEventsWithRetry(
+  adapter: ProviderAdapter,
+  feedUrl: string
+): Promise<Awaited<ReturnType<ProviderAdapter["fetchEvents"]>>> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= MAX_SYNC_ATTEMPTS; attempt++) {
+    try {
+      return await adapter.fetchEvents({ feedUrl });
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : "Sync failed";
+
+      if (!isRetryableSyncError(message) || attempt === MAX_SYNC_ATTEMPTS) {
+        throw error;
+      }
+
+      const delayMs = RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  // Unreachable (the loop always returns or throws), but keeps
+  // TypeScript satisfied that every path returns/throws.
+  throw lastError;
+}
+
+const ESCALATION_THRESHOLD = 5;
+
+/**
+ * Runs a sync for one integration against ONE property. `propertyId`
+ * is normally the connection's own stored property_id (see
+ * integrations/controller.ts, which defaults it there) — still an
+ * explicit parameter rather than looked up internally, so this
+ * function's contract doesn't silently change based on which caller
+ * invokes it. `trigger` only affects the sync_logs.event label
+ * ("manual_sync" vs "scheduled_sync") and defaults to "manual" so the
+ * existing controller call site (predates this parameter) keeps
+ * working unchanged.
+ *
+ * Wrapped in withIntegrationLock so a scheduler tick and a manual
+ * "Sync Now" click for the SAME connection can never run this
+ * function's fetch/parse/import loop concurrently — whichever call
+ * arrives second simply waits for the first to finish.
  */
 export async function runManualSync(
   organizationId: string,
   integrationId: string,
   propertyId: string,
-  userId: string
+  userId: string,
+  trigger: SyncTrigger = "manual"
+): Promise<SyncResult> {
+  return withIntegrationLock(integrationId, () =>
+    runSyncUnlocked(organizationId, integrationId, propertyId, trigger)
+  );
+}
+
+async function runSyncUnlocked(
+  organizationId: string,
+  integrationId: string,
+  propertyId: string,
+  trigger: SyncTrigger
 ): Promise<SyncResult> {
   const integration = await findIntegrationById(organizationId, integrationId);
 
@@ -87,27 +182,49 @@ export async function runManualSync(
     throw new Error("Property not found in your organization");
   }
 
+  const eventLabel = trigger === "scheduled" ? "scheduled_sync" : "manual_sync";
+  const startedAt = new Date();
+
+  await updateIntegrationRow(organizationId, integrationId, {
+    last_sync_started_at: startedAt.toISOString(),
+  });
+
   let events;
 
   try {
-    events = await adapter.fetchEvents({ feedUrl: integration.api_key });
+    events = await fetchEventsWithRetry(adapter, integration.api_key);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sync failed";
+    const durationMs = Date.now() - startedAt.getTime();
 
     await createSyncLogRow(integrationId, {
-      event: "manual_sync",
+      event: eventLabel,
       status: "failed",
       response: { errorMessage: message },
+      startedAt: startedAt.toISOString(),
+      durationMs,
     });
 
     const wasAlreadyError = integration.status === "error";
-    await updateIntegrationRow(organizationId, integrationId, { status: "error" });
+    const failureCount = (integration.consecutive_failure_count ?? 0) + 1;
+
+    await updateIntegrationRow(organizationId, integrationId, {
+      status: "error",
+      last_sync_duration_ms: durationMs,
+      consecutive_failure_count: failureCount,
+    });
 
     if (!wasAlreadyError) {
       await notifyIntegrationSyncFailed(organizationId, {
         provider: integration.provider,
         accountName: integration.account_name,
         errorMessage: message,
+      });
+    } else if (failureCount === ESCALATION_THRESHOLD) {
+      await notifyIntegrationSyncEscalation(organizationId, {
+        provider: integration.provider,
+        accountName: integration.account_name,
+        consecutiveFailureCount: failureCount,
       });
     }
 
@@ -239,16 +356,31 @@ export async function runManualSync(
   }
 
   const response = { imported, updated, cancelled, skipped, conflicts };
+  const durationMs = Date.now() - startedAt.getTime();
+  const completedAt = new Date();
 
   await createSyncLogRow(integrationId, {
-    event: "manual_sync",
+    event: eventLabel,
     status: "success",
     response,
+    startedAt: startedAt.toISOString(),
+    durationMs,
   });
+
+  const wasRecovering = (integration.consecutive_failure_count ?? 0) > 0;
 
   await updateIntegrationRow(organizationId, integrationId, {
     status: "active",
+    last_sync_duration_ms: durationMs,
+    consecutive_failure_count: 0,
   });
+
+  if (wasRecovering) {
+    await notifyIntegrationSyncRecovered(organizationId, {
+      provider: integration.provider,
+      accountName: integration.account_name,
+    });
+  }
 
   if (conflicts > 0) {
     await notifyIntegrationSyncConflict(organizationId, {
@@ -258,6 +390,12 @@ export async function runManualSync(
     });
   }
 
+  const health: ConnectionHealth = computeConnectionHealth({
+    status: "active",
+    consecutiveFailureCount: 0,
+    lastSuccessfulSyncAt: completedAt.toISOString(),
+  });
+
   return {
     status: "success",
     imported,
@@ -266,5 +404,8 @@ export async function runManualSync(
     skipped,
     conflicts,
     errorMessage: null,
+    durationMs,
+    health,
+    lastSuccessfulSyncAt: completedAt.toISOString(),
   };
 }

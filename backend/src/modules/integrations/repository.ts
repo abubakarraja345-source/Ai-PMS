@@ -2,7 +2,7 @@ import { supabase } from "../../config/supabase";
 import { IntegrationRow, SyncLogRow } from "./types";
 
 const INTEGRATION_SELECT =
-  "id, organization_id, provider, account_name, api_key, access_token, refresh_token, expires_at, status, created_at, property_id, external_listing_name, property:properties(id, title)";
+  "id, organization_id, provider, account_name, api_key, access_token, refresh_token, expires_at, status, created_at, property_id, external_listing_name, last_sync_started_at, last_sync_duration_ms, consecutive_failure_count, property:properties(id, title)";
 
 export async function findIntegrationsByOrganization(
   organizationId: string
@@ -40,6 +40,37 @@ export async function findIntegrationById(
   if (error) throw error;
 
   return data as unknown as IntegrationRow | null;
+}
+
+/**
+ * Every property-linked, enabled, feed-configured connection across
+ * ALL organizations — deliberately not organization-scoped, since
+ * this backs the internal scheduler (a system process, not a user
+ * request) rather than any API route. Never exported through a
+ * controller. Each connection returned here is still synced through
+ * runManualSync with its own organization_id, so every actual data
+ * read/write during the sync itself remains fully organization-scoped
+ * — only the "which connections exist to sync" query spans orgs.
+ *
+ * Includes status="error" as well as "active" — a connection that is
+ * currently failing is still "enabled" (only "disabled" is excluded),
+ * and it must keep being attempted or it could never recover. Only
+ * "disabled" is ever excluded, exactly matching the "disabled
+ * connections must never be automatically synced" requirement.
+ */
+export async function findActiveConnectionsForSync(): Promise<
+  IntegrationRow[]
+> {
+  const { data, error } = await supabase
+    .from("integrations")
+    .select(INTEGRATION_SELECT)
+    .neq("status", "disabled")
+    .not("property_id", "is", null)
+    .not("api_key", "is", null);
+
+  if (error) throw error;
+
+  return (data ?? []) as unknown as IntegrationRow[];
 }
 
 /**
@@ -114,11 +145,18 @@ export async function deleteIntegrationRow(
 
 /* -------------------------------- Sync logs ------------------------------- */
 
-const SYNC_LOG_SELECT = "id, integration_id, event, status, response, synced_at";
+const SYNC_LOG_SELECT =
+  "id, integration_id, event, status, response, synced_at, started_at, duration_ms";
 
 export async function createSyncLogRow(
   integrationId: string,
-  input: { event: string; status: string; response: Record<string, unknown> }
+  input: {
+    event: string;
+    status: string;
+    response: Record<string, unknown>;
+    startedAt?: string;
+    durationMs?: number;
+  }
 ): Promise<SyncLogRow> {
   const { data, error } = await supabase
     .from("sync_logs")
@@ -127,6 +165,8 @@ export async function createSyncLogRow(
       event: input.event,
       status: input.status,
       response: input.response,
+      started_at: input.startedAt ?? null,
+      duration_ms: input.durationMs ?? null,
     })
     .select(SYNC_LOG_SELECT)
     .single();

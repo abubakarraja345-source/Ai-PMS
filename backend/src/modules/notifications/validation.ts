@@ -19,6 +19,8 @@ export const NOTIFICATION_TYPES = [
   "integration_connected",
   "integration_sync_failed",
   "integration_sync_conflict",
+  "integration_sync_recovered",
+  "integration_sync_escalation",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

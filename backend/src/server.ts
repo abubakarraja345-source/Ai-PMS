@@ -2,12 +2,15 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import app from "./app";
+import { startIcalScheduler } from "./modules/integrations/scheduler";
 
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
   console.log(`🚀 Hostly Backend running on http://localhost:${PORT}`);
 });
+
+const icalScheduler = startIcalScheduler();
 
 /**
  * Graceful shutdown — orchestrators (Docker/Kubernetes/most PaaS)
@@ -18,6 +21,8 @@ const server = app.listen(PORT, () => {
  */
 function shutdown(signal: string) {
   console.log(`${signal} received, shutting down gracefully...`);
+
+  icalScheduler.stop();
 
   server.close((err) => {
     if (err) {

@@ -11,8 +11,13 @@ export interface IntegrationRow {
   created_at: string;
   property_id: string | null;
   external_listing_name: string | null;
+  last_sync_started_at: string | null;
+  last_sync_duration_ms: number | null;
+  consecutive_failure_count: number;
   property?: { id: string; title: string } | null;
 }
+
+export type ConnectionHealth = "healthy" | "warning" | "error" | "disabled";
 
 /** Client-facing shape — credentials are never returned, only a
  * boolean indicating whether one is configured. */
@@ -30,6 +35,11 @@ export interface Integration {
   propertyId: string | null;
   propertyTitle: string | null;
   externalListingName: string | null;
+  health: ConnectionHealth;
+  consecutiveFailureCount: number;
+  lastSyncStartedAt: string | null;
+  lastSyncDurationMs: number | null;
+  nextScheduledSyncAt: string | null;
 }
 
 export interface SyncLogRow {
@@ -39,6 +49,8 @@ export interface SyncLogRow {
   status: string;
   response: Record<string, unknown> | null;
   synced_at: string;
+  started_at: string | null;
+  duration_ms: number | null;
 }
 
 export interface SyncLogEntry {
@@ -52,6 +64,8 @@ export interface SyncLogEntry {
   conflicts: number;
   errorMessage: string | null;
   syncedAt: string;
+  startedAt: string | null;
+  durationMs: number | null;
 }
 
 export interface SyncResult {
@@ -62,4 +76,7 @@ export interface SyncResult {
   skipped: number;
   conflicts: number;
   errorMessage: string | null;
+  durationMs: number;
+  health: ConnectionHealth;
+  lastSuccessfulSyncAt: string | null;
 }

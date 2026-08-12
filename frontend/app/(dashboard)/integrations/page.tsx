@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 
+type ConnectionHealth = "healthy" | "warning" | "error" | "disabled";
+
 interface Integration {
   id: string;
   provider: string;
@@ -18,6 +20,11 @@ interface Integration {
   propertyId: string | null;
   propertyTitle: string | null;
   externalListingName: string | null;
+  health: ConnectionHealth;
+  consecutiveFailureCount: number;
+  lastSyncStartedAt: string | null;
+  lastSyncDurationMs: number | null;
+  nextScheduledSyncAt: string | null;
 }
 
 interface SyncLogEntry {
@@ -31,6 +38,8 @@ interface SyncLogEntry {
   conflicts: number;
   errorMessage: string | null;
   syncedAt: string;
+  startedAt: string | null;
+  durationMs: number | null;
 }
 
 interface PropertyOption {
@@ -81,33 +90,58 @@ function formatRelative(value: string | null) {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
-type ConnectionStatusLabel =
-  | "Connected"
-  | "Disabled"
-  | "Error"
-  | "Needs attention";
+/**
+ * Health is computed authoritatively by the backend (see
+ * integrations/health.ts) from consecutive_failure_count and how
+ * stale the last successful sync is, relative to the configured sync
+ * interval — never re-derived client-side, so the badge always
+ * matches what actually drove any notification the user received.
+ */
+const HEALTH_LABELS: Record<ConnectionHealth, string> = {
+  healthy: "Healthy",
+  warning: "Warning",
+  error: "Sync Error",
+  disabled: "Disabled",
+};
 
-function connectionStatus(
-  integration: Integration,
-  needsReview: boolean
-): ConnectionStatusLabel {
-  if (integration.status === "error") return "Error";
-  if (integration.status !== "active") return "Disabled";
-  if (needsReview) return "Needs attention";
-  return "Connected";
-}
+const HEALTH_DOT: Record<ConnectionHealth, string> = {
+  healthy: "●",
+  warning: "●",
+  error: "⚠",
+  disabled: "●",
+};
 
-function statusBadgeClasses(status: ConnectionStatusLabel) {
-  switch (status) {
-    case "Connected":
+function healthBadgeClasses(health: ConnectionHealth) {
+  switch (health) {
+    case "healthy":
       return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    case "Needs attention":
+    case "warning":
       return "bg-amber-50 text-amber-700 border-amber-200";
-    case "Error":
+    case "error":
       return "bg-red-50 text-red-700 border-red-200";
     default:
       return "bg-slate-50 text-slate-600 border-slate-200";
   }
+}
+
+function formatCountdown(value: string | null): string {
+  if (!value) return "—";
+
+  const diffMs = new Date(value).getTime() - Date.now();
+  if (diffMs <= 0) return "due now";
+
+  const minutes = Math.round(diffMs / 60000);
+  if (minutes < 1) return "due now";
+  if (minutes < 60) return `~${minutes} min`;
+
+  const hours = Math.round(minutes / 60);
+  return `~${hours} hr`;
+}
+
+function formatDuration(ms: number | null): string {
+  if (ms === null) return "—";
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
 }
 
 type WizardStep = "property" | "provider" | "details";
@@ -562,7 +596,7 @@ export default function IntegrationsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="w-full min-w-[1050px] text-left text-sm">
               <thead className="border-b bg-slate-50">
                 <tr>
                   <th className="px-5 py-3 font-medium text-slate-600">
@@ -572,10 +606,13 @@ export default function IntegrationsPage() {
                     Provider
                   </th>
                   <th className="px-5 py-3 font-medium text-slate-600">
-                    Status
+                    Health
                   </th>
                   <th className="px-5 py-3 font-medium text-slate-600">
                     Last Sync
+                  </th>
+                  <th className="px-5 py-3 font-medium text-slate-600">
+                    Next Sync
                   </th>
                   <th className="px-5 py-3 font-medium text-slate-600">
                     Reservations
@@ -587,11 +624,6 @@ export default function IntegrationsPage() {
               </thead>
               <tbody className="divide-y">
                 {connections.map((integration) => {
-                  const status = connectionStatus(
-                    integration,
-                    reviewFlags[integration.id] ?? false
-                  );
-
                   return (
                     <tr
                       key={integration.id}
@@ -614,14 +646,26 @@ export default function IntegrationsPage() {
                         {providerLabel(integration.provider)}
                       </td>
                       <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${statusBadgeClasses(status)}`}
-                        >
-                          {status}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${healthBadgeClasses(integration.health)}`}
+                          >
+                            {HEALTH_DOT[integration.health]} {HEALTH_LABELS[integration.health]}
+                          </span>
+                          {reviewFlags[integration.id] && (
+                            <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                              Needs review
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-4 text-slate-600">
                         {formatRelative(integration.lastSyncAt)}
+                      </td>
+                      <td className="px-5 py-4 text-slate-600">
+                        {integration.status === "disabled"
+                          ? "—"
+                          : formatCountdown(integration.nextScheduledSyncAt)}
                       </td>
                       <td className="px-5 py-4 text-slate-600">
                         {reservationCounts[integration.id] ?? 0}
@@ -639,7 +683,9 @@ export default function IntegrationsPage() {
                             >
                               {syncingId === integration.id
                                 ? "Syncing..."
-                                : "Sync"}
+                                : integration.health === "error"
+                                  ? "Retry"
+                                  : "Sync"}
                             </button>
                           )}
                           <button
@@ -1007,24 +1053,38 @@ export default function IntegrationsPage() {
                 </p>
               </div>
 
+              <div>
+                <p className="text-xs font-medium uppercase text-slate-500">
+                  Health
+                </p>
+                <span
+                  className={`mt-1 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${healthBadgeClasses(detailFor.health)}`}
+                >
+                  {HEALTH_DOT[detailFor.health]} {HEALTH_LABELS[detailFor.health]}
+                </span>
+                {detailFor.consecutiveFailureCount > 0 && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    {detailFor.consecutiveFailureCount} consecutive failure
+                    {detailFor.consecutiveFailureCount === 1 ? "" : "s"}
+                  </p>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-medium uppercase text-slate-500">
-                    Status
-                  </p>
-                  <p className="mt-1 font-medium text-slate-900">
-                    {connectionStatus(
-                      detailFor,
-                      reviewFlags[detailFor.id] ?? false
-                    )}
-                  </p>
-                </div>
                 <div>
                   <p className="text-xs font-medium uppercase text-slate-500">
                     Reservations Imported
                   </p>
                   <p className="mt-1 font-medium text-slate-900">
                     {reservationCounts[detailFor.id] ?? 0}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase text-slate-500">
+                    Sync Duration
+                  </p>
+                  <p className="mt-1 text-slate-700">
+                    {formatDuration(detailFor.lastSyncDurationMs)}
                   </p>
                 </div>
                 <div>
@@ -1043,11 +1103,21 @@ export default function IntegrationsPage() {
                     {formatDateTime(detailFor.lastSuccessfulSyncAt)}
                   </p>
                 </div>
+                <div>
+                  <p className="text-xs font-medium uppercase text-slate-500">
+                    Next Scheduled Sync
+                  </p>
+                  <p className="mt-1 text-slate-700">
+                    {detailFor.status === "disabled"
+                      ? "Paused (disabled)"
+                      : formatCountdown(detailFor.nextScheduledSyncAt)}
+                  </p>
+                </div>
               </div>
 
               {detailFor.lastSyncError && (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                  <p className="font-medium">Last sync error</p>
+                  <p className="font-medium">⚠ Sync Error — Reason</p>
                   <p className="mt-1">{detailFor.lastSyncError}</p>
                 </div>
               )}
@@ -1062,7 +1132,11 @@ export default function IntegrationsPage() {
                     }
                     className="rounded-lg bg-[#10172a] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
                   >
-                    {syncingId === detailFor.id ? "Syncing..." : "Sync Now"}
+                    {syncingId === detailFor.id
+                      ? "Syncing..."
+                      : detailFor.health === "error"
+                        ? "Retry Now"
+                        : "Sync Now"}
                   </button>
                   <button
                     onClick={() => openHistory(detailFor)}
@@ -1119,10 +1193,15 @@ export default function IntegrationsPage() {
                         <span
                           className={`font-medium ${log.status === "success" ? "text-emerald-600" : "text-red-600"}`}
                         >
-                          {log.status}
+                          {log.status === "success" ? "✓ Success" : "✕ Failed"}
+                          {log.event === "scheduled_sync" && (
+                            <span className="ml-1.5 font-normal text-slate-400">
+                              (auto)
+                            </span>
+                          )}
                         </span>
                         <span className="text-xs text-slate-400">
-                          {formatDateTime(log.syncedAt)}
+                          {formatDateTime(log.syncedAt)} · {formatDuration(log.durationMs)}
                         </span>
                       </div>
 

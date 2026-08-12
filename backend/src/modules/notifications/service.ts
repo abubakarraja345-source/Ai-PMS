@@ -434,6 +434,59 @@ export async function notifyIntegrationSyncFailed(
   }
 }
 
+/**
+ * Fires once when a connection goes from failing back to a
+ * successful sync — the counterpart to notifyIntegrationSyncFailed's
+ * "only on the first failure" gate. Callers must only invoke this
+ * when the previous consecutive-failure count was actually > 0, so
+ * this never fires on every routine successful sync.
+ */
+export async function notifyIntegrationSyncRecovered(
+  organizationId: string,
+  data: IntegrationEventData
+): Promise<void> {
+  try {
+    const recipients = await resolveRecipients(organizationId);
+
+    await dispatch(
+      organizationId,
+      recipients,
+      "Connection recovered",
+      `${integrationLabel(data)} is syncing successfully again.`,
+      "integration_sync_recovered"
+    );
+  } catch (error) {
+    console.error("Failed to create integration_sync_recovered notification:", error);
+  }
+}
+
+/**
+ * A single escalation notice once a connection crosses a "this has
+ * been failing for a while" threshold — deliberately separate from
+ * notifyIntegrationSyncFailed's first-failure notice, and gated by
+ * the caller to fire exactly once per failure streak (not on every
+ * failure past the threshold), so a feed that's been down for hours
+ * doesn't produce a notification every 30 minutes.
+ */
+export async function notifyIntegrationSyncEscalation(
+  organizationId: string,
+  data: IntegrationEventData & { consecutiveFailureCount: number }
+): Promise<void> {
+  try {
+    const recipients = await resolveRecipients(organizationId);
+
+    await dispatch(
+      organizationId,
+      recipients,
+      "Integration still failing",
+      `${integrationLabel(data)} has failed to sync ${data.consecutiveFailureCount} times in a row. Check the connection.`,
+      "integration_sync_escalation"
+    );
+  } catch (error) {
+    console.error("Failed to create integration_sync_escalation notification:", error);
+  }
+}
+
 export async function notifyIntegrationSyncConflict(
   organizationId: string,
   data: IntegrationEventData & { conflictCount: number }

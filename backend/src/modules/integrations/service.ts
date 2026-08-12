@@ -22,6 +22,8 @@ import {
 import { verifyProperty } from "../reservations/service";
 import { createChannelLink, removeChannelLink } from "./channelLinks.service";
 import { ConnectPropertyCalendarInput } from "./validation";
+import { computeConnectionHealth } from "./health";
+import { resolveSyncIntervalMinutes } from "./syncConfig";
 
 async function toClientIntegration(row: IntegrationRow): Promise<Integration> {
   const [lastLog, lastSuccess, lastFailed] = await Promise.all([
@@ -38,6 +40,29 @@ async function toClientIntegration(row: IntegrationRow): Promise<Integration> {
     unknown
   > | null;
 
+  const lastSuccessfulSyncAt = lastSuccess?.synced_at ?? null;
+  const consecutiveFailureCount = row.consecutive_failure_count ?? 0;
+
+  const health = computeConnectionHealth({
+    status: row.status,
+    consecutiveFailureCount,
+    lastSuccessfulSyncAt,
+  });
+
+  // Anchored off the last completed sync attempt (success or
+  // failure) when one exists, otherwise off connection creation — a
+  // freshly connected calendar still gets a meaningful "next sync"
+  // estimate rather than null. Only meaningful for connections the
+  // scheduler will actually pick up (see repository.ts's
+  // findActiveConnectionsForSync — property-linked, not disabled).
+  const nextScheduledSyncAt =
+    row.status !== "disabled" && row.property_id && row.api_key
+      ? new Date(
+          new Date(lastLog?.synced_at ?? row.created_at).getTime() +
+            resolveSyncIntervalMinutes() * 60 * 1000
+        ).toISOString()
+      : null;
+
   return {
     id: row.id,
     provider: row.provider,
@@ -47,7 +72,7 @@ async function toClientIntegration(row: IntegrationRow): Promise<Integration> {
     isSupported: !!adapter?.isSupported,
     createdAt: row.created_at,
     lastSyncAt: lastLog?.synced_at ?? null,
-    lastSuccessfulSyncAt: lastSuccess?.synced_at ?? null,
+    lastSuccessfulSyncAt,
     lastSyncError:
       typeof lastFailedResponse?.errorMessage === "string"
         ? lastFailedResponse.errorMessage
@@ -55,6 +80,11 @@ async function toClientIntegration(row: IntegrationRow): Promise<Integration> {
     propertyId: row.property_id,
     propertyTitle: row.property?.title ?? null,
     externalListingName: row.external_listing_name,
+    health,
+    consecutiveFailureCount,
+    lastSyncStartedAt: row.last_sync_started_at,
+    lastSyncDurationMs: row.last_sync_duration_ms,
+    nextScheduledSyncAt,
   };
 }
 
