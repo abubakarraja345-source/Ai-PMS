@@ -6,9 +6,11 @@ import {
   addRule,
   confirmDocumentUpload,
   editRule,
+  getIcalExportStatus,
   listAmenities,
   listDocuments,
   listRules,
+  regenerateIcalExportToken,
   removeAmenity,
   removeDocument,
   removeRule,
@@ -95,6 +97,62 @@ export async function getAvailabilityController(
     }
 
     return res.status(500).json({ success: false, error: "Unable to load property availability" });
+  }
+}
+
+/* ---------------------------- iCal export feed --------------------------- */
+
+export async function getIcalExportStatusController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  try {
+    if (!req.organization) {
+      return res.status(403).json({ success: false, error: "Organization context is required" });
+    }
+
+    const data = await getIcalExportStatus(req.organization.id, requirePropertyId(req));
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Get iCal export status error:", error);
+
+    if (isKnownError(error)) {
+      return res.status(404).json({ success: false, error: error.message });
+    }
+
+    return res.status(500).json({ success: false, error: "Unable to load export status" });
+  }
+}
+
+/**
+ * Returns the raw token exactly once — never persisted, never
+ * returned again by any other endpoint. Regenerating immediately
+ * invalidates any previously issued export URL (the old raw token's
+ * hash no longer matches the stored one).
+ */
+export async function regenerateIcalExportController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  try {
+    if (!req.organization) {
+      return res.status(403).json({ success: false, error: "Organization context is required" });
+    }
+
+    const token = await regenerateIcalExportToken(
+      req.organization.id,
+      requirePropertyId(req)
+    );
+
+    return res.status(200).json({ success: true, data: { token } });
+  } catch (error) {
+    console.error("Regenerate iCal export token error:", error);
+
+    return res.status(400).json({
+      success: false,
+      error: isKnownError(error) ? error.message : "Unable to generate export URL",
+    });
   }
 }
 

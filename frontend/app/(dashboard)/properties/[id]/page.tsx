@@ -10,6 +10,7 @@ import PropertyRulesSection from "@/components/properties/property-rules-section
 import PropertyDocumentsSection from "@/components/properties/property-documents-section";
 import PropertyChannelLinksSection from "@/components/properties/property-channel-links-section";
 import PropertyCurrentBookingSection from "@/components/properties/property-current-booking-section";
+import PropertyIcalExportSection from "@/components/properties/property-ical-export-section";
 
 type Property = {
   id: string;
@@ -352,6 +353,11 @@ export default function PropertyDetailsPage() {
         />
 
         <PropertyChannelLinksSection
+          propertyId={property.id}
+          canManage={canManage}
+        />
+
+        <PropertyIcalExportSection
           propertyId={property.id}
           canManage={canManage}
         />

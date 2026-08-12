@@ -12,9 +12,11 @@ import {
   deleteDocumentController,
   deleteRuleController,
   getAvailabilityController,
+  getIcalExportStatusController,
   listAmenitiesController,
   listDocumentsController,
   listRulesController,
+  regenerateIcalExportController,
   requestDocumentUploadController,
   updateRuleController,
 } from "./controller";
@@ -27,6 +29,9 @@ router.use(requireAuth, requireOrganization);
 const mutate = requireRole("owner", "company_admin");
 
 router.get("/availability", getAvailabilityController);
+
+router.get("/ical-export", getIcalExportStatusController);
+router.post("/ical-export/regenerate", mutate, regenerateIcalExportController);
 
 router.get("/amenities", listAmenitiesController);
 router.post("/amenities", mutate, createAmenityController);

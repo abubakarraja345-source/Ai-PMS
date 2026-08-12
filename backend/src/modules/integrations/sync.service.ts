@@ -55,6 +55,16 @@ export async function runManualSync(
     throw new Error("Integration not found");
   }
 
+  // A disabled connection must not sync — "Disable" needs to actually
+  // stop synchronization, not just be a status label. "error" is
+  // deliberately still allowed to retry (that's how a failing feed
+  // recovers), only "disabled" blocks.
+  if (integration.status === "disabled") {
+    throw new Error(
+      "This connection is disabled. Enable it before syncing."
+    );
+  }
+
   if (!isSupportedProvider(integration.provider)) {
     throw new Error(`Unknown provider: ${integration.provider}`);
   }

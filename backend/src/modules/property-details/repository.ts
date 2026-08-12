@@ -1,6 +1,41 @@
 import { supabase } from "../../config/supabase";
 import { AmenityRow, DocumentRow, RuleRow } from "./types";
 
+/* ---------------------------- iCal export feed --------------------------- */
+
+export async function setPropertyIcalExportTokenHash(
+  organizationId: string,
+  propertyId: string,
+  tokenHash: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("properties")
+    .update({ ical_export_token_hash: tokenHash })
+    .eq("id", propertyId)
+    .eq("organization_id", organizationId)
+    .select("id");
+
+  if (error) throw error;
+
+  return !!data && data.length > 0;
+}
+
+export async function getPropertyIcalExportEnabled(
+  organizationId: string,
+  propertyId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("properties")
+    .select("ical_export_token_hash")
+    .eq("id", propertyId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return !!data?.ical_export_token_hash;
+}
+
 /* ------------------------------- Amenities ------------------------------ */
 
 const AMENITY_SELECT = "id, property_id, amenity_name, amenity_category, created_at";

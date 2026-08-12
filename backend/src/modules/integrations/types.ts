@@ -9,6 +9,9 @@ export interface IntegrationRow {
   expires_at: string | null;
   status: string;
   created_at: string;
+  property_id: string | null;
+  external_listing_name: string | null;
+  property?: { id: string; title: string } | null;
 }
 
 /** Client-facing shape — credentials are never returned, only a
@@ -23,6 +26,10 @@ export interface Integration {
   createdAt: string;
   lastSyncAt: string | null;
   lastSuccessfulSyncAt: string | null;
+  lastSyncError: string | null;
+  propertyId: string | null;
+  propertyTitle: string | null;
+  externalListingName: string | null;
 }
 
 export interface SyncLogRow {

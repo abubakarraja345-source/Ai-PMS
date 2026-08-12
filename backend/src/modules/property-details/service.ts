@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { verifyProperty } from "../reservations/service";
 import { StorageService, buildStoragePath } from "../../services/storage.service";
 
@@ -13,6 +14,8 @@ import {
   findDocumentsByProperty,
   findRuleById,
   findRulesByProperty,
+  getPropertyIcalExportEnabled,
+  setPropertyIcalExportTokenHash,
   updateRuleRow,
 } from "./repository";
 
@@ -36,6 +39,52 @@ async function assertPropertyInOrganization(
   if (!exists) {
     throw new Error("Property not found in your organization");
   }
+}
+
+/* ---------------------------- iCal export feed --------------------------- */
+
+/**
+ * Same token pattern organization/invitations.service.ts already
+ * uses: crypto.randomBytes (never Math.random/an id — predictable
+ * would let an outsider guess their way into a private feed), only
+ * the SHA-256 hash persisted. The raw token is returned here once and
+ * never stored anywhere — regenerating overwrites the stored hash, so
+ * any previously issued URL stops matching immediately.
+ */
+export async function regenerateIcalExportToken(
+  organizationId: string,
+  propertyId: string
+): Promise<string> {
+  await assertPropertyInOrganization(organizationId, propertyId);
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+  const updated = await setPropertyIcalExportTokenHash(
+    organizationId,
+    propertyId,
+    tokenHash
+  );
+
+  if (!updated) {
+    throw new Error("Property not found in your organization");
+  }
+
+  return token;
+}
+
+export async function getIcalExportStatus(
+  organizationId: string,
+  propertyId: string
+): Promise<{ enabled: boolean }> {
+  await assertPropertyInOrganization(organizationId, propertyId);
+
+  const enabled = await getPropertyIcalExportEnabled(
+    organizationId,
+    propertyId
+  );
+
+  return { enabled };
 }
 
 /* ------------------------------- Amenities ------------------------------ */

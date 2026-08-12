@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 
@@ -10,6 +11,28 @@ interface ChannelLink {
   externalListingId: string;
   createdAt: string;
   updatedAt: string;
+}
+
+interface ConnectionStatus {
+  status: string;
+  lastSyncAt: string | null;
+  propertyId: string | null;
+}
+
+function formatRelative(value: string | null): string | null {
+  if (!value) return null;
+
+  const diffMs = Date.now() - new Date(value).getTime();
+  const minutes = Math.round(diffMs / 60000);
+
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hr ago`;
+
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
 /**
@@ -45,6 +68,9 @@ export default function PropertyChannelLinksSection({
   canManage: boolean;
 }) {
   const [links, setLinks] = useState<ChannelLink[]>([]);
+  const [connectionsByProvider, setConnectionsByProvider] = useState<
+    Record<string, ConnectionStatus>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -70,6 +96,25 @@ export default function PropertyChannelLinksSection({
       const all: ChannelLink[] = response.data ?? [];
 
       setLinks(all.filter((link) => link.propertyId === propertyId));
+
+      // Live sync status per provider, sourced from the same
+      // connections the /integrations page manages — not a second
+      // mapping system, just a read of the existing one for this
+      // property's context.
+      const integrationsResponse = await apiFetch("/api/integrations");
+      const byProvider: Record<string, ConnectionStatus> = {};
+
+      for (const integration of integrationsResponse.data ?? []) {
+        if (integration.propertyId === propertyId) {
+          byProvider[integration.provider] = {
+            status: integration.status,
+            lastSyncAt: integration.lastSyncAt,
+            propertyId: integration.propertyId,
+          };
+        }
+      }
+
+      setConnectionsByProvider(byProvider);
     } catch (err) {
       setError(
         err instanceof Error
@@ -173,14 +218,25 @@ export default function PropertyChannelLinksSection({
 
   return (
     <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-slate-900">
-        Channel / Listing Connections
-      </h2>
-      <p className="mt-1 text-sm text-slate-500">
-        Listing mapping only — this links a property to its external
-        listing ID for calendar synchronization. It does not create a
-        live Airbnb/Booking.com API connection.
-      </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">
+            Channel Connections
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Listing mapping and iCal calendar synchronization. This does
+            not create a live Airbnb/Booking.com/VRBO API connection —
+            only standard iCal calendar sync.
+          </p>
+        </div>
+
+        <Link
+          href="/integrations"
+          className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Manage Connections
+        </Link>
+      </div>
 
       {error && (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -229,6 +285,37 @@ export default function PropertyChannelLinksSection({
                     <p className="text-xs text-slate-400">
                       Mapped {formatDateTime(link.createdAt)}
                     </p>
+
+                    {connectionsByProvider[provider.id] && (
+                      <p className="mt-2 flex items-center gap-1.5 text-xs">
+                        <span
+                          className={
+                            connectionsByProvider[provider.id].status ===
+                            "active"
+                              ? "text-emerald-600"
+                              : connectionsByProvider[provider.id].status ===
+                                  "error"
+                                ? "text-red-600"
+                                : "text-slate-400"
+                          }
+                        >
+                          ●
+                        </span>
+                        <span className="text-slate-500">
+                          {connectionsByProvider[provider.id].status ===
+                          "active"
+                            ? "Connected"
+                            : connectionsByProvider[provider.id].status ===
+                                "error"
+                              ? "Connection error"
+                              : "Disabled"}
+                          {formatRelative(
+                            connectionsByProvider[provider.id].lastSyncAt
+                          ) &&
+                            ` · Last sync: ${formatRelative(connectionsByProvider[provider.id].lastSyncAt)}`}
+                        </span>
+                      </p>
+                    )}
                   </div>
                 )}
 

@@ -2,7 +2,7 @@ import { supabase } from "../../config/supabase";
 import { IntegrationRow, SyncLogRow } from "./types";
 
 const INTEGRATION_SELECT =
-  "id, organization_id, provider, account_name, api_key, access_token, refresh_token, expires_at, status, created_at";
+  "id, organization_id, provider, account_name, api_key, access_token, refresh_token, expires_at, status, created_at, property_id, external_listing_name, property:properties(id, title)";
 
 export async function findIntegrationsByOrganization(
   organizationId: string
@@ -15,7 +15,15 @@ export async function findIntegrationsByOrganization(
 
   if (error) throw error;
 
-  return data ?? [];
+  /*
+   * Supabase's untyped client (no Database generic passed to
+   * createClient) infers embedded relations as arrays by default. At
+   * runtime PostgREST returns a single object here because
+   * property_id is a many-to-one FK — this assertion aligns the type
+   * with actual behavior (same pattern already used in
+   * reservations/repository.ts).
+   */
+  return (data ?? []) as unknown as IntegrationRow[];
 }
 
 export async function findIntegrationById(
@@ -31,7 +39,7 @@ export async function findIntegrationById(
 
   if (error) throw error;
 
-  return data;
+  return data as unknown as IntegrationRow | null;
 }
 
 /**
@@ -43,7 +51,13 @@ export async function findIntegrationById(
  */
 export async function createIntegrationRow(
   organizationId: string,
-  input: { provider: string; accountName: string | null; feedUrl: string | null }
+  input: {
+    provider: string;
+    accountName: string | null;
+    feedUrl: string | null;
+    propertyId?: string | null;
+    externalListingName?: string | null;
+  }
 ): Promise<IntegrationRow> {
   const { data, error } = await supabase
     .from("integrations")
@@ -52,6 +66,8 @@ export async function createIntegrationRow(
       provider: input.provider,
       account_name: input.accountName,
       api_key: input.feedUrl,
+      property_id: input.propertyId ?? null,
+      external_listing_name: input.externalListingName ?? null,
       status: "disabled",
     })
     .select(INTEGRATION_SELECT)
@@ -59,7 +75,7 @@ export async function createIntegrationRow(
 
   if (error) throw error;
 
-  return data;
+  return data as unknown as IntegrationRow;
 }
 
 export async function updateIntegrationRow(
@@ -77,7 +93,7 @@ export async function updateIntegrationRow(
 
   if (error) throw error;
 
-  return data;
+  return data as unknown as IntegrationRow | null;
 }
 
 export async function deleteIntegrationRow(
@@ -143,6 +159,23 @@ export async function findLastSyncLog(
     .from("sync_logs")
     .select(SYNC_LOG_SELECT)
     .eq("integration_id", integrationId)
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return data;
+}
+
+export async function findLastFailedSyncLog(
+  integrationId: string
+): Promise<SyncLogRow | null> {
+  const { data, error } = await supabase
+    .from("sync_logs")
+    .select(SYNC_LOG_SELECT)
+    .eq("integration_id", integrationId)
+    .eq("status", "failed")
     .order("synced_at", { ascending: false })
     .limit(1)
     .maybeSingle();

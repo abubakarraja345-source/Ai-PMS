@@ -3,19 +3,22 @@ import { OrganizationRequest } from "../../middleware/organization.middleware";
 
 import {
   addIntegration,
+  connectPropertyCalendar,
   disableIntegration,
   editIntegration,
   enableIntegration,
   getIntegration,
   listIntegrations,
   removeIntegration,
+  testIcalFeedUrl,
   testIntegrationConnection,
 } from "./service";
 
 import { runManualSync } from "./sync.service";
-import { findSyncLogsByIntegration } from "./repository";
+import { findIntegrationById, findSyncLogsByIntegration } from "./repository";
 
 import {
+  validateConnectPropertyCalendar,
   validateCreateIntegration,
   validateUpdateIntegration,
 } from "./validation";
@@ -218,6 +221,70 @@ export async function testConnectionController(
   }
 }
 
+/**
+ * Connect a property's calendar to an external (iCal-based) provider
+ * in one step (Phase E/G) — tests the feed, registers the channel
+ * mapping, and creates the connection, already active.
+ */
+export async function connectPropertyCalendarController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  try {
+    if (!req.organization) {
+      return res.status(403).json({ success: false, error: "Organization context is required" });
+    }
+
+    const input = validateConnectPropertyCalendar(req.body);
+
+    const data = await connectPropertyCalendar(req.organization.id, input);
+
+    return res.status(201).json({ success: true, data });
+  } catch (error) {
+    console.error("Connect property calendar error:", error);
+
+    return res.status(400).json({
+      success: false,
+      error: isKnownError(error) ? error.message : "Unable to connect this calendar",
+    });
+  }
+}
+
+/**
+ * Test a feed URL before it's ever saved (Phase E/F's "Test
+ * Connection" step of the connect-a-calendar wizard) — no integration
+ * needs to exist yet. Never returns the raw URL back to the client;
+ * only counts/samples derived from parsing it.
+ */
+export async function testIcalUrlController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  try {
+    if (!req.organization) {
+      return res.status(403).json({ success: false, error: "Organization context is required" });
+    }
+
+    const feedUrl =
+      typeof req.body?.feedUrl === "string" ? req.body.feedUrl.trim() : "";
+
+    if (!feedUrl) {
+      return res.status(400).json({ success: false, error: "feedUrl is required" });
+    }
+
+    const data = await testIcalFeedUrl(feedUrl);
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Test iCal URL error:", error);
+
+    return res.status(400).json({
+      success: false,
+      error: isKnownError(error) ? error.message : "Unable to test this feed URL",
+    });
+  }
+}
+
 export async function manualSyncController(
   req: OrganizationRequest,
   res: Response
@@ -227,8 +294,30 @@ export async function manualSyncController(
       return res.status(403).json({ success: false, error: "Organization context is required" });
     }
 
-    const propertyId =
+    const integrationId = req.params.id;
+
+    if (!integrationId) {
+      return res.status(400).json({ success: false, error: "Integration ID is required" });
+    }
+
+    let propertyId =
       typeof req.body?.propertyId === "string" ? req.body.propertyId.trim() : "";
+
+    // A connection created through the new Connect Calendar flow
+    // already knows its property — the caller no longer has to pick
+    // one every sync (the old gap runManualSync's own comment
+    // acknowledged). Only integrations without a property still
+    // require the body to specify one.
+    if (!propertyId) {
+      const integration = await findIntegrationById(
+        req.organization.id,
+        integrationId
+      );
+
+      if (integration?.property_id) {
+        propertyId = integration.property_id;
+      }
+    }
 
     if (!propertyId) {
       return res.status(400).json({
@@ -239,7 +328,7 @@ export async function manualSyncController(
 
     const data = await runManualSync(
       req.organization.id,
-      req.params.id,
+      integrationId,
       propertyId,
       req.user.id
     );

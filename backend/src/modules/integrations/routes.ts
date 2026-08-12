@@ -5,6 +5,7 @@ import { requireOrganization } from "../../middleware/organization.middleware";
 import { requireRole } from "../../middleware/role.middleware";
 
 import {
+  connectPropertyCalendarController,
   createIntegrationController,
   deleteIntegrationController,
   disableIntegrationController,
@@ -14,6 +15,7 @@ import {
   manualSyncController,
   syncHistoryController,
   testConnectionController,
+  testIcalUrlController,
   updateIntegrationController,
 } from "./controller";
 
@@ -36,6 +38,13 @@ const mutate = requireRole("owner", "company_admin");
 router.get("/channel-links", listChannelLinksController);
 router.post("/channel-links", mutate, createChannelLinkController);
 router.delete("/channel-links/:id", mutate, deleteChannelLinkController);
+
+// Test a feed URL before saving it as a connection, and the "save"
+// step itself — same reasoning as channel-links above: registered
+// before "/:id" so the literal segment "ical" is never captured as an
+// :id param.
+router.post("/ical/test", mutate, testIcalUrlController);
+router.post("/ical", mutate, connectPropertyCalendarController);
 
 router.get("/", listIntegrationsController);
 router.post("/", mutate, createIntegrationController);

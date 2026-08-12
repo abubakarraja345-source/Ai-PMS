@@ -1,5 +1,6 @@
 import * as ical from "node-ical";
 import { ExternalEvent, ProviderAdapter } from "./types";
+import { assertPublicHttpUrl } from "../urlSafety";
 
 const FETCH_TIMEOUT_MS = 15000;
 const MAX_FEED_BYTES = 5 * 1024 * 1024; // 5MB — a sane cap for a calendar feed
@@ -71,17 +72,10 @@ export const icalAdapter: ProviderAdapter = {
       throw new Error("No feed URL configured");
     }
 
-    let parsedUrl: URL;
-
-    try {
-      parsedUrl = new URL(config.feedUrl);
-    } catch {
-      throw new Error("Feed URL is not a valid URL");
-    }
-
-    if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
-      throw new Error("Feed URL must be http or https");
-    }
+    // Validates protocol AND resolves+checks the host isn't a local/
+    // private address (SSRF guard) — every real sync goes through
+    // this exact check, not just the test-before-save endpoint.
+    await assertPublicHttpUrl(config.feedUrl);
 
     const text = await fetchFeedText(config.feedUrl);
 
