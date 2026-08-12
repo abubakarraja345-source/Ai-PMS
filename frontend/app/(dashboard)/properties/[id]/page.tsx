@@ -11,6 +11,7 @@ import PropertyDocumentsSection from "@/components/properties/property-documents
 import PropertyChannelLinksSection from "@/components/properties/property-channel-links-section";
 import PropertyCurrentBookingSection from "@/components/properties/property-current-booking-section";
 import PropertyIcalExportSection from "@/components/properties/property-ical-export-section";
+import CurrencyDisplayCard from "@/components/shared/currency-display-card";
 
 type Property = {
   id: string;
@@ -241,14 +242,41 @@ export default function PropertyDetailsPage() {
               label="Maximum Guests"
               value={property.max_guests ?? "—"}
             />
+          </div>
+        </section>
 
-            <InfoCard
-              label="Effective Currency"
-              value={
-                property.currency
-                  ? property.currency
-                  : `${orgDefaultCurrency} (org default)`
+        {/* Financial Profile */}
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">
+                Financial Profile
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Currency used for this property&apos;s reservations and
+                financial records.
+              </p>
+            </div>
+
+            {canManage && (
+              <button
+                onClick={() =>
+                  router.push(`/properties/${property.id}/edit`)
+                }
+                className="text-sm font-medium text-slate-700 hover:text-slate-900"
+              >
+                Edit Settings →
+              </button>
+            )}
+          </div>
+
+          <div className="mt-5">
+            <CurrencyDisplayCard
+              code={property.currency ?? orgDefaultCurrency}
+              sourceLabel={
+                property.currency ? "Property override" : "Organization default"
               }
+              helperText="Used for new reservations."
             />
           </div>
         </section>

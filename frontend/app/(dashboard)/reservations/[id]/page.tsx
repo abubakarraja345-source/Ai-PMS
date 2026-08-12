@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney as formatMoneyShared } from "@/lib/currency";
 import ReservationReviewBanner from "@/components/reservations/reservation-review-banner";
+import CurrencyBadge from "@/components/shared/currency-badge";
 
 type Reservation = {
   id: string;
@@ -390,14 +391,18 @@ export default async function ReservationViewPage({
 
         {/* Payment */}
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">
-              Payment Summary
-            </h2>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Payment Summary
+              </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Financial details for this reservation
-            </p>
+              <p className="mt-1 text-sm text-slate-500">
+                Financial details for this reservation
+              </p>
+            </div>
+
+            <CurrencyBadge code={reservation.currency} variant="expanded" />
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">

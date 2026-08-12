@@ -3,7 +3,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
-import { CURRENCIES, SUPPORTED_CURRENCY_CODES } from "@/lib/currency";
+import { CURRENCIES } from "@/lib/currency";
+import CurrencySelect from "@/components/shared/currency-select";
+import CurrencyDisplayCard from "@/components/shared/currency-display-card";
 
 export default function NewPropertyPage() {
   const router = useRouter();
@@ -470,41 +472,91 @@ export default function NewPropertyPage() {
             </div>
           </section>
 
-          {/* Pricing */}
+          {/* Financial Settings */}
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">
-              Pricing
+              Financial Settings
             </h2>
 
-            <div className="mt-6">
-              <label htmlFor="currency" className="mb-2 block text-sm font-medium text-slate-700">
-                Currency
+            <p className="mt-1 text-sm text-slate-500">
+              Choose which currency this property uses for reservations and
+              financial records.
+            </p>
+
+            <div className="mt-5 space-y-3">
+              <label
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+                  form.currency === ""
+                    ? "border-slate-900 bg-slate-50"
+                    : "border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="currency_mode"
+                  checked={form.currency === ""}
+                  onChange={() => updateField("currency", "")}
+                  className="mt-1"
+                />
+
+                <span>
+                  <span className="block text-sm font-medium text-slate-900">
+                    Use organization default
+                  </span>
+                  <span className="mt-0.5 block text-sm text-slate-500">
+                    {orgDefaultCurrency}
+                    {CURRENCIES[orgDefaultCurrency]
+                      ? ` — ${CURRENCIES[orgDefaultCurrency]!.name}`
+                      : ""}
+                  </span>
+                </span>
               </label>
 
-              <select
-                id="currency"
-                value={form.currency}
-                onChange={(e) =>
-                  updateField("currency", e.target.value)
-                }
-                className="w-full max-w-sm rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-slate-900"
+              <label
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+                  form.currency !== ""
+                    ? "border-slate-900 bg-slate-50"
+                    : "border-slate-200 hover:bg-slate-50"
+                }`}
               >
-                <option value="">Use organization default</option>
-                {SUPPORTED_CURRENCY_CODES.map((code) => {
-                  const meta = CURRENCIES[code];
-                  return (
-                    <option key={code} value={code}>
-                      {code} — {meta?.name} ({meta?.symbol})
-                    </option>
-                  );
-                })}
-              </select>
+                <input
+                  type="radio"
+                  name="currency_mode"
+                  checked={form.currency !== ""}
+                  onChange={() =>
+                    updateField("currency", form.currency || orgDefaultCurrency)
+                  }
+                  className="mt-1"
+                />
 
-              <p className="mt-2 text-sm text-slate-500">
-                {form.currency
-                  ? `Effective currency: ${form.currency}`
-                  : `Using organization default: ${orgDefaultCurrency}`}
+                <span className="w-full">
+                  <span className="block text-sm font-medium text-slate-900">
+                    Custom property currency
+                  </span>
+
+                  {form.currency !== "" && (
+                    <div className="mt-3 max-w-sm">
+                      <CurrencySelect
+                        value={form.currency || orgDefaultCurrency}
+                        onChange={(code) => updateField("currency", code)}
+                      />
+                    </div>
+                  )}
+                </span>
+              </label>
+            </div>
+
+            <div className="mt-5">
+              <p className="mb-2 text-sm font-medium text-slate-700">
+                Effective currency
               </p>
+
+              <CurrencyDisplayCard
+                code={form.currency || orgDefaultCurrency}
+                sourceLabel={
+                  form.currency ? "Property override" : "Organization default"
+                }
+              />
             </div>
           </section>
 

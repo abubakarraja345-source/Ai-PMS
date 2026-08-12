@@ -6,6 +6,7 @@ import { PaginationControls } from "@/components/shared/pagination-controls";
 import AvailabilityCheck from "@/components/reservations/availability-check";
 import { formatMoney as formatMoneyShared } from "@/lib/currency";
 import MoneyInput from "@/components/shared/money-input";
+import CurrencyDisplayCard from "@/components/shared/currency-display-card";
 
 interface PropertySummary {
   id: string;
@@ -1528,7 +1529,7 @@ export default function ReservationsPage() {
                   Financial
                 </h3>
 
-                <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
                   <div>
                     <label htmlFor="create-total_amount" className="text-sm font-medium text-slate-700">
@@ -1579,20 +1580,23 @@ export default function ReservationsPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">
-                      Currency
-                    </label>
+                </div>
 
-                    <div className="mt-2 flex h-[42px] items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
-                      {effectiveCreateCurrency}
-                    </div>
+                <div className="mt-5">
+                  <p className="mb-2 text-sm font-medium text-slate-700">
+                    Currency
+                  </p>
 
-                    <p className="mt-1 text-xs text-slate-400">
-                      From the selected property&apos;s currency.
-                    </p>
-                  </div>
-
+                  <CurrencyDisplayCard
+                    code={effectiveCreateCurrency}
+                    sourceLabel={
+                      properties.find((p) => p.id === form.property_id)
+                        ?.currency
+                        ? "Property currency"
+                        : "Organization default"
+                    }
+                    helperText="Currency is automatically determined by the property's financial settings and cannot be changed manually."
+                  />
                 </div>
               </div>
 
@@ -2103,11 +2107,6 @@ export default function ReservationsPage() {
                             }
                           />
                         </div>
-
-                        <p className="mt-1 text-xs text-slate-400">
-                          Currency ({selectedReservation.currency ?? "USD"})
-                          is fixed for this reservation.
-                        </p>
                       </div>
 
                       <div>
@@ -2146,6 +2145,18 @@ export default function ReservationsPage() {
                         </select>
                       </div>
 
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-sm font-medium text-slate-700">
+                        Currency
+                      </p>
+
+                      <CurrencyDisplayCard
+                        code={selectedReservation.currency}
+                        sourceLabel="Fixed for this reservation"
+                        helperText="Set automatically when the reservation was created and cannot be changed here."
+                      />
                     </div>
 
                     {/* Nights preview */}

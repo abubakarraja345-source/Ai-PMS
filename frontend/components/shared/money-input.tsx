@@ -15,17 +15,19 @@ interface MoneyInputProps {
   disabled?: boolean;
   placeholder?: string;
   allowNegative?: boolean;
+  /** Validation message shown below the field in a danger state. */
+  error?: string;
   className?: string;
 }
 
 /**
  * A currency-aware money input: rejects keystrokes that would
  * produce more decimal places than the currency actually supports
- * (0 for JPY/KRW, 2 for most others — see lib/currency.ts), rejects
- * non-numeric input, and optionally rejects negative values. Positions
- * the currency symbol as a prefix or suffix per the currency's own
- * convention (AED/SAR display after the number) instead of always
- * assuming a leading "$".
+ * (0 for JPY/KRW, 2 for most others — see lib/currency.ts) and
+ * rejects non-numeric input, optionally negative values. Shows the
+ * ISO code as a fixed prefix chip (rather than the raw glyph as a
+ * prefix/suffix) so right-to-left symbols like AED's "د.إ" never
+ * fight the input's text direction.
  */
 export default function MoneyInput({
   id,
@@ -35,6 +37,7 @@ export default function MoneyInput({
   disabled,
   placeholder,
   allowNegative = false,
+  error,
   className,
 }: MoneyInputProps) {
   const meta = getCurrencyMeta(currency);
@@ -61,31 +64,31 @@ export default function MoneyInput({
     meta.minorUnit > 0 ? `0.${"0".repeat(meta.minorUnit)}` : "0";
 
   return (
-    <div className={`relative ${className ?? ""}`}>
-      {meta.symbolPosition === "prefix" && (
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">
-          {meta.symbol}
+    <div className={className}>
+      <div
+        className={`flex items-stretch overflow-hidden rounded-xl border bg-white transition focus-within:ring-4 ${
+          error
+            ? "border-red-300 focus-within:border-red-400 focus-within:ring-red-50"
+            : "border-slate-200 focus-within:border-slate-900 focus-within:ring-slate-900/5"
+        } ${disabled ? "bg-slate-50" : ""}`}
+      >
+        <span className="flex min-w-[3.5rem] shrink-0 items-center justify-center border-r border-slate-200 bg-slate-50 px-2 text-xs font-semibold tracking-wide text-slate-500">
+          {meta.code}
         </span>
-      )}
 
-      <input
-        id={id}
-        type="text"
-        inputMode="decimal"
-        value={value}
-        disabled={disabled}
-        placeholder={placeholder ?? defaultPlaceholder}
-        onChange={(event) => handleChange(event.target.value)}
-        className={`w-full rounded-lg border border-slate-200 py-2.5 text-sm outline-none focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 ${
-          meta.symbolPosition === "prefix" ? "pl-7 pr-3" : "pl-3 pr-10"
-        }`}
-      />
+        <input
+          id={id}
+          type="text"
+          inputMode="decimal"
+          value={value}
+          disabled={disabled}
+          placeholder={placeholder ?? defaultPlaceholder}
+          onChange={(event) => handleChange(event.target.value)}
+          className="w-full bg-transparent px-3 py-2.5 text-sm text-slate-900 outline-none disabled:cursor-not-allowed disabled:text-slate-500"
+        />
+      </div>
 
-      {meta.symbolPosition === "suffix" && (
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">
-          {meta.symbol}
-        </span>
-      )}
+      {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
     </div>
   );
 }

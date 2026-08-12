@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { formatMoney as formatMoneyShared } from "@/lib/currency";
+import CurrencyBadge from "@/components/shared/currency-badge";
 import AiInsights from "./ai-insights";
 
 interface GuestSummary {
@@ -433,22 +434,22 @@ export default function DashboardStats() {
               {revenue.byCurrency.map((entry) => (
                 <div
                   key={entry.currency}
-                  className="rounded-xl bg-slate-50 p-5"
+                  className="rounded-xl border border-slate-100 bg-slate-50 p-5"
                 >
-                  <p className="text-sm text-slate-500">
-                    {entry.currency}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <CurrencyBadge code={entry.currency} />
 
-                  <p className="mt-2 text-2xl font-semibold text-slate-900">
+                    <span className="text-xs text-slate-400">
+                      {entry.count} reservation
+                      {entry.count === 1 ? "" : "s"}
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-2xl font-semibold text-slate-900">
                     {formatMoney(
                       entry.total,
                       entry.currency
                     )}
-                  </p>
-
-                  <p className="mt-1 text-xs text-slate-400">
-                    {entry.count} reservation
-                    {entry.count === 1 ? "" : "s"}
                   </p>
                 </div>
               ))}

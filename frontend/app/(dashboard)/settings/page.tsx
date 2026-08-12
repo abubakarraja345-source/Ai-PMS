@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { CURRENCIES, SUPPORTED_CURRENCY_CODES } from "@/lib/currency";
+import CurrencySelect from "@/components/shared/currency-select";
+import CurrencyBadge from "@/components/shared/currency-badge";
+import CurrencyDisplayCard from "@/components/shared/currency-display-card";
+import ConfirmDialog from "@/components/shared/confirm-dialog";
+import { useToast } from "@/components/shared/toast";
 
 interface OrganizationSettings {
   name: string;
@@ -46,6 +50,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [showCurrencyConfirm, setShowCurrencyConfirm] = useState(false);
+  const { showToast, ToastViewport } = useToast();
 
   const loadSettings = useCallback(async () => {
     try {
@@ -116,16 +122,21 @@ export default function SettingsPage() {
       window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty]);
 
-  async function handleSave() {
+  function handleSave() {
     if (!form || !original) return;
 
     if (form.currency !== original.currency) {
-      const confirmed = window.confirm(
-        "Changing the organization currency will affect the default currency for properties that do not have a currency override. Existing reservations will keep their original currency.\n\nContinue?"
-      );
-
-      if (!confirmed) return;
+      setShowCurrencyConfirm(true);
+      return;
     }
+
+    persistSave();
+  }
+
+  async function persistSave() {
+    if (!form || !original) return;
+
+    const currencyChanged = form.currency !== original.currency;
 
     try {
       setSaving(true);
@@ -160,12 +171,29 @@ export default function SettingsPage() {
       setForm(nextForm);
       setOriginal(nextForm);
       setSuccess(true);
+
+      if (currencyChanged) {
+        showToast({
+          tone: "success",
+          title: "Currency updated",
+          description: `New reservations will use ${nextForm.currency}. Existing reservations remain unchanged.`,
+        });
+      }
     } catch (err) {
-      setError(
+      const message =
         err instanceof Error
           ? err.message
-          : "Failed to save organization settings."
-      );
+          : "Failed to save organization settings.";
+
+      setError(message);
+
+      if (currencyChanged) {
+        showToast({
+          tone: "error",
+          title: "Unable to update currency",
+          description: "Your existing currency settings were not changed. Try again.",
+        });
+      }
     } finally {
       setSaving(false);
     }
@@ -289,7 +317,7 @@ export default function SettingsPage() {
             affect existing reservations or reports.
           </p>
 
-          <div className="mt-5 grid gap-5 sm:grid-cols-3">
+          <div className="mt-5 grid gap-5 sm:grid-cols-2">
             <div>
               <label htmlFor="timezone" className="text-sm font-medium text-slate-700">
                 Timezone
@@ -308,35 +336,6 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label htmlFor="currency" className="text-sm font-medium text-slate-700">
-                Default Currency
-              </label>
-              <select
-                id="currency"
-                value={form.currency}
-                disabled={!canEdit}
-                onChange={(event) =>
-                  updateField("currency", event.target.value)
-                }
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
-              >
-                {SUPPORTED_CURRENCY_CODES.map((code) => {
-                  const meta = CURRENCIES[code];
-                  return (
-                    <option key={code} value={code}>
-                      {code} — {meta?.name} ({meta?.symbol})
-                    </option>
-                  );
-                })}
-              </select>
-              <p className="mt-2 text-xs text-slate-500">
-                The default currency for properties that don&apos;t set their
-                own. Existing reservations always keep the currency they were
-                created with.
-              </p>
-            </div>
-
-            <div>
               <label htmlFor="language" className="text-sm font-medium text-slate-700">
                 Language
               </label>
@@ -352,6 +351,43 @@ export default function SettingsPage() {
                 className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
               />
             </div>
+          </div>
+        </section>
+
+        {/* Financial Preferences */}
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">
+                Financial Preferences
+              </h2>
+              <p className="mt-1 max-w-md text-sm text-slate-500">
+                Choose the default currency used for new reservations and
+                financial records.
+              </p>
+            </div>
+
+            <CurrencyBadge code={form.currency} variant="expanded" />
+          </div>
+
+          <div className="mt-5 max-w-sm">
+            <label htmlFor="currency" className="mb-2 block text-sm font-medium text-slate-700">
+              Currency
+            </label>
+            <CurrencySelect
+              id="currency"
+              value={form.currency}
+              disabled={!canEdit}
+              onChange={(code) => updateField("currency", code)}
+            />
+          </div>
+
+          <div className="mt-5">
+            <CurrencyDisplayCard
+              code={form.currency}
+              sourceLabel="Current default"
+              helperText="This affects new reservations only. Existing reservation amounts are not changed."
+            />
           </div>
         </section>
 
@@ -421,6 +457,38 @@ export default function SettingsPage() {
           </div>
         </section>
       </div>
+
+      <ConfirmDialog
+        open={showCurrencyConfirm}
+        tone="warning"
+        title="Change Organization Currency?"
+        confirmLabel="Confirm Change"
+        cancelLabel="Cancel"
+        onCancel={() => setShowCurrencyConfirm(false)}
+        onConfirm={() => {
+          setShowCurrencyConfirm(false);
+          persistSave();
+        }}
+        description={
+          <>
+            <p>You&apos;re changing the default currency from:</p>
+
+            <div className="my-3 flex flex-wrap items-center gap-3">
+              <CurrencyBadge code={original?.currency} variant="expanded" />
+              <span className="text-slate-400">→</span>
+              <CurrencyBadge code={form?.currency} variant="expanded" />
+            </div>
+
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              This change affects new reservations and future financial
+              records only. Existing reservations will keep their original
+              currency and amounts.
+            </p>
+          </>
+        }
+      />
+
+      {ToastViewport}
     </main>
   );
 }

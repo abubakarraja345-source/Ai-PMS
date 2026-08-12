@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import AvailabilityCheck from "@/components/reservations/availability-check";
 import MoneyInput from "@/components/shared/money-input";
+import CurrencyDisplayCard from "@/components/shared/currency-display-card";
 
 type Reservation = {
   id: string;
@@ -589,7 +590,7 @@ export default function EditReservationPage() {
             Payment
           </h2>
 
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <label htmlFor="total_amount" className="text-sm font-medium text-slate-700">
                 Total Amount
@@ -649,20 +650,18 @@ export default function EditReservationPage() {
                 />
               </div>
             </div>
+          </div>
 
-            <div>
-              <label className="text-sm font-medium text-slate-700">
-                Currency
-              </label>
+          <div className="mt-5">
+            <p className="mb-2 text-sm font-medium text-slate-700">
+              Currency
+            </p>
 
-              <div className="mt-2 flex h-[42px] items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
-                {form.currency}
-              </div>
-
-              <p className="mt-1 text-xs text-slate-400">
-                Fixed for this reservation — cannot be changed here.
-              </p>
-            </div>
+            <CurrencyDisplayCard
+              code={form.currency}
+              sourceLabel="Fixed for this reservation"
+              helperText="Cannot be changed here — set automatically when the reservation was created."
+            />
           </div>
         </section>
 
