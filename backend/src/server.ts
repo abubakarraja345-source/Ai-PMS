@@ -3,6 +3,7 @@ dotenv.config();
 
 import app from "./app";
 import { startIcalScheduler } from "./modules/integrations/scheduler";
+import { startAirbnbApiScheduler } from "./modules/integrations/airbnbApi/scheduler";
 
 const PORT = process.env.PORT || 5000;
 
@@ -11,6 +12,7 @@ const server = app.listen(PORT, () => {
 });
 
 const icalScheduler = startIcalScheduler();
+const airbnbApiScheduler = startAirbnbApiScheduler();
 
 /**
  * Graceful shutdown — orchestrators (Docker/Kubernetes/most PaaS)
@@ -23,6 +25,7 @@ function shutdown(signal: string) {
   console.log(`${signal} received, shutting down gracefully...`);
 
   icalScheduler.stop();
+  airbnbApiScheduler.stop();
 
   server.close((err) => {
     if (err) {

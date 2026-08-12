@@ -23,7 +23,18 @@ const PROVIDER_LABELS: Record<string, string> = {
   "booking.com": "Booking.com",
   vrbo: "VRBO",
   ical: "Other Calendar",
+  airbnb_api: "Airbnb (Official API)",
 };
+
+interface AirbnbApiStatusResponse {
+  connected: boolean;
+  integrationId: string | null;
+  accountName: string | null;
+  status: string | null;
+  health: ConnectionHealth | null;
+  lastSuccessfulSyncAt: string | null;
+  listingCount: number;
+}
 
 const HEALTH_META: Record<
   ConnectionHealth,
@@ -95,8 +106,42 @@ export default function StatusCenterPage() {
       setLoading(true);
       setError("");
 
-      const response = await apiFetch("/api/integrations");
-      setIntegrations(response.data ?? []);
+      const [icalResponse, airbnbApiResponse] = await Promise.all([
+        apiFetch("/api/integrations"),
+        apiFetch("/api/integrations/airbnb/status").catch(() => null),
+      ]);
+
+      const icalIntegrations: Integration[] = icalResponse.data ?? [];
+      const airbnbApiStatus: AirbnbApiStatusResponse | undefined =
+        airbnbApiResponse?.data;
+
+      // Keyed on integrationId (a connection has ever existed), not
+      // `connected` (service.ts's connected flips to false once
+      // disabled so the Integrations page's Connect button can
+      // re-trigger) — a disabled Airbnb API connection should still
+      // show up here with a "Disabled" badge, matching how a disabled
+      // iCal connection also still appears in this same list.
+      const airbnbApiEntry: Integration[] =
+        airbnbApiStatus?.integrationId
+          ? [
+              {
+                id: airbnbApiStatus.integrationId,
+                provider: "airbnb_api",
+                accountName: airbnbApiStatus.accountName,
+                status: airbnbApiStatus.status ?? "active",
+                propertyTitle: null,
+                externalListingName:
+                  airbnbApiStatus.listingCount > 0
+                    ? `${airbnbApiStatus.listingCount} listing${airbnbApiStatus.listingCount === 1 ? "" : "s"} mapped`
+                    : null,
+                health: airbnbApiStatus.health ?? "warning",
+                lastSuccessfulSyncAt: airbnbApiStatus.lastSuccessfulSyncAt,
+                nextScheduledSyncAt: null,
+              },
+            ]
+          : [];
+
+      setIntegrations([...icalIntegrations, ...airbnbApiEntry]);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to load system status."

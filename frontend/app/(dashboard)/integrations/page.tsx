@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import AirbnbApiSection from "@/components/integrations/airbnb-api-section";
 
 type ConnectionHealth = "healthy" | "warning" | "error" | "disabled";
 
@@ -736,6 +737,11 @@ export default function IntegrationsPage() {
           ))}
         </div>
       </div>
+
+      {/* Airbnb Official API — a wholly separate connection from the
+          iCal feed above; see the card's own header for why they must
+          never be confused with each other. */}
+      <AirbnbApiSection canManage={canManage} properties={properties} />
 
       {/* Connect Calendar wizard */}
       {showWizard && (

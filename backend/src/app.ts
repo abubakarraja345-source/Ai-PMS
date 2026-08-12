@@ -25,6 +25,7 @@ import {
   organizationInventoryRoutes,
 } from "./modules/inventory/routes";
 import integrationsRoutes from "./modules/integrations/routes";
+import airbnbApiRoutes from "./modules/integrations/airbnbApi/routes";
 import icalExportRoutes from "./modules/icalExport/routes";
 import aiRoutes from "./modules/ai/routes";
 import exchangeRatesRoutes from "./modules/exchangeRates/routes";
@@ -88,6 +89,11 @@ app.use("/api/properties/:propertyId/images", propertyImagesRoutes);
 app.use("/api/properties/:propertyId", propertyDetailsRoutes);
 app.use("/api/properties/:propertyId/inventory", propertyInventoryRoutes);
 app.use("/api/inventory", organizationInventoryRoutes);
+// Mounted BEFORE /api/integrations so its more specific prefix is
+// matched first — the existing integrations router has a GET /:id
+// route that would otherwise swallow /api/integrations/airbnb/* as
+// id="airbnb" if this were registered after it.
+app.use("/api/integrations/airbnb", airbnbApiRoutes);
 app.use("/api/integrations", integrationsRoutes);
 app.use("/api/ical", icalExportRoutes);
 app.use("/api/ai", aiRoutes);

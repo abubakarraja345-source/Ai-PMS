@@ -27,6 +27,12 @@ export const AUDIT_ACTIONS = [
   "integration.connected",
   "currency.organization_changed",
   "currency.property_changed",
+  "airbnb.connection_started",
+  "airbnb.connection_authorized",
+  "airbnb.connection_failed",
+  "airbnb.disconnected",
+  "airbnb.listing_mapped",
+  "airbnb.listing_unmapped",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
