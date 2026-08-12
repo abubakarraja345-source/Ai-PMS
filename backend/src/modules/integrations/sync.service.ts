@@ -156,28 +156,38 @@ export async function runManualSync(
       );
       const conflict = overlapping.some((r) => r.id !== existing.id);
 
-      if (conflict) {
-        conflicts++;
-        continue;
-      }
-
       const nights = Math.round(
         (new Date(`${event.checkOut}T00:00:00Z`).getTime() -
           new Date(`${event.checkIn}T00:00:00Z`).getTime()) /
           (1000 * 60 * 60 * 24)
       );
 
+      // A conflicting update is still applied — not skipped — and
+      // flagged for staff review instead. The external calendar is
+      // treated as probably correct (the OTA already prevents double-
+      // booking on its own end); silently dropping the update would
+      // risk this system losing track of a real, paying guest's
+      // actual dates.
       await updateReservation(organizationId, existing.id, {
         check_in: event.checkIn,
         check_out: event.checkOut,
         nights,
+        ...(conflict ? { needs_review: true } : {}),
       });
-      updated++;
+
+      if (conflict) {
+        conflicts++;
+      } else {
+        updated++;
+      }
+
       continue;
     }
 
     // No existing match for this external event — check whether the
-    // dates conflict with ANY existing reservation before importing.
+    // dates conflict with ANY existing reservation. A conflict no
+    // longer blocks the import (see the comment above); it's created
+    // anyway and flagged for review.
     const overlapping = await findReservationsByOrganizationInRange(
       organizationId,
       event.checkIn,
@@ -185,10 +195,7 @@ export async function runManualSync(
       propertyId
     );
 
-    if (overlapping.length > 0) {
-      conflicts++;
-      continue;
-    }
+    const hasConflict = overlapping.length > 0;
 
     if (!placeholderGuestId) {
       placeholderGuestId = await findOrCreatePlaceholderGuest(
@@ -209,9 +216,16 @@ export async function runManualSync(
       special_requests: event.summary,
     };
 
-    await createReservation(organizationId, importInput);
+    const created = await createReservation(organizationId, importInput);
 
-    imported++;
+    if (hasConflict) {
+      await updateReservation(organizationId, created.id, {
+        needs_review: true,
+      });
+      conflicts++;
+    } else {
+      imported++;
+    }
   }
 
   const response = { imported, updated, cancelled, skipped, conflicts };

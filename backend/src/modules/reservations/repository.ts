@@ -28,6 +28,7 @@ const RESERVATION_SELECT = `
   taxes,
   currency,
   special_requests,
+  needs_review,
   created_at,
   updated_at,
 

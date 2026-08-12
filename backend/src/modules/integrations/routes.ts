@@ -17,11 +17,25 @@ import {
   updateIntegrationController,
 } from "./controller";
 
+import {
+  listChannelLinksController,
+  createChannelLinkController,
+  deleteChannelLinkController,
+} from "./channelLinks.controller";
+
 const router = Router();
 
 router.use(requireAuth, requireOrganization);
 
 const mutate = requireRole("owner", "company_admin");
+
+// Registered before the generic "/:id" routes below — "/:id" would
+// otherwise greedily match a literal "/channel-links" request first
+// (Express matches by registration order, and ":id" matches any
+// single path segment, including the literal string "channel-links").
+router.get("/channel-links", listChannelLinksController);
+router.post("/channel-links", mutate, createChannelLinkController);
+router.delete("/channel-links/:id", mutate, deleteChannelLinkController);
 
 router.get("/", listIntegrationsController);
 router.post("/", mutate, createIntegrationController);

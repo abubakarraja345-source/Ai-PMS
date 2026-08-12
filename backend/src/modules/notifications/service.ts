@@ -445,7 +445,7 @@ export async function notifyIntegrationSyncConflict(
       organizationId,
       recipients,
       "Integration sync conflict",
-      `${integrationLabel(data)} sync found ${data.conflictCount} conflicting reservation(s) that were not imported automatically.`,
+      `${integrationLabel(data)} sync found ${data.conflictCount} reservation(s) that overlap an existing booking — imported and flagged for your review.`,
       "integration_sync_conflict"
     );
   } catch (error) {

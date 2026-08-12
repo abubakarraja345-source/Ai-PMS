@@ -45,6 +45,12 @@ export interface Reservation {
 
   special_requests: string | null;
 
+  /** Set only by sync logic (see integrations/sync.service.ts) when an
+   * imported booking overlapped an existing confirmed reservation —
+   * never settable through the public create/update reservation API.
+   * Staff review and clear it manually. */
+  needs_review: boolean;
+
   created_at: string;
   updated_at: string;
 }
@@ -77,6 +83,8 @@ export interface ReservationListItem {
   total_amount: number | null;
 
   currency: string | null;
+
+  needs_review: boolean;
 
   created_at: string;
   updated_at: string;
