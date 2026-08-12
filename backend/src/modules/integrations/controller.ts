@@ -237,7 +237,11 @@ export async function connectPropertyCalendarController(
 
     const input = validateConnectPropertyCalendar(req.body);
 
-    const data = await connectPropertyCalendar(req.organization.id, input);
+    const data = await connectPropertyCalendar(
+      req.organization.id,
+      input,
+      req.user
+    );
 
     return res.status(201).json({ success: true, data });
   } catch (error) {

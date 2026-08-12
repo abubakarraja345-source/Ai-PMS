@@ -28,6 +28,7 @@ import {
   validateCreateInvitation,
 } from "./invitations.validation";
 import { InvitationRowSafe } from "./invitations.types";
+import { logAudit } from "../auditLog/service";
 
 const DEFAULT_EXPIRY_DAYS = 7;
 
@@ -213,13 +214,25 @@ export async function createInvitation(
     acceptUrl: buildAcceptUrl(token),
   });
 
+  void logAudit({
+    organizationId,
+    actorUserId: inviterId,
+    actorLabel: inviterEmail ?? inviterId,
+    action: "invitation.created",
+    entityType: "invitation",
+    entityId: invitation.id,
+    metadata: { email: input.email, role: input.role },
+  });
+
   return withDeliveryInfo(toSummary(invitation), emailResult, token);
 }
 
 export async function resendInvitation(
   organizationId: string,
   organizationName: string,
-  invitationId: string
+  invitationId: string,
+  callerUserId?: string,
+  callerEmail?: string
 ) {
   const invitation = await findInvitationById(organizationId, invitationId);
 
@@ -251,6 +264,16 @@ export async function resendInvitation(
     acceptUrl: buildAcceptUrl(token),
   });
 
+  void logAudit({
+    organizationId,
+    actorUserId: callerUserId ?? null,
+    actorLabel: callerEmail ?? callerUserId ?? null,
+    action: "invitation.resent",
+    entityType: "invitation",
+    entityId: invitation.id,
+    metadata: { email: invitation.email },
+  });
+
   return withDeliveryInfo(
     toSummary(updated ?? invitation),
     emailResult,
@@ -260,7 +283,9 @@ export async function resendInvitation(
 
 export async function revokeInvitation(
   organizationId: string,
-  invitationId: string
+  invitationId: string,
+  callerUserId?: string,
+  callerEmail?: string
 ) {
   const invitation = await findInvitationById(organizationId, invitationId);
 
@@ -273,6 +298,19 @@ export async function revokeInvitation(
   }
 
   const updated = await updateInvitationStatus(invitation.id, "revoked");
+
+  if (updated) {
+    void logAudit({
+      organizationId,
+      actorUserId: callerUserId ?? null,
+      actorLabel: callerEmail ?? callerUserId ?? null,
+      action: "invitation.revoked",
+      entityType: "invitation",
+      entityId: invitation.id,
+      metadata: { email: invitation.email },
+    });
+  }
+
   return updated ? toSummary(updated) : null;
 }
 

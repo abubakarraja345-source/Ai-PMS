@@ -4,9 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { PaginationControls } from "@/components/shared/pagination-controls";
 import AvailabilityCheck from "@/components/reservations/availability-check";
-import { formatMoney as formatMoneyShared } from "@/lib/currency";
+import { formatMoney as formatMoneyShared, getCurrencyMeta } from "@/lib/currency";
 import MoneyInput from "@/components/shared/money-input";
-import CurrencyDisplayCard from "@/components/shared/currency-display-card";
 
 interface PropertySummary {
   id: string;
@@ -1526,8 +1525,28 @@ export default function ReservationsPage() {
               <div>
 
                 <h3 className="text-sm font-semibold text-slate-900">
-                  Financial
+                  Financial Details
                 </h3>
+
+                <div className="mt-3 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-sm font-semibold text-blue-700 shadow-sm">
+                    {getCurrencyMeta(effectiveCreateCurrency).symbol}
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-900">
+                      Currency{" "}
+                      <span className="font-semibold text-blue-700">
+                        {getCurrencyMeta(effectiveCreateCurrency).code} ·{" "}
+                        {getCurrencyMeta(effectiveCreateCurrency).name}
+                      </span>
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Your amounts will be recorded in this property&apos;s
+                      effective currency and cannot be changed manually.
+                    </p>
+                  </div>
+                </div>
 
                 <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
@@ -1580,23 +1599,6 @@ export default function ReservationsPage() {
                     </div>
                   </div>
 
-                </div>
-
-                <div className="mt-5">
-                  <p className="mb-2 text-sm font-medium text-slate-700">
-                    Currency
-                  </p>
-
-                  <CurrencyDisplayCard
-                    code={effectiveCreateCurrency}
-                    sourceLabel={
-                      properties.find((p) => p.id === form.property_id)
-                        ?.currency
-                        ? "Property currency"
-                        : "Organization default"
-                    }
-                    helperText="Currency is automatically determined by the property's financial settings and cannot be changed manually."
-                  />
                 </div>
               </div>
 
@@ -2147,16 +2149,24 @@ export default function ReservationsPage() {
 
                     </div>
 
-                    <div>
-                      <p className="mb-2 text-sm font-medium text-slate-700">
-                        Currency
-                      </p>
+                    <div className="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-sm font-semibold text-amber-700 shadow-sm">
+                        {getCurrencyMeta(selectedReservation.currency).symbol}
+                      </div>
 
-                      <CurrencyDisplayCard
-                        code={selectedReservation.currency}
-                        sourceLabel="Fixed for this reservation"
-                        helperText="Set automatically when the reservation was created and cannot be changed here."
-                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-900">
+                          Currency{" "}
+                          <span className="font-semibold text-amber-700">
+                            {getCurrencyMeta(selectedReservation.currency).code} ·{" "}
+                            {getCurrencyMeta(selectedReservation.currency).name}
+                          </span>
+                        </p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          Fixed for this reservation — set automatically at
+                          creation and cannot be changed here.
+                        </p>
+                      </div>
                     </div>
 
                     {/* Nights preview */}

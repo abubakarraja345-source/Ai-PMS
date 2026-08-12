@@ -16,6 +16,9 @@ import {
   findRecentReservations,
 } from "../modules/reservations/repository";
 
+import { computeConnectionHealth } from "../modules/integrations/health";
+import { ConnectionHealth } from "../modules/integrations/types";
+
 const router = Router();
 
 function todayUTC(): string {
@@ -161,6 +164,7 @@ export async function getDashboardSummary(organizationId: string) {
         propertiesResult,
         totalReservationsResult,
         pendingReservationsResult,
+        reviewRequiredResult,
         activeAndUpcoming,
         revenueResult,
         recentReservations,
@@ -186,6 +190,12 @@ export async function getDashboardSummary(organizationId: string) {
           .select("id", { count: "exact", head: true })
           .eq("organization_id", organizationId)
           .eq("status", "pending"),
+
+        supabase
+          .from("reservations")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", organizationId)
+          .eq("needs_review", true),
 
         findActiveAndUpcomingReservations(
           organizationId,
@@ -231,7 +241,7 @@ export async function getDashboardSummary(organizationId: string) {
 
         supabase
           .from("integrations")
-          .select("status")
+          .select("id, status, consecutive_failure_count")
           .eq("organization_id", organizationId),
       ]);
 
@@ -240,6 +250,7 @@ export async function getDashboardSummary(organizationId: string) {
         throw totalReservationsResult.error;
       if (pendingReservationsResult.error)
         throw pendingReservationsResult.error;
+      if (reviewRequiredResult.error) throw reviewRequiredResult.error;
       if (revenueResult.error) throw revenueResult.error;
       if (recentGuestsResult.error)
         throw recentGuestsResult.error;
@@ -286,6 +297,60 @@ export async function getDashboardSummary(organizationId: string) {
         error: integrations.filter((i) => i.status === "error").length,
       };
 
+      // "Calendar Health" — buckets every integration by the same
+      // ConnectionHealth enum the integrations module itself computes
+      // (see modules/integrations/health.ts), rather than the raw
+      // status column above, so a feed that's gone silently stale
+      // shows up here even while its status column still says "active".
+      // lastSuccessfulSyncAt isn't a column on integrations itself (see
+      // integrations/repository.ts's findLastSuccessfulSyncLog) — it's
+      // derived from sync_logs, so it's fetched here in one bulk query
+      // across every integration in the org rather than N+1 queries.
+      const integrationIds = integrations.map((i) => i.id);
+
+      const lastSuccessByIntegration = new Map<string, string>();
+
+      if (integrationIds.length > 0) {
+        const { data: successLogs, error: successLogsError } = await supabase
+          .from("sync_logs")
+          .select("integration_id, synced_at")
+          .in("integration_id", integrationIds)
+          .eq("status", "success")
+          .order("synced_at", { ascending: false });
+
+        if (successLogsError) throw successLogsError;
+
+        for (const log of successLogs ?? []) {
+          if (!lastSuccessByIntegration.has(log.integration_id)) {
+            lastSuccessByIntegration.set(log.integration_id, log.synced_at);
+          }
+        }
+      }
+
+      const calendarHealthBuckets: Record<ConnectionHealth, number> = {
+        healthy: 0,
+        warning: 0,
+        error: 0,
+        disabled: 0,
+      };
+
+      for (const integration of integrations) {
+        const health = computeConnectionHealth({
+          status: integration.status,
+          consecutiveFailureCount: integration.consecutive_failure_count ?? 0,
+          lastSuccessfulSyncAt:
+            lastSuccessByIntegration.get(integration.id) ?? null,
+        });
+
+        calendarHealthBuckets[health] += 1;
+      }
+
+      const calendarHealth = {
+        ...calendarHealthBuckets,
+        needsAttention:
+          calendarHealthBuckets.warning + calendarHealthBuckets.error,
+      };
+
       const properties = propertiesResult.data ?? [];
       const totalProperties = properties.length;
       const activeProperties = properties.filter(
@@ -307,6 +372,15 @@ export async function getDashboardSummary(organizationId: string) {
       const occupiedProperties = new Set(
         currentStays.map((r) => r.property_id)
       ).size;
+
+      // "Available" = active listings not currently occupied. Floored
+      // at 0 rather than allowed to go negative — an inactive property
+      // could theoretically still show as "occupied" from a lingering
+      // reservation, which shouldn't ever read as a negative count.
+      const availableProperties = Math.max(
+        activeProperties - occupiedProperties,
+        0
+      );
 
       const upcomingReservations = activeAndUpcoming
         .filter((r) => r.check_in >= today)
@@ -379,11 +453,13 @@ export async function getDashboardSummary(organizationId: string) {
         stats: {
           totalProperties,
           activeProperties,
+          availableProperties,
           totalReservations:
             totalReservationsResult.count ?? 0,
           pendingReservations:
             pendingReservationsResult.count ?? 0,
           occupiedProperties,
+          reviewRequired: reviewRequiredResult.count ?? 0,
           totalGuests: totalGuestsResult.count ?? 0,
           cleaningTasks: cleaningSummary.total,
           maintenanceTickets: maintenanceSummary.total,
@@ -413,6 +489,7 @@ export async function getDashboardSummary(organizationId: string) {
           lowStockCount,
         },
         integrations: integrationsSummary,
+        calendarHealth,
       };
 }
 

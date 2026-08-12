@@ -27,6 +27,8 @@ import {
 import integrationsRoutes from "./modules/integrations/routes";
 import icalExportRoutes from "./modules/icalExport/routes";
 import aiRoutes from "./modules/ai/routes";
+import exchangeRatesRoutes from "./modules/exchangeRates/routes";
+import auditLogRoutes from "./modules/auditLog/routes";
 import { apiRateLimiter } from "./middleware/rateLimiter";
 import { errorMiddleware, notFoundHandler } from "./middleware/error.middleware";
 import { env } from "./config/env";
@@ -79,6 +81,8 @@ app.use("/api/maintenance", maintenanceRoutes);
 app.use("/api/reports", reportsRoutes);
 app.use("/api/organization", organizationRoutes);
 app.use("/api/organization/settings", settingsRoutes);
+app.use("/api/organization/exchange-rates", exchangeRatesRoutes);
+app.use("/api/audit-log", auditLogRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/properties/:propertyId/images", propertyImagesRoutes);
 app.use("/api/properties/:propertyId", propertyDetailsRoutes);

@@ -8,6 +8,9 @@ export interface UpdateSettingsInput {
   check_in_time?: string | null;
   check_out_time?: string | null;
   guest_message_template?: string | null;
+  base_currency?: string | null;
+  display_currency?: string | null;
+  exchange_rate_mode?: "auto" | "manual";
 }
 
 /**
@@ -86,6 +89,42 @@ export function validateUpdateSettings(
     }
 
     updates.currency = currency;
+  }
+
+  for (const field of ["base_currency", "display_currency"] as const) {
+    const value = data[field];
+
+    if (value === undefined) continue;
+
+    if (value === null) {
+      updates[field] = null;
+      continue;
+    }
+
+    if (typeof value !== "string" || !value.trim()) {
+      throw new Error(`${field} must be a supported currency code or null`);
+    }
+
+    const currency = value.trim().toUpperCase();
+
+    if (!isSupportedCurrency(currency)) {
+      throw new Error(
+        `${field} must be one of: ${SUPPORTED_CURRENCY_CODES.join(", ")}`
+      );
+    }
+
+    updates[field] = currency;
+  }
+
+  if (data.exchange_rate_mode !== undefined) {
+    if (
+      data.exchange_rate_mode !== "auto" &&
+      data.exchange_rate_mode !== "manual"
+    ) {
+      throw new Error("exchange_rate_mode must be 'auto' or 'manual'");
+    }
+
+    updates.exchange_rate_mode = data.exchange_rate_mode;
   }
 
   for (const field of NULLABLE_STRING_FIELDS) {

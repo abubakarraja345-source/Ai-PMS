@@ -20,6 +20,8 @@ import {
   notifyMemberRoleChanged,
 } from "../notifications/service";
 
+import { logAudit } from "../auditLog/service";
+
 export const ALREADY_HAS_ORGANIZATION_MESSAGE =
   "You already belong to an organization";
 
@@ -228,7 +230,8 @@ export async function changeMemberRole(
   organizationId: string,
   callerUserId: string,
   targetMemberId: string,
-  newRole: string
+  newRole: string,
+  callerEmail?: string
 ) {
   const target = await findMemberById(
     organizationId,
@@ -267,6 +270,20 @@ export async function changeMemberRole(
       target.user_id,
       newRole
     );
+
+    void logAudit({
+      organizationId,
+      actorUserId: callerUserId,
+      actorLabel: callerEmail ?? callerUserId,
+      action: "member.role_changed",
+      entityType: "member",
+      entityId: targetMemberId,
+      metadata: {
+        targetUserId: target.user_id,
+        previousRole: target.role,
+        newRole,
+      },
+    });
   }
 
   return updated;
@@ -288,7 +305,8 @@ export async function changeMemberRole(
 export async function removeMember(
   organizationId: string,
   callerUserId: string,
-  targetMemberId: string
+  targetMemberId: string,
+  callerEmail?: string
 ) {
   const target = await findMemberById(
     organizationId,
@@ -315,6 +333,16 @@ export async function removeMember(
 
   if (deleted) {
     await notifyMemberRemoved(organizationId, target.user_id);
+
+    void logAudit({
+      organizationId,
+      actorUserId: callerUserId,
+      actorLabel: callerEmail ?? callerUserId,
+      action: "member.removed",
+      entityType: "member",
+      entityId: targetMemberId,
+      metadata: { targetUserId: target.user_id, previousRole: target.role },
+    });
   }
 
   return deleted;

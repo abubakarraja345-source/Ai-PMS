@@ -17,6 +17,7 @@ import { findImagePathsByProperty } from "../property-media/repository";
 import { IMAGES_BUCKET } from "../property-media/validation";
 import { findDocumentPathsByProperty } from "../property-details/repository";
 import { DOCUMENTS_BUCKET } from "../property-details/validation";
+import { logAudit } from "../auditLog/service";
 
 export async function getProperties(
   organizationId: string,
@@ -72,7 +73,8 @@ export async function getProperty(
 export async function editProperty(
   organizationId: string,
   propertyId: string,
-  rawUpdates: unknown
+  rawUpdates: unknown,
+  actor?: { id: string; email?: string }
 ) {
   if (!organizationId) {
     throw new Error("Organization ID is required");
@@ -88,11 +90,37 @@ export async function editProperty(
   // written through this path.
   const updates = validateUpdateProperty(rawUpdates);
 
-  return updateProperty(
+  const previous =
+    updates.currency !== undefined
+      ? await findPropertyById(organizationId, propertyId)
+      : null;
+
+  const updated = await updateProperty(
     organizationId,
     propertyId,
     updates
   );
+
+  if (
+    updated &&
+    updates.currency !== undefined &&
+    updates.currency !== previous?.currency
+  ) {
+    void logAudit({
+      organizationId,
+      actorUserId: actor?.id ?? null,
+      actorLabel: actor?.email ?? actor?.id ?? null,
+      action: "currency.property_changed",
+      entityType: "property",
+      entityId: propertyId,
+      metadata: {
+        previousCurrency: previous?.currency ?? null,
+        newCurrency: updates.currency,
+      },
+    });
+  }
+
+  return updated;
 }
 export async function removeProperty(
   organizationId: string,

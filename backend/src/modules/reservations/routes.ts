@@ -204,7 +204,8 @@ reservationRouter.post(
 
       const data = await addReservation(
         req.organization.id,
-        input
+        input,
+        req.user
       );
 
       return res.status(201).json({
@@ -258,7 +259,8 @@ reservationRouter.patch(
       const data = await editReservation(
         req.organization.id,
         req.params.id,
-        req.body
+        req.body,
+        req.user
       );
 
       if (!data) {
@@ -335,7 +337,8 @@ reservationRouter.patch(
 
       const data = await clearReviewFlag(
         req.organization.id,
-        reservationId
+        reservationId,
+        req.user
       );
 
       if (!data) {

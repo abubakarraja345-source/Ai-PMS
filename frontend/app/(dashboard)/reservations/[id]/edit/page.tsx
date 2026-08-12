@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import AvailabilityCheck from "@/components/reservations/availability-check";
 import MoneyInput from "@/components/shared/money-input";
-import CurrencyDisplayCard from "@/components/shared/currency-display-card";
+import { getCurrencyMeta } from "@/lib/currency";
 
 type Reservation = {
   id: string;
@@ -587,10 +587,30 @@ export default function EditReservationPage() {
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">
-            Payment
+            Financial Details
           </h2>
 
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-sm font-semibold text-amber-700 shadow-sm">
+              {getCurrencyMeta(form.currency).symbol}
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-900">
+                Currency{" "}
+                <span className="font-semibold text-amber-700">
+                  {getCurrencyMeta(form.currency).code} ·{" "}
+                  {getCurrencyMeta(form.currency).name}
+                </span>
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Fixed for this reservation — set automatically at creation
+                and cannot be changed here.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <label htmlFor="total_amount" className="text-sm font-medium text-slate-700">
                 Total Amount
@@ -650,18 +670,6 @@ export default function EditReservationPage() {
                 />
               </div>
             </div>
-          </div>
-
-          <div className="mt-5">
-            <p className="mb-2 text-sm font-medium text-slate-700">
-              Currency
-            </p>
-
-            <CurrencyDisplayCard
-              code={form.currency}
-              sourceLabel="Fixed for this reservation"
-              helperText="Cannot be changed here — set automatically when the reservation was created."
-            />
           </div>
         </section>
 

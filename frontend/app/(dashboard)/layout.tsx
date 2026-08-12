@@ -31,7 +31,9 @@ const navItems = [
   { name: "Reports", href: "/reports" },
   { name: "Inventory", href: "/inventory" },
   { name: "Integrations", href: "/integrations" },
+  { name: "Status Center", href: "/status" },
   { name: "Team", href: "/team" },
+  { name: "Audit Log", href: "/audit-log" },
   { name: "AI Assistant", href: "/ai" },
 ];
 

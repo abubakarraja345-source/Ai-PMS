@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 
@@ -394,6 +395,13 @@ export default function TeamPage() {
                     {canManage && (
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
+                          <Link
+                            href={`/audit-log?entity_type=member&entity_id=${member.id}`}
+                            className="text-sm font-medium text-slate-500 hover:text-slate-900"
+                          >
+                            Activity
+                          </Link>
+
                           <select
                             value={
                               ASSIGNABLE_ROLES.includes(member.role)

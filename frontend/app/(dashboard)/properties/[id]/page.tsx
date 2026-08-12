@@ -274,9 +274,12 @@ export default function PropertyDetailsPage() {
             <CurrencyDisplayCard
               code={property.currency ?? orgDefaultCurrency}
               sourceLabel={
-                property.currency ? "Property override" : "Organization default"
+                property.currency
+                  ? "Custom property currency"
+                  : "Inherited from organization"
               }
-              helperText="Used for new reservations."
+              sourceTone={property.currency ? "override" : "inherited"}
+              helperText="Used for new reservations. Existing reservations keep the currency they were created with."
             />
           </div>
         </section>

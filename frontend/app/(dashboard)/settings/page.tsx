@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ArrowDown } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import CurrencySelect from "@/components/shared/currency-select";
-import CurrencyBadge from "@/components/shared/currency-badge";
+import { getCurrencyMeta } from "@/lib/currency";
+import CurrencyPickerModal from "@/components/shared/currency-picker-modal";
 import CurrencyDisplayCard from "@/components/shared/currency-display-card";
+import CurrencySelect from "@/components/shared/currency-select";
 import ConfirmDialog from "@/components/shared/confirm-dialog";
 import { useToast } from "@/components/shared/toast";
+import ExchangeRatesTable from "@/components/settings/exchange-rates-table";
 
 interface OrganizationSettings {
   name: string;
@@ -17,6 +20,9 @@ interface OrganizationSettings {
   checkInTime: string | null;
   checkOutTime: string | null;
   guestMessageTemplate: string | null;
+  baseCurrency: string;
+  displayCurrency: string;
+  exchangeRateMode: "auto" | "manual";
   updatedAt: string | null;
 }
 
@@ -28,6 +34,9 @@ type FormState = {
   checkInTime: string;
   checkOutTime: string;
   guestMessageTemplate: string;
+  baseCurrency: string;
+  displayCurrency: string;
+  exchangeRateMode: "auto" | "manual";
 };
 
 function toForm(settings: OrganizationSettings): FormState {
@@ -39,6 +48,9 @@ function toForm(settings: OrganizationSettings): FormState {
     checkInTime: settings.checkInTime ?? "",
     checkOutTime: settings.checkOutTime ?? "",
     guestMessageTemplate: settings.guestMessageTemplate ?? "",
+    baseCurrency: settings.baseCurrency,
+    displayCurrency: settings.displayCurrency,
+    exchangeRateMode: settings.exchangeRateMode,
   };
 }
 
@@ -51,6 +63,7 @@ export default function SettingsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [showCurrencyConfirm, setShowCurrencyConfirm] = useState(false);
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const { showToast, ToastViewport } = useToast();
 
   const loadSettings = useCallback(async () => {
@@ -159,6 +172,12 @@ export default function SettingsPage() {
       if (form.guestMessageTemplate !== original.guestMessageTemplate)
         payload.guest_message_template =
           form.guestMessageTemplate || null;
+      if (form.baseCurrency !== original.baseCurrency)
+        payload.base_currency = form.baseCurrency;
+      if (form.displayCurrency !== original.displayCurrency)
+        payload.display_currency = form.displayCurrency;
+      if (form.exchangeRateMode !== original.exchangeRateMode)
+        payload.exchange_rate_mode = form.exchangeRateMode;
 
       const response = await apiFetch("/api/organization/settings", {
         method: "PATCH",
@@ -355,40 +374,131 @@ export default function SettingsPage() {
         </section>
 
         {/* Financial Preferences */}
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 p-6">
+            <h2 className="text-xl font-semibold text-slate-900">
+              Financial Preferences
+            </h2>
+            <p className="mt-1 max-w-md text-sm text-slate-500">
+              Manage how monetary values are displayed across your
+              organization.
+            </p>
+          </div>
+
+          <div className="p-6">
+            <div className="max-w-md">
+              <CurrencyDisplayCard
+                code={form.currency}
+                eyebrow="Organization Currency"
+                sourceLabel={
+                  canEdit ? "Editable by owners & admins" : "Read-only"
+                }
+                sourceTone="inherited"
+                helperText="All new properties inherit this currency unless they set their own override. Existing reservations always keep the currency they were created with."
+              />
+            </div>
+
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => setShowCurrencyPicker(true)}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                Change Currency
+              </button>
+            )}
+          </div>
+        </section>
+
+        <CurrencyPickerModal
+          open={showCurrencyPicker}
+          value={form.currency}
+          title="Change organization currency"
+          description="This becomes the default for new properties and reservations."
+          onChange={(code) => updateField("currency", code)}
+          onClose={() => setShowCurrencyPicker(false)}
+        />
+
+        {/* Multi-Currency Conversion */}
+        <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 p-6">
+            <h2 className="text-xl font-semibold text-slate-900">
+              Multi-Currency Conversion
+            </h2>
+            <p className="mt-1 max-w-lg text-sm text-slate-500">
+              Reservations booked in other currencies are converted into
+              your base currency for consolidated reporting — original
+              amounts and currencies are always kept too, never overwritten.
+            </p>
+          </div>
+
+          <div className="grid gap-6 p-6 sm:grid-cols-2">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900">
-                Financial Preferences
-              </h2>
-              <p className="mt-1 max-w-md text-sm text-slate-500">
-                Choose the default currency used for new reservations and
-                financial records.
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Base Currency
+              </label>
+              <CurrencySelect
+                value={form.baseCurrency}
+                disabled={!canEdit}
+                onChange={(code) => updateField("baseCurrency", code)}
+              />
+              <p className="mt-2 text-xs text-slate-500">
+                Every reservation amount is converted into this currency
+                for reports.
               </p>
             </div>
 
-            <CurrencyBadge code={form.currency} variant="expanded" />
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Display Currency
+              </label>
+              <CurrencySelect
+                value={form.displayCurrency}
+                disabled={!canEdit}
+                onChange={(code) => updateField("displayCurrency", code)}
+              />
+              <p className="mt-2 text-xs text-slate-500">
+                A viewing preference only — never stored on any
+                reservation.
+              </p>
+            </div>
           </div>
 
-          <div className="mt-5 max-w-sm">
-            <label htmlFor="currency" className="mb-2 block text-sm font-medium text-slate-700">
-              Currency
-            </label>
-            <CurrencySelect
-              id="currency"
-              value={form.currency}
-              disabled={!canEdit}
-              onChange={(code) => updateField("currency", code)}
-            />
+          <div className="border-t border-slate-100 px-6 py-5">
+            <p className="text-sm font-medium text-slate-700">
+              Exchange Rate Mode
+            </p>
+
+            <div className="mt-3 inline-flex rounded-xl border border-slate-200 p-1">
+              {(["auto", "manual"] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  disabled={!canEdit}
+                  onClick={() => updateField("exchangeRateMode", option)}
+                  className={`rounded-lg px-4 py-2 text-sm font-medium capitalize transition disabled:cursor-not-allowed ${
+                    form.exchangeRateMode === option
+                      ? "bg-slate-900 text-white"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+
+            <p className="mt-2 text-xs text-slate-500">
+              {form.exchangeRateMode === "auto"
+                ? "Rates are fetched automatically from a public rate service and cached for a few hours."
+                : "Rates are only ever the values an owner or company admin enters below."}
+            </p>
           </div>
 
-          <div className="mt-5">
-            <CurrencyDisplayCard
-              code={form.currency}
-              sourceLabel="Current default"
-              helperText="This affects new reservations only. Existing reservation amounts are not changed."
-            />
-          </div>
+          <ExchangeRatesTable
+            baseCurrency={form.baseCurrency}
+            mode={form.exchangeRateMode}
+            canEdit={canEdit}
+          />
         </section>
 
         {/* Guest Experience */}
@@ -461,8 +571,8 @@ export default function SettingsPage() {
       <ConfirmDialog
         open={showCurrencyConfirm}
         tone="warning"
-        title="Change Organization Currency?"
-        confirmLabel="Confirm Change"
+        title="Change organization currency?"
+        confirmLabel="Change Currency"
         cancelLabel="Cancel"
         onCancel={() => setShowCurrencyConfirm(false)}
         onConfirm={() => {
@@ -471,18 +581,31 @@ export default function SettingsPage() {
         }}
         description={
           <>
-            <p>You&apos;re changing the default currency from:</p>
+            <div className="my-1 flex flex-col items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 py-4">
+              <div className="text-center">
+                <p className="text-base font-semibold text-slate-900">
+                  {getCurrencyMeta(original?.currency).code}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {getCurrencyMeta(original?.currency).name}
+                </p>
+              </div>
 
-            <div className="my-3 flex flex-wrap items-center gap-3">
-              <CurrencyBadge code={original?.currency} variant="expanded" />
-              <span className="text-slate-400">→</span>
-              <CurrencyBadge code={form?.currency} variant="expanded" />
+              <ArrowDown size={16} className="text-slate-300" />
+
+              <div className="text-center">
+                <p className="text-base font-semibold text-blue-700">
+                  {getCurrencyMeta(form?.currency).code}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {getCurrencyMeta(form?.currency).name}
+                </p>
+              </div>
             </div>
 
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              This change affects new reservations and future financial
-              records only. Existing reservations will keep their original
-              currency and amounts.
+            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Existing reservations will remain in their original
+              currencies. New reservations will use the new default.
             </p>
           </>
         }

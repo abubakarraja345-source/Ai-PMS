@@ -24,6 +24,7 @@ import { createChannelLink, removeChannelLink } from "./channelLinks.service";
 import { ConnectPropertyCalendarInput } from "./validation";
 import { computeConnectionHealth } from "./health";
 import { resolveSyncIntervalMinutes } from "./syncConfig";
+import { logAudit } from "../auditLog/service";
 
 async function toClientIntegration(row: IntegrationRow): Promise<Integration> {
   const [lastLog, lastSuccess, lastFailed] = await Promise.all([
@@ -131,7 +132,8 @@ export async function addIntegration(
  */
 export async function connectPropertyCalendar(
   organizationId: string,
-  input: ConnectPropertyCalendarInput
+  input: ConnectPropertyCalendarInput,
+  actor?: { id: string; email?: string }
 ): Promise<Integration> {
   const propertyExists = await verifyProperty(
     organizationId,
@@ -169,6 +171,20 @@ export async function connectPropertyCalendar(
     await notifyIntegrationConnected(organizationId, {
       provider: input.provider,
       accountName: input.externalListingName,
+    });
+
+    void logAudit({
+      organizationId,
+      actorUserId: actor?.id ?? null,
+      actorLabel: actor?.email ?? actor?.id ?? null,
+      action: "integration.connected",
+      entityType: "integration",
+      entityId: row.id,
+      metadata: {
+        provider: input.provider,
+        propertyId: input.propertyId,
+        externalListingName: input.externalListingName,
+      },
     });
 
     return toClientIntegration(activated ?? row);

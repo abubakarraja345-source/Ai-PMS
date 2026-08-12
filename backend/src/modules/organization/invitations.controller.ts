@@ -177,7 +177,9 @@ export async function resendInvitationController(
     const data = await resendInvitation(
       req.organization.id,
       req.organization.name,
-      invitationId
+      invitationId,
+      req.user?.id,
+      req.user?.email
     );
 
     if (!data) {
@@ -223,7 +225,12 @@ export async function revokeInvitationController(
       });
     }
 
-    const data = await revokeInvitation(req.organization.id, invitationId);
+    const data = await revokeInvitation(
+      req.organization.id,
+      invitationId,
+      req.user?.id,
+      req.user?.email
+    );
 
     if (!data) {
       return res.status(404).json({

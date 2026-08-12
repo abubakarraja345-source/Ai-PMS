@@ -487,8 +487,8 @@ export default function NewPropertyPage() {
               <label
                 className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
                   form.currency === ""
-                    ? "border-slate-900 bg-slate-50"
-                    : "border-slate-200 hover:bg-slate-50"
+                    ? "border-blue-300 bg-blue-50/50 ring-1 ring-blue-100"
+                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
                 <input
@@ -496,7 +496,7 @@ export default function NewPropertyPage() {
                   name="currency_mode"
                   checked={form.currency === ""}
                   onChange={() => updateField("currency", "")}
-                  className="mt-1"
+                  className="mt-1 accent-blue-600"
                 />
 
                 <span>
@@ -506,7 +506,7 @@ export default function NewPropertyPage() {
                   <span className="mt-0.5 block text-sm text-slate-500">
                     {orgDefaultCurrency}
                     {CURRENCIES[orgDefaultCurrency]
-                      ? ` — ${CURRENCIES[orgDefaultCurrency]!.name}`
+                      ? ` · ${CURRENCIES[orgDefaultCurrency]!.name}`
                       : ""}
                   </span>
                 </span>
@@ -515,8 +515,8 @@ export default function NewPropertyPage() {
               <label
                 className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
                   form.currency !== ""
-                    ? "border-slate-900 bg-slate-50"
-                    : "border-slate-200 hover:bg-slate-50"
+                    ? "border-blue-300 bg-blue-50/50 ring-1 ring-blue-100"
+                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
                 <input
@@ -526,7 +526,7 @@ export default function NewPropertyPage() {
                   onChange={() =>
                     updateField("currency", form.currency || orgDefaultCurrency)
                   }
-                  className="mt-1"
+                  className="mt-1 accent-blue-600"
                 />
 
                 <span className="w-full">
@@ -534,28 +534,32 @@ export default function NewPropertyPage() {
                     Custom property currency
                   </span>
 
-                  {form.currency !== "" && (
-                    <div className="mt-3 max-w-sm">
+                  <div
+                    className={`grid transition-all duration-200 ease-out ${
+                      form.currency !== ""
+                        ? "mt-3 grid-rows-[1fr] opacity-100"
+                        : "grid-rows-[0fr] overflow-hidden opacity-0"
+                    }`}
+                  >
+                    <div className="max-w-sm min-h-0">
                       <CurrencySelect
                         value={form.currency || orgDefaultCurrency}
                         onChange={(code) => updateField("currency", code)}
                       />
                     </div>
-                  )}
+                  </div>
                 </span>
               </label>
             </div>
 
             <div className="mt-5">
-              <p className="mb-2 text-sm font-medium text-slate-700">
-                Effective currency
-              </p>
-
               <CurrencyDisplayCard
                 code={form.currency || orgDefaultCurrency}
+                eyebrow="Effective Currency"
                 sourceLabel={
                   form.currency ? "Property override" : "Organization default"
                 }
+                sourceTone={form.currency ? "override" : "inherited"}
               />
             </div>
           </section>

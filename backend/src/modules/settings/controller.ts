@@ -67,7 +67,8 @@ export async function updateSettingsController(
 
     const data = await updateOrganizationSettings(
       req.organization.id,
-      input
+      input,
+      req.user
     );
 
     return res.status(200).json({

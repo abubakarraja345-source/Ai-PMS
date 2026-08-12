@@ -12,6 +12,7 @@ import {
   CURRENCIES,
   CurrencyMeta,
   SUPPORTED_CURRENCY_CODES,
+  formatMoney,
   getCurrencyMeta,
 } from "@/lib/currency";
 
@@ -131,7 +132,7 @@ export default function CurrencySelect({
         onKeyDown={handleTriggerKeyDown}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm outline-none transition focus:border-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm outline-none transition hover:border-slate-300 focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
       >
         <span className="flex min-w-0 items-center gap-2">
           <span className="text-slate-400">{selected.symbol}</span>
@@ -150,7 +151,7 @@ export default function CurrencySelect({
       {open && (
         <div
           role="listbox"
-          className="absolute z-20 mt-2 w-full min-w-[280px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg animate-in fade-in zoom-in-95 duration-150"
+          className="absolute z-20 mt-2 w-full min-w-[340px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg animate-in fade-in zoom-in-95 duration-150"
         >
           <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2.5">
             <Search size={15} className="shrink-0 text-slate-400" />
@@ -187,17 +188,20 @@ export default function CurrencySelect({
                       index === highlighted ? "bg-slate-50" : ""
                     }`}
                   >
-                    <span className="flex h-4 w-4 shrink-0 items-center justify-center text-slate-900">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center text-blue-600">
                       {isSelected && <Check size={14} />}
                     </span>
                     <span className="w-6 shrink-0 text-center text-slate-400">
                       {meta.symbol}
                     </span>
-                    <span className="shrink-0 font-medium text-slate-900">
+                    <span className="w-11 shrink-0 font-medium text-slate-900">
                       {meta.code}
                     </span>
-                    <span className="truncate text-slate-500">
+                    <span className="min-w-0 flex-1 truncate text-slate-500">
                       {meta.name}
+                    </span>
+                    <span className="shrink-0 tabular-nums text-slate-400">
+                      {formatMoney(1250, meta.code)}
                     </span>
                   </button>
                 );

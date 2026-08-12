@@ -8,6 +8,7 @@ import {
 import { OrganizationSettings } from "./types";
 import { UpdateSettingsInput } from "./validation";
 import { notifySettingsChanged } from "../notifications/service";
+import { logAudit } from "../auditLog/service";
 
 /**
  * organization_id/name live on `organizations` (already populated
@@ -32,23 +33,36 @@ export async function getOrganizationSettings(
     throw new Error("Organization not found");
   }
 
+  const currency = settings?.currency ?? "USD";
+  const baseCurrency = settings?.base_currency ?? currency;
+  const displayCurrency = settings?.display_currency ?? baseCurrency;
+
   return {
     name: org.name,
     timezone: settings?.timezone ?? "UTC",
-    currency: settings?.currency ?? "USD",
+    currency,
     language: settings?.language ?? "en",
     checkInTime: settings?.check_in_time ?? null,
     checkOutTime: settings?.check_out_time ?? null,
     guestMessageTemplate: settings?.guest_message_template ?? null,
+    baseCurrency,
+    displayCurrency,
+    exchangeRateMode: settings?.exchange_rate_mode ?? "auto",
     updatedAt: settings?.updated_at ?? null,
   };
 }
 
 export async function updateOrganizationSettings(
   organizationId: string,
-  input: UpdateSettingsInput
+  input: UpdateSettingsInput,
+  actor?: { id: string; email?: string }
 ): Promise<OrganizationSettings> {
   const { name, ...settingsFields } = input;
+
+  const previousCurrency =
+    input.currency !== undefined
+      ? (await getOrganizationSettings(organizationId)).currency
+      : null;
 
   if (name !== undefined) {
     const updated = await updateOrganizationName(
@@ -69,6 +83,18 @@ export async function updateOrganizationSettings(
 
   if (changedFields.length > 0) {
     await notifySettingsChanged(organizationId, changedFields);
+  }
+
+  if (input.currency !== undefined && input.currency !== previousCurrency) {
+    void logAudit({
+      organizationId,
+      actorUserId: actor?.id ?? null,
+      actorLabel: actor?.email ?? actor?.id ?? null,
+      action: "currency.organization_changed",
+      entityType: "organization",
+      entityId: organizationId,
+      metadata: { previousCurrency, newCurrency: input.currency },
+    });
   }
 
   return getOrganizationSettings(organizationId);

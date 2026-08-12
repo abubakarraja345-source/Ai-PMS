@@ -40,6 +40,12 @@ export interface CreateReservationInput {
 
   currency?: string | null;
 
+  /** Server-derived multi-currency conversion snapshot — never
+   * accepted from the client. See service.ts's addReservation. */
+  amount_base?: number | null;
+  base_currency?: string | null;
+  exchange_rate?: number | null;
+
   special_requests?: string | null;
 }
 
@@ -336,6 +342,13 @@ export function validateCreateReservation(
     // property's effective currency before the reservation is
     // created. This placeholder value is never actually persisted.
     currency: null,
+
+    // Same — always server-derived in addReservation from the
+    // resolved currency + the organization's base-currency exchange
+    // rate. Never trusted from the client.
+    amount_base: null,
+    base_currency: null,
+    exchange_rate: null,
 
     special_requests:
       typeof data.special_requests === "string"

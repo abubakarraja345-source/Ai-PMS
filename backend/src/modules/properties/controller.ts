@@ -155,7 +155,8 @@ export async function updatePropertyController(
     const property = await editProperty(
       req.organization.id,
       req.params.id,
-      req.body
+      req.body,
+      req.user
     );
 
     if (!property) {

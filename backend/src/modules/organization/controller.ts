@@ -70,7 +70,8 @@ export async function changeMemberRoleController(
       req.organization.id,
       req.user.id,
       req.params.id,
-      role
+      role,
+      req.user.email
     );
 
     if (!updated) {
@@ -116,7 +117,8 @@ export async function removeMemberController(
     const removed = await removeMember(
       req.organization.id,
       req.user.id,
-      req.params.id
+      req.params.id,
+      req.user.email
     );
 
     if (!removed) {

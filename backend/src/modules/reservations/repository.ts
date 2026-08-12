@@ -27,6 +27,9 @@ const RESERVATION_SELECT = `
   cleaning_fee,
   taxes,
   currency,
+  amount_base,
+  base_currency,
+  exchange_rate,
   special_requests,
   needs_review,
   created_at,
@@ -441,6 +444,10 @@ export async function createReservation(
 
       currency:
         input.currency ?? "USD",
+
+      amount_base: input.amount_base ?? null,
+      base_currency: input.base_currency ?? null,
+      exchange_rate: input.exchange_rate ?? null,
 
       special_requests:
         input.special_requests ?? null,

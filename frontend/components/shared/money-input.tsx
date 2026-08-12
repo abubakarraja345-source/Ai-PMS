@@ -84,8 +84,15 @@ export default function MoneyInput({
           disabled={disabled}
           placeholder={placeholder ?? defaultPlaceholder}
           onChange={(event) => handleChange(event.target.value)}
-          className="w-full bg-transparent px-3 py-2.5 text-sm text-slate-900 outline-none disabled:cursor-not-allowed disabled:text-slate-500"
+          className="min-w-0 flex-1 bg-transparent px-3 py-3 text-base font-semibold tabular-nums text-slate-900 outline-none disabled:cursor-not-allowed disabled:text-slate-500"
         />
+
+        <span
+          aria-hidden="true"
+          className="flex shrink-0 items-center pr-3 text-sm text-slate-300"
+        >
+          {meta.symbol}
+        </span>
       </div>
 
       {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}

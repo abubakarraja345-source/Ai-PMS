@@ -1,0 +1,43 @@
+export interface AuditLogRow {
+  id: string;
+  organization_id: string;
+  actor_user_id: string | null;
+  actor_label: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+/**
+ * The curated set of "important actions" this module records — see
+ * the migration's own header comment for why this is intentionally
+ * not an exhaustive wrap of every mutation in the app.
+ */
+export const AUDIT_ACTIONS = [
+  "reservation.created",
+  "reservation.cancelled",
+  "reservation.review_cleared",
+  "member.role_changed",
+  "member.removed",
+  "invitation.created",
+  "invitation.resent",
+  "invitation.revoked",
+  "integration.connected",
+  "currency.organization_changed",
+  "currency.property_changed",
+] as const;
+
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+
+export const AUDIT_ENTITY_TYPES = [
+  "reservation",
+  "member",
+  "invitation",
+  "integration",
+  "organization",
+  "property",
+] as const;
+
+export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

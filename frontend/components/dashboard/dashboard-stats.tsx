@@ -15,6 +15,8 @@ import {
   Clock,
   DollarSign,
   UserPlus,
+  AlertTriangle,
+  RadioTower,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { formatMoney as formatMoneyShared } from "@/lib/currency";
@@ -66,9 +68,11 @@ interface DashboardSummary {
   stats: {
     totalProperties: number;
     activeProperties: number;
+    availableProperties: number;
     totalReservations: number;
     pendingReservations: number;
     occupiedProperties: number;
+    reviewRequired: number;
     totalGuests: number;
     cleaningTasks: number;
     maintenanceTickets: number;
@@ -113,6 +117,13 @@ interface DashboardSummary {
     total: number;
     active: number;
     error: number;
+  };
+  calendarHealth: {
+    healthy: number;
+    warning: number;
+    error: number;
+    disabled: number;
+    needsAttention: number;
   };
 }
 
@@ -229,7 +240,7 @@ export default function DashboardStats() {
 
   if (!summary) return null;
 
-  const { stats, today, upcomingReservations, recentActivity, revenue, occupancy } =
+  const { stats, today, upcomingReservations, recentActivity, revenue, occupancy, calendarHealth } =
     summary;
 
   const cards = [
@@ -264,6 +275,19 @@ export default function DashboardStats() {
       icon: BedDouble,
     },
     {
+      title: "Available Properties",
+      value: stats.availableProperties,
+      description: "Active and not occupied",
+      icon: Building2,
+    },
+    {
+      title: "Review Required",
+      value: stats.reviewRequired,
+      description: "Reservations flagged for staff review",
+      icon: AlertTriangle,
+      alert: stats.reviewRequired > 0,
+    },
+    {
       title: "Guests",
       value: stats.totalGuests,
       description: "Guests in your system",
@@ -277,11 +301,16 @@ export default function DashboardStats() {
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => {
           const Icon = card.icon;
+          const isAlert = "alert" in card && card.alert;
 
           return (
             <div
               key={card.title}
-              className="group rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+              className={`group rounded-2xl border p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                isAlert
+                  ? "border-amber-200 bg-amber-50/40"
+                  : "border-slate-200/80 bg-white"
+              }`}
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -289,12 +318,22 @@ export default function DashboardStats() {
                     {card.title}
                   </p>
 
-                  <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+                  <p
+                    className={`mt-3 text-3xl font-semibold tracking-tight ${
+                      isAlert ? "text-amber-700" : "text-slate-900"
+                    }`}
+                  >
                     {card.value}
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-slate-100 p-3 text-slate-700 transition-colors group-hover:bg-slate-900 group-hover:text-white">
+                <div
+                  className={`rounded-xl p-3 transition-colors ${
+                    isAlert
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-slate-100 text-slate-700 group-hover:bg-slate-900 group-hover:text-white"
+                  }`}
+                >
                   <Icon size={20} />
                 </div>
               </div>
@@ -411,33 +450,52 @@ export default function DashboardStats() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">
-                Revenue
+                Financial Overview
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                From confirmed and completed reservations.
+                Revenue from confirmed and completed reservations, grouped
+                by currency.
               </p>
             </div>
 
-            <DollarSign
-              size={20}
-              className="text-slate-400"
-            />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <DollarSign size={18} />
+            </div>
           </div>
 
           {revenue.byCurrency.length === 0 ? (
-            <p className="mt-8 text-sm text-slate-400">
-              No revenue yet.
-            </p>
+            <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 py-10 text-center">
+              <p className="text-sm font-medium text-slate-600">
+                No financial data yet
+              </p>
+              <p className="mt-1 max-w-xs text-xs text-slate-400">
+                New reservation financial activity will appear here once
+                bookings are confirmed.
+              </p>
+            </div>
           ) : (
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {revenue.byCurrency.map((entry) => (
+              {revenue.byCurrency.map((entry, index) => (
                 <div
                   key={entry.currency}
-                  className="rounded-xl border border-slate-100 bg-slate-50 p-5"
+                  className={`relative overflow-hidden rounded-xl border pl-6 pr-5 py-5 transition hover:shadow-sm ${
+                    index === 0
+                      ? "border-blue-100 bg-blue-50/40"
+                      : "border-slate-100 bg-slate-50"
+                  }`}
                 >
+                  <span
+                    className={`absolute inset-y-0 left-0 w-1 ${
+                      index === 0 ? "bg-blue-500" : "bg-slate-300"
+                    }`}
+                  />
+
                   <div className="flex items-center justify-between">
-                    <CurrencyBadge code={entry.currency} />
+                    <CurrencyBadge
+                      code={entry.currency}
+                      variant={index === 0 ? "financial" : "compact"}
+                    />
 
                     <span className="text-xs text-slate-400">
                       {entry.count} reservation
@@ -445,7 +503,7 @@ export default function DashboardStats() {
                     </span>
                   </div>
 
-                  <p className="mt-3 text-2xl font-semibold text-slate-900">
+                  <p className="mt-3 text-2xl font-bold tabular-nums text-slate-900">
                     {formatMoney(
                       entry.total,
                       entry.currency
@@ -456,12 +514,23 @@ export default function DashboardStats() {
             </div>
           )}
 
-          {revenue.byCurrency.length > 1 && (
-            <p className="mt-4 text-xs text-slate-400">
-              Shown separately per currency — amounts are not
-              combined.
-            </p>
-          )}
+          <div className="mt-5 flex items-center justify-between gap-4">
+            {revenue.byCurrency.length > 1 ? (
+              <p className="text-xs text-slate-400">
+                Shown separately per currency — amounts are not combined.
+              </p>
+            ) : (
+              <span />
+            )}
+
+            <Link
+              href="/reports"
+              className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
+            >
+              View financial details
+              <ArrowUpRight size={14} />
+            </Link>
+          </div>
         </div>
 
         {/* Operations */}
@@ -549,6 +618,45 @@ export default function DashboardStats() {
                 {summary.integrations.error > 0
                   ? `, ${summary.integrations.error} error`
                   : ""}
+              </span>
+            </Link>
+
+            <Link
+              href="/status"
+              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
+            >
+              <span className="text-sm text-slate-700">
+                Calendar health
+              </span>
+              <span
+                className={`text-sm font-medium ${
+                  calendarHealth.needsAttention > 0
+                    ? "text-amber-600"
+                    : "text-emerald-600"
+                }`}
+              >
+                {calendarHealth.needsAttention > 0
+                  ? `${calendarHealth.needsAttention} need attention`
+                  : "All healthy"}
+              </span>
+            </Link>
+
+            <Link
+              href="/reservations/review"
+              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
+            >
+              <span className="text-sm text-slate-700">
+                Review required
+              </span>
+              <span
+                className={`text-sm font-medium ${
+                  stats.reviewRequired > 0
+                    ? "text-amber-600"
+                    : "text-slate-900"
+                }`}
+              >
+                {stats.reviewRequired} reservation
+                {stats.reviewRequired === 1 ? "" : "s"}
               </span>
             </Link>
           </div>

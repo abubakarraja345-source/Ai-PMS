@@ -402,49 +402,52 @@ export default async function ReservationViewPage({
               </p>
             </div>
 
-            <CurrencyBadge code={reservation.currency} variant="expanded" />
+            <CurrencyBadge code={reservation.currency} variant="financial" />
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
-              <p className="text-sm text-slate-500">
-                Total Amount
-              </p>
+          <div className="mt-6 rounded-2xl bg-slate-900 px-6 py-8 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Total Amount
+            </p>
 
-              <p className="mt-2 text-2xl font-bold text-slate-900">
-                {formatMoney(
-                  reservation.total_amount,
-                  reservation.currency
-                )}
-              </p>
-            </div>
+            <p className="mt-2 text-4xl font-bold tabular-nums text-white">
+              {formatMoney(
+                reservation.total_amount,
+                reservation.currency
+              )}
+            </p>
 
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
-              <p className="text-sm text-slate-500">
-                Cleaning Fee
-              </p>
+            <p className="mt-1 text-xs text-slate-400">
+              Recorded reservation value
+            </p>
+          </div>
 
-              <p className="mt-2 text-xl font-semibold text-slate-900">
+          <div className="mt-5 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-100">
+            <div className="flex items-center justify-between px-5 py-3.5">
+              <span className="text-sm text-slate-600">Cleaning Fee</span>
+              <span className="text-sm font-semibold tabular-nums text-slate-900">
                 {formatMoney(
                   reservation.cleaning_fee,
                   reservation.currency
                 )}
-              </p>
+              </span>
             </div>
 
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
-              <p className="text-sm text-slate-500">
-                Taxes
-              </p>
-
-              <p className="mt-2 text-xl font-semibold text-slate-900">
+            <div className="flex items-center justify-between px-5 py-3.5">
+              <span className="text-sm text-slate-600">Taxes</span>
+              <span className="text-sm font-semibold tabular-nums text-slate-900">
                 {formatMoney(
                   reservation.taxes,
                   reservation.currency
                 )}
-              </p>
+              </span>
             </div>
           </div>
+
+          <p className="mt-3 text-xs text-slate-400">
+            Cleaning fee and taxes are recorded independently and are not
+            combined into the total amount above.
+          </p>
         </div>
 
         {/* Special Requests */}

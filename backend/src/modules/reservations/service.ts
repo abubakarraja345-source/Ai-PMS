@@ -25,6 +25,18 @@ import {
 import { withPropertyLock } from "./propertyLock";
 import { ReservationListItem } from "./types";
 import { getEffectivePropertyCurrency } from "../properties/currency";
+import { getOrganizationSettings } from "../settings/service";
+import { resolveExchangeRate } from "../exchangeRates/service";
+import { logAudit } from "../auditLog/service";
+
+export interface AuditActor {
+  id: string;
+  email?: string;
+}
+
+function actorLabel(actor: AuditActor | undefined): string | null {
+  return actor?.email ?? actor?.id ?? null;
+}
 
 /**
  * Thrown when a create/edit would double-book a property. Carries a
@@ -381,7 +393,8 @@ function dateToTimestamp(
  */
 export async function addReservation(
   organizationId: string,
-  input: CreateReservationInput
+  input: CreateReservationInput,
+  actor?: AuditActor
 ) {
   const propertyExists =
     await verifyProperty(
@@ -417,6 +430,37 @@ export async function addReservation(
     organizationId,
     input.property_id
   );
+
+  // Multi-currency conversion snapshot: convert total_amount into the
+  // organization's base currency AT THIS MOMENT, using whatever rate
+  // resolveExchangeRate can find (auto-fetched/cached or manually set,
+  // per the org's exchange_rate_mode). Left null — never a fabricated
+  // guess — when there's no amount to convert, the reservation's own
+  // currency already IS the base currency (nothing to convert, so no
+  // snapshot is stored at all rather than a trivial rate-of-1 row), or
+  // no rate is available.
+  if (
+    input.total_amount !== null &&
+    input.total_amount !== undefined
+  ) {
+    const orgSettings = await getOrganizationSettings(organizationId);
+
+    if (input.currency !== orgSettings.baseCurrency) {
+      const resolved = await resolveExchangeRate(
+        organizationId,
+        input.currency,
+        orgSettings.baseCurrency,
+        orgSettings.exchangeRateMode
+      );
+
+      if (resolved) {
+        input.base_currency = orgSettings.baseCurrency;
+        input.exchange_rate = resolved.rate;
+        input.amount_base =
+          Math.round(input.total_amount * resolved.rate * 100) / 100;
+      }
+    }
+  }
 
   return withPropertyLock(input.property_id, async () => {
     // Serialized per-property (see propertyLock.ts) so this
@@ -468,6 +512,22 @@ export async function addReservation(
 
     await notifyReservationCreated(organizationId, reservation);
 
+    void logAudit({
+      organizationId,
+      actorUserId: actor?.id ?? null,
+      actorLabel: actorLabel(actor),
+      action: "reservation.created",
+      entityType: "reservation",
+      entityId: reservation.id,
+      metadata: {
+        propertyId: reservation.property_id,
+        checkIn: reservation.check_in,
+        checkOut: reservation.check_out,
+        totalAmount: reservation.total_amount,
+        currency: reservation.currency,
+      },
+    });
+
     return reservation;
   });
 }
@@ -486,7 +546,8 @@ export async function addReservation(
 export async function editReservation(
   organizationId: string,
   reservationId: string,
-  updates: Record<string, unknown>
+  updates: Record<string, unknown>,
+  actor?: AuditActor
 ) {
   const existing =
     await findReservationById(
@@ -788,6 +849,12 @@ export async function editReservation(
     delete updates.currency;
   }
 
+  // Same immutability as currency above — the base-currency conversion
+  // snapshot is fixed at creation time and never editable afterward.
+  if ("amount_base" in updates) delete updates.amount_base;
+  if ("base_currency" in updates) delete updates.base_currency;
+  if ("exchange_rate" in updates) delete updates.exchange_rate;
+
   const statusChanged =
     updates.status !== undefined &&
     updates.status !== existing.status;
@@ -856,6 +923,21 @@ export async function editReservation(
       updated,
       updated.status ?? String(updates.status)
     );
+
+    if (updated.status === "cancelled") {
+      void logAudit({
+        organizationId,
+        actorUserId: actor?.id ?? null,
+        actorLabel: actorLabel(actor),
+        action: "reservation.cancelled",
+        entityType: "reservation",
+        entityId: updated.id,
+        metadata: {
+          propertyId: updated.property_id,
+          previousStatus: existing.status,
+        },
+      });
+    }
   }
 
   return updated;
@@ -896,7 +978,8 @@ export async function removeReservation(
  */
 export async function clearReviewFlag(
   organizationId: string,
-  reservationId: string
+  reservationId: string,
+  actor?: AuditActor
 ) {
   const existing = await findReservationById(
     organizationId,
@@ -907,7 +990,21 @@ export async function clearReviewFlag(
     return null;
   }
 
-  return updateReservation(organizationId, reservationId, {
+  const updated = await updateReservation(organizationId, reservationId, {
     needs_review: false,
   });
+
+  if (updated) {
+    void logAudit({
+      organizationId,
+      actorUserId: actor?.id ?? null,
+      actorLabel: actorLabel(actor),
+      action: "reservation.review_cleared",
+      entityType: "reservation",
+      entityId: updated.id,
+      metadata: { propertyId: updated.property_id },
+    });
+  }
+
+  return updated;
 }
