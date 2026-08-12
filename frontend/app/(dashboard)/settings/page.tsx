@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import { CURRENCIES, SUPPORTED_CURRENCY_CODES } from "@/lib/currency";
 
 interface OrganizationSettings {
   name: string;
@@ -117,6 +118,14 @@ export default function SettingsPage() {
 
   async function handleSave() {
     if (!form || !original) return;
+
+    if (form.currency !== original.currency) {
+      const confirmed = window.confirm(
+        "Changing the organization currency will affect the default currency for properties that do not have a currency override. Existing reservations will keep their original currency.\n\nContinue?"
+      );
+
+      if (!confirmed) return;
+    }
 
     try {
       setSaving(true);
@@ -300,22 +309,31 @@ export default function SettingsPage() {
 
             <div>
               <label htmlFor="currency" className="text-sm font-medium text-slate-700">
-                Currency
+                Default Currency
               </label>
-              <input
+              <select
                 id="currency"
-                type="text"
                 value={form.currency}
                 disabled={!canEdit}
                 onChange={(event) =>
-                  updateField(
-                    "currency",
-                    event.target.value.toUpperCase()
-                  )
+                  updateField("currency", event.target.value)
                 }
-                placeholder="e.g. USD"
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
-              />
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+              >
+                {SUPPORTED_CURRENCY_CODES.map((code) => {
+                  const meta = CURRENCIES[code];
+                  return (
+                    <option key={code} value={code}>
+                      {code} — {meta?.name} ({meta?.symbol})
+                    </option>
+                  );
+                })}
+              </select>
+              <p className="mt-2 text-xs text-slate-500">
+                The default currency for properties that don&apos;t set their
+                own. Existing reservations always keep the currency they were
+                created with.
+              </p>
             </div>
 
             <div>

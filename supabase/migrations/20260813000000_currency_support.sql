@@ -1,0 +1,34 @@
+-- Phase 5 (Currency + Financial Settings System).
+--
+-- Audit performed first (see conversation report) found that most of
+-- this phase's foundation already exists and did NOT need a
+-- migration:
+--
+--   - organizations.currency already exists (TEXT, default 'USD') —
+--     but it is dead code, never read/written anywhere in the app.
+--     Left untouched; not safe to repurpose without knowing its
+--     original intent.
+--   - settings.currency already exists (TEXT, default 'USD') and is
+--     already the de facto organization default currency, already
+--     exposed via GET/PATCH /api/organization/settings with the
+--     exact owner/company_admin-write, any-member-read RBAC this
+--     phase requires. This migration does not touch it.
+--   - reservations.currency already exists (TEXT, default 'USD').
+--     This migration does not touch it — the gap there was that it
+--     was client-trusted on create, which is an application-layer
+--     fix (reservations/service.ts), not a schema change.
+--
+-- The one genuine schema gap: properties has no currency column at
+-- all. NULL means "inherit the organization's effective currency" —
+-- the property never had a currency before this column existed, so
+-- NULL-as-inherit for every existing property is the only accurate,
+-- non-destructive default (an explicit 'USD' default would silently
+-- assert every existing property is USD-priced, which is not known
+-- to be true and is not this migration's place to assert).
+--
+-- Does not modify, rename, or drop any existing column, table, or
+-- constraint. Does not touch any historical reservation financial
+-- value.
+
+ALTER TABLE properties
+  ADD COLUMN currency TEXT;

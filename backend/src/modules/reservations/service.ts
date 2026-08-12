@@ -24,6 +24,7 @@ import {
 
 import { withPropertyLock } from "./propertyLock";
 import { ReservationListItem } from "./types";
+import { getEffectivePropertyCurrency } from "../properties/currency";
 
 /**
  * Thrown when a create/edit would double-book a property. Carries a
@@ -406,6 +407,17 @@ export async function addReservation(
     );
   }
 
+  // Currency is NEVER trusted from the client — whatever the request
+  // body sent for `currency` is discarded here and replaced with the
+  // property's effective currency (property override, else the
+  // organization's default, else USD). This is the one place a new
+  // reservation's currency is decided, so it can never drift from
+  // what getEffectivePropertyCurrency would report for this property.
+  input.currency = await getEffectivePropertyCurrency(
+    organizationId,
+    input.property_id
+  );
+
   return withPropertyLock(input.property_id, async () => {
     // Serialized per-property (see propertyLock.ts) so this
     // check-then-insert can't race with another concurrent create for
@@ -763,6 +775,17 @@ export async function editReservation(
 
   if ("created_at" in updates) {
     delete updates.created_at;
+  }
+
+  // A reservation's currency is immutable once created (see Phase 5's
+  // currency-support report) — it must never silently change just
+  // because the organization or property's default currency changed
+  // later, and there is no explicit financial-edit operation in this
+  // phase that would legitimately need to change it. Strip it from
+  // any PATCH body exactly like the protected fields above, rather
+  // than validating it — this field is simply not editable yet.
+  if ("currency" in updates) {
+    delete updates.currency;
   }
 
   const statusChanged =

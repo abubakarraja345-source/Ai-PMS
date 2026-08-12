@@ -17,6 +17,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { formatMoney as formatMoneyShared } from "@/lib/currency";
 import AiInsights from "./ai-insights";
 
 interface GuestSummary {
@@ -135,14 +136,7 @@ function getStatusClasses(status: string | null) {
 }
 
 function formatMoney(amount: number | null, currency: string) {
-  if (amount === null) return "—";
-
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  return formatMoneyShared(amount, currency);
 }
 
 function formatDateShort(value: string) {

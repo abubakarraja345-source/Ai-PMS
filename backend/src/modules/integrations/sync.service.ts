@@ -33,6 +33,7 @@ import {
 } from "../notifications/service";
 
 import { computeConnectionHealth } from "./health";
+import { getEffectivePropertyCurrency } from "../properties/currency";
 import { withIntegrationLock } from "./syncLock";
 import { ConnectionHealth, SyncResult } from "./types";
 
@@ -181,6 +182,16 @@ async function runSyncUnlocked(
   if (!propertyExists) {
     throw new Error("Property not found in your organization");
   }
+
+  // iCal feeds never reliably provide a transaction currency — this
+  // is NOT invented from the feed. It's the same effective-currency
+  // rule every other reservation in this app uses (property override,
+  // else the organization's default), computed once per sync since it
+  // doesn't vary per event.
+  const importCurrency = await getEffectivePropertyCurrency(
+    organizationId,
+    propertyId
+  );
 
   const eventLabel = trigger === "scheduled" ? "scheduled_sync" : "manual_sync";
   const startedAt = new Date();
@@ -341,6 +352,7 @@ async function runSyncUnlocked(
       check_in: event.checkIn,
       check_out: event.checkOut,
       special_requests: event.summary,
+      currency: importCurrency,
     };
 
     const created = await createReservation(organizationId, importInput);

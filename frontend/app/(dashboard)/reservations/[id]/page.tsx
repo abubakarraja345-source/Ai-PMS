@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { formatMoney as formatMoneyShared } from "@/lib/currency";
 import ReservationReviewBanner from "@/components/reservations/reservation-review-banner";
 
 type Reservation = {
@@ -114,10 +115,7 @@ export default async function ReservationViewPage({
     amount: number | null,
     currency: string | null
   ) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency || "USD",
-    }).format(amount ?? 0);
+    return formatMoneyShared(amount ?? 0, currency);
   };
 
   const status = (

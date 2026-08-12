@@ -22,6 +22,7 @@ export interface Property {
   house_manual_url: string | null;
   status: string | null;
   created_by: string | null;
+  currency: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -40,6 +41,7 @@ export interface PropertyListItem {
   beds: number | null;
   max_guests: number | null;
   status: string | null;
+  currency: string | null;
   created_at: string | null;
   updated_at: string | null;
 }

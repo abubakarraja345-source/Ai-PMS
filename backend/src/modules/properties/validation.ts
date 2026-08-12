@@ -1,3 +1,5 @@
+import { isSupportedCurrency, SUPPORTED_CURRENCY_CODES } from "../../constants/currency";
+
 export interface CreatePropertyInput {
   title: string;
   property_type: string;
@@ -17,6 +19,34 @@ export interface CreatePropertyInput {
   check_out_time?: string | null;
   house_manual_url?: string | null;
   status?: string | null;
+  currency?: string | null;
+}
+
+/**
+ * NULL means "inherit the organization's default currency" (see
+ * properties/currency.ts's getEffectivePropertyCurrency) — that's a
+ * meaningful, intentional value here, not "not provided", so this
+ * validates a non-null currency against the supported list but
+ * passes null straight through.
+ */
+function validateOptionalCurrency(value: unknown): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error("currency must be a string or null");
+  }
+
+  const currency = value.trim().toUpperCase();
+
+  if (!isSupportedCurrency(currency)) {
+    throw new Error(
+      `currency must be one of: ${SUPPORTED_CURRENCY_CODES.join(", ")}`
+    );
+  }
+
+  return currency;
 }
 
 export function validateCreateProperty(
@@ -109,6 +139,7 @@ export function validateCreateProperty(
       typeof data.status === "string"
         ? data.status
         : null,
+    currency: validateOptionalCurrency(data.currency),
   };
 }
 
@@ -251,6 +282,10 @@ export function validateUpdateProperty(
       "longitude",
       true
     );
+  }
+
+  if (data.currency !== undefined) {
+    updates.currency = validateOptionalCurrency(data.currency);
   }
 
   if (Object.keys(updates).length === 0) {

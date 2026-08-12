@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import AvailabilityCheck from "@/components/reservations/availability-check";
+import MoneyInput from "@/components/shared/money-input";
 
 type Reservation = {
   id: string;
@@ -246,7 +247,9 @@ export default function EditReservationPage() {
 
             taxes: Number(form.taxes),
 
-            currency: form.currency,
+            // No `currency` field is sent — it's immutable once a
+            // reservation is created (see reservations/service.ts's
+            // editReservation, which strips it from any PATCH body).
 
             special_requests:
               form.special_requests.trim() || null,
@@ -592,20 +595,19 @@ export default function EditReservationPage() {
                 Total Amount
               </label>
 
-              <input
-                id="total_amount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.total_amount}
-                onChange={(e) =>
-                  updateField(
-                    "total_amount",
-                    Number(e.target.value)
-                  )
-                }
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
-              />
+              <div className="mt-2">
+                <MoneyInput
+                  id="total_amount"
+                  value={String(form.total_amount)}
+                  currency={form.currency}
+                  onChange={(value) =>
+                    updateField(
+                      "total_amount",
+                      value === "" ? 0 : Number(value)
+                    )
+                  }
+                />
+              </div>
             </div>
 
             <div>
@@ -613,20 +615,19 @@ export default function EditReservationPage() {
                 Cleaning Fee
               </label>
 
-              <input
-                id="cleaning_fee"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.cleaning_fee}
-                onChange={(e) =>
-                  updateField(
-                    "cleaning_fee",
-                    Number(e.target.value)
-                  )
-                }
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
-              />
+              <div className="mt-2">
+                <MoneyInput
+                  id="cleaning_fee"
+                  value={String(form.cleaning_fee)}
+                  currency={form.currency}
+                  onChange={(value) =>
+                    updateField(
+                      "cleaning_fee",
+                      value === "" ? 0 : Number(value)
+                    )
+                  }
+                />
+              </div>
             </div>
 
             <div>
@@ -634,43 +635,33 @@ export default function EditReservationPage() {
                 Taxes
               </label>
 
-              <input
-                id="taxes"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.taxes}
-                onChange={(e) =>
-                  updateField(
-                    "taxes",
-                    Number(e.target.value)
-                  )
-                }
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
-              />
+              <div className="mt-2">
+                <MoneyInput
+                  id="taxes"
+                  value={String(form.taxes)}
+                  currency={form.currency}
+                  onChange={(value) =>
+                    updateField(
+                      "taxes",
+                      value === "" ? 0 : Number(value)
+                    )
+                  }
+                />
+              </div>
             </div>
 
             <div>
-              <label htmlFor="currency" className="text-sm font-medium text-slate-700">
+              <label className="text-sm font-medium text-slate-700">
                 Currency
               </label>
 
-              <select
-                id="currency"
-                value={form.currency}
-                onChange={(e) =>
-                  updateField(
-                    "currency",
-                    e.target.value
-                  )
-                }
-                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500"
-              >
-                <option value="USD">USD</option>
-                <option value="PKR">PKR</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-              </select>
+              <div className="mt-2 flex h-[42px] items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
+                {form.currency}
+              </div>
+
+              <p className="mt-1 text-xs text-slate-400">
+                Fixed for this reservation — cannot be changed here.
+              </p>
             </div>
           </div>
         </section>

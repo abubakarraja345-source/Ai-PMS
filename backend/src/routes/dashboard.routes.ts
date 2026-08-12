@@ -136,9 +136,14 @@ router.get(
  *   to present as active.
  * - Revenue counts `confirmed` + `completed` reservations only
  *   (pending hasn't been confirmed; cancelled never happened),
- *   grouped by currency — never summed across currencies, since
- *   there is no organization-level base-currency field anywhere
- *   in the schema.
+ *   grouped by currency — never summed across currencies. This
+ *   stays true even though an organization default currency exists
+ *   (settings.currency, see Phase 5's currency-support report):
+ *   summing revenue figures denominated in different real-world
+ *   currencies into one number is mathematically invalid regardless
+ *   of which currency is "default" for new bookings, so grouping by
+ *   currency is the correct behavior, not a workaround for a missing
+ *   field.
  * - Occupancy rate is occupied-properties ÷ active-properties
  *   (inactive listings aren't part of the rentable pool).
  */

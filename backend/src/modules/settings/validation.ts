@@ -1,3 +1,5 @@
+import { isSupportedCurrency, SUPPORTED_CURRENCY_CODES } from "../../constants/currency";
+
 export interface UpdateSettingsInput {
   name?: string;
   timezone?: string;
@@ -10,15 +12,18 @@ export interface UpdateSettingsInput {
 
 /**
  * Fields that must be a non-empty string when supplied. No
- * enum/format is enforced for timezone or currency — the rest
- * of the codebase (reservations.currency, properties.check_in_time)
- * never establishes an allowed-values list for these kinds of
- * fields either, so inventing one here would be a new, unproven
- * business rule.
+ * enum/format is enforced for timezone — the rest of the codebase
+ * (properties.check_in_time) never establishes an allowed-values
+ * list for that kind of field either, so inventing one here would be
+ * a new, unproven business rule. `currency` is the one exception —
+ * this is now the organization's default currency (see
+ * constants/currency.ts), and an unvalidated free-text currency code
+ * would let a typo silently break every property/reservation that
+ * inherits it, so it's validated separately below rather than
+ * through this generic non-empty-string list.
  */
 const REQUIRED_STRING_FIELDS = [
   "timezone",
-  "currency",
   "language",
 ] as const;
 
@@ -65,6 +70,22 @@ export function validateUpdateSettings(
     }
 
     updates[field] = value.trim();
+  }
+
+  if (data.currency !== undefined) {
+    if (typeof data.currency !== "string" || !data.currency.trim()) {
+      throw new Error("currency cannot be empty");
+    }
+
+    const currency = data.currency.trim().toUpperCase();
+
+    if (!isSupportedCurrency(currency)) {
+      throw new Error(
+        `currency must be one of: ${SUPPORTED_CURRENCY_CODES.join(", ")}`
+      );
+    }
+
+    updates.currency = currency;
   }
 
   for (const field of NULLABLE_STRING_FIELDS) {

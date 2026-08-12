@@ -331,10 +331,11 @@ export function validateCreateReservation(
 
     taxes,
 
-    currency:
-      typeof data.currency === "string"
-        ? data.currency.trim() || "USD"
-        : "USD",
+    // Never trust whatever the client sent here — service.ts's
+    // addReservation unconditionally overwrites this with the
+    // property's effective currency before the reservation is
+    // created. This placeholder value is never actually persisted.
+    currency: null,
 
     special_requests:
       typeof data.special_requests === "string"

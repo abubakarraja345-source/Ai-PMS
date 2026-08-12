@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { CURRENCIES, SUPPORTED_CURRENCY_CODES } from "@/lib/currency";
 
 export default function NewPropertyPage() {
   const router = useRouter();
@@ -10,6 +11,7 @@ export default function NewPropertyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [orgDefaultCurrency, setOrgDefaultCurrency] = useState("USD");
 
   const [form, setForm] = useState({
     title: "",
@@ -35,7 +37,22 @@ export default function NewPropertyPage() {
 
     house_manual_url: "",
     status: "active",
+    /** Empty = "use organization default" (persisted as null). */
+    currency: "",
   });
+
+  useEffect(() => {
+    async function loadOrgCurrency() {
+      try {
+        const response = await apiFetch("/api/organization/settings");
+        setOrgDefaultCurrency(response.data?.currency ?? "USD");
+      } catch {
+        // Non-fatal — helper text just won't resolve a value.
+      }
+    }
+
+    loadOrgCurrency();
+  }, []);
 
   function updateField(
     field: keyof typeof form,
@@ -118,6 +135,8 @@ export default function NewPropertyPage() {
           form.house_manual_url || null,
 
         status: form.status,
+
+        currency: form.currency || null,
       };
 
       await apiFetch("/api/properties", {
@@ -448,6 +467,44 @@ export default function NewPropertyPage() {
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
                 />
               </div>
+            </div>
+          </section>
+
+          {/* Pricing */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">
+              Pricing
+            </h2>
+
+            <div className="mt-6">
+              <label htmlFor="currency" className="mb-2 block text-sm font-medium text-slate-700">
+                Currency
+              </label>
+
+              <select
+                id="currency"
+                value={form.currency}
+                onChange={(e) =>
+                  updateField("currency", e.target.value)
+                }
+                className="w-full max-w-sm rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-slate-900"
+              >
+                <option value="">Use organization default</option>
+                {SUPPORTED_CURRENCY_CODES.map((code) => {
+                  const meta = CURRENCIES[code];
+                  return (
+                    <option key={code} value={code}>
+                      {code} — {meta?.name} ({meta?.symbol})
+                    </option>
+                  );
+                })}
+              </select>
+
+              <p className="mt-2 text-sm text-slate-500">
+                {form.currency
+                  ? `Effective currency: ${form.currency}`
+                  : `Using organization default: ${orgDefaultCurrency}`}
+              </p>
             </div>
           </section>
 

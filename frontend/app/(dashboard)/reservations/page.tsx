@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { PaginationControls } from "@/components/shared/pagination-controls";
 import AvailabilityCheck from "@/components/reservations/availability-check";
+import { formatMoney as formatMoneyShared } from "@/lib/currency";
+import MoneyInput from "@/components/shared/money-input";
 
 interface PropertySummary {
   id: string;
@@ -58,6 +60,7 @@ interface Property {
   title: string;
   property_type?: string;
   city?: string | null;
+  currency?: string | null;
 }
 
 interface Guest {
@@ -86,7 +89,6 @@ interface ReservationForm {
   total_amount: string;
   cleaning_fee: string;
   taxes: string;
-  currency: string;
   special_requests: string;
 }
 
@@ -105,7 +107,6 @@ const initialForm: ReservationForm = {
   total_amount: "",
   cleaning_fee: "",
   taxes: "",
-  currency: "USD",
   special_requests: "",
 };
 
@@ -136,13 +137,7 @@ function formatCurrency(
     return "-";
   }
 
-  return `${currency ?? "USD"} ${Number(amount).toLocaleString(
-    undefined,
-    {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }
-  )}`;
+  return formatMoneyShared(amount, currency);
 }
 
 function getStatusClasses(status: string) {
@@ -264,6 +259,8 @@ export default function ReservationsPage() {
   const [form, setForm] =
     useState<ReservationForm>(initialForm);
 
+  const [orgDefaultCurrency, setOrgDefaultCurrency] = useState("USD");
+
   /*
    * Properties/guests are only needed for the Create Reservation
    * form's dropdowns — loaded once, independent of the reservations
@@ -272,13 +269,16 @@ export default function ReservationsPage() {
   useEffect(() => {
     async function loadDropdownData() {
       try {
-        const [propertyResponse, guestResponse] = await Promise.all([
-          apiFetch("/api/properties?limit=100"),
-          apiFetch("/api/guests?limit=100"),
-        ]);
+        const [propertyResponse, guestResponse, settingsResponse] =
+          await Promise.all([
+            apiFetch("/api/properties?limit=100"),
+            apiFetch("/api/guests?limit=100"),
+            apiFetch("/api/organization/settings"),
+          ]);
 
         setProperties(propertyResponse.data ?? []);
         setGuests(guestResponse.data ?? []);
+        setOrgDefaultCurrency(settingsResponse.data?.currency ?? "USD");
       } catch {
         // Non-fatal — the create-reservation dropdowns simply won't
         // populate; the list itself doesn't depend on this.
@@ -287,6 +287,20 @@ export default function ReservationsPage() {
 
     loadDropdownData();
   }, []);
+
+  /**
+   * Currency is never client-editable — the backend always derives it
+   * from the selected property's effective currency (property
+   * override, else the organization default) and ignores whatever a
+   * client sends, so this form only ever DISPLAYS what will be used,
+   * never lets it be picked independently of the property.
+   */
+  const effectiveCreateCurrency = (() => {
+    const selectedProperty = properties.find(
+      (p) => p.id === form.property_id
+    );
+    return selectedProperty?.currency ?? orgDefaultCurrency;
+  })();
 
   // Any filter change invalidates the current page — page 1 of a new
   // filtered set is the only page guaranteed to exist.
@@ -440,7 +454,11 @@ export default function ReservationsPage() {
                 ? 0
                 : Number(form.taxes),
 
-            currency: form.currency,
+            // No `currency` field is sent — the backend always
+            // derives it from the property's effective currency and
+            // ignores any client-supplied value (see reservations/
+            // service.ts's addReservation), so sending one here would
+            // just be misleading dead weight.
 
             special_requests:
               form.special_requests || null,
@@ -1517,21 +1535,16 @@ export default function ReservationsPage() {
                       Total Amount
                     </label>
 
-                    <input
-                      id="create-total_amount"
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={form.total_amount}
-                      onChange={(event) =>
-                        updateForm(
-                          "total_amount",
-                          event.target.value
-                        )
-                      }
-                      placeholder="300"
-                      className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
-                    />
+                    <div className="mt-2">
+                      <MoneyInput
+                        id="create-total_amount"
+                        value={form.total_amount}
+                        currency={effectiveCreateCurrency}
+                        onChange={(value) =>
+                          updateForm("total_amount", value)
+                        }
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -1539,20 +1552,16 @@ export default function ReservationsPage() {
                       Cleaning Fee
                     </label>
 
-                    <input
-                      id="create-cleaning_fee"
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={form.cleaning_fee}
-                      onChange={(event) =>
-                        updateForm(
-                          "cleaning_fee",
-                          event.target.value
-                        )
-                      }
-                      className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
-                    />
+                    <div className="mt-2">
+                      <MoneyInput
+                        id="create-cleaning_fee"
+                        value={form.cleaning_fee}
+                        currency={effectiveCreateCurrency}
+                        onChange={(value) =>
+                          updateForm("cleaning_fee", value)
+                        }
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -1560,54 +1569,28 @@ export default function ReservationsPage() {
                       Taxes
                     </label>
 
-                    <input
-                      id="create-taxes"
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={form.taxes}
-                      onChange={(event) =>
-                        updateForm(
-                          "taxes",
-                          event.target.value
-                        )
-                      }
-                      className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
-                    />
+                    <div className="mt-2">
+                      <MoneyInput
+                        id="create-taxes"
+                        value={form.taxes}
+                        currency={effectiveCreateCurrency}
+                        onChange={(value) => updateForm("taxes", value)}
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <label htmlFor="create-currency" className="text-sm font-medium text-slate-700">
+                    <label className="text-sm font-medium text-slate-700">
                       Currency
                     </label>
 
-                    <select
-                      id="create-currency"
-                      value={form.currency}
-                      onChange={(event) =>
-                        updateForm(
-                          "currency",
-                          event.target.value
-                        )
-                      }
-                      className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
-                    >
-                      <option value="USD">
-                        USD
-                      </option>
+                    <div className="mt-2 flex h-[42px] items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
+                      {effectiveCreateCurrency}
+                    </div>
 
-                      <option value="PKR">
-                        PKR
-                      </option>
-
-                      <option value="EUR">
-                        EUR
-                      </option>
-
-                      <option value="GBP">
-                        GBP
-                      </option>
-                    </select>
+                    <p className="mt-1 text-xs text-slate-400">
+                      From the selected property&apos;s currency.
+                    </p>
                   </div>
 
                 </div>
@@ -2103,28 +2086,28 @@ export default function ReservationsPage() {
                           Total Amount
                         </label>
 
-                        <input
-                          id="edit-total_amount"
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={
-                            selectedReservation.total_amount ??
-                            ""
-                          }
-                          onChange={(event) =>
-                            updateSelectedReservation(
-                              "total_amount",
-                              event.target.value ===
-                                ""
-                                ? null
-                                : Number(
-                                    event.target.value
-                                  )
-                            )
-                          }
-                          className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
-                        />
+                        <div className="mt-2">
+                          <MoneyInput
+                            id="edit-total_amount"
+                            value={
+                              selectedReservation.total_amount !== null
+                                ? String(selectedReservation.total_amount)
+                                : ""
+                            }
+                            currency={selectedReservation.currency}
+                            onChange={(value) =>
+                              updateSelectedReservation(
+                                "total_amount",
+                                value === "" ? null : Number(value)
+                              )
+                            }
+                          />
+                        </div>
+
+                        <p className="mt-1 text-xs text-slate-400">
+                          Currency ({selectedReservation.currency ?? "USD"})
+                          is fixed for this reservation.
+                        </p>
                       </div>
 
                       <div>

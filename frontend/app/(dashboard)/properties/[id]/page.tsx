@@ -35,6 +35,7 @@ type Property = {
   wifi_password: string | null;
   house_manual_url: string | null;
   status: string;
+  currency: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -48,6 +49,7 @@ export default function PropertyDetailsPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [orgDefaultCurrency, setOrgDefaultCurrency] = useState("USD");
   const [canManage, setCanManage] = useState(false);
 
   useEffect(() => {
@@ -100,6 +102,21 @@ export default function PropertyDetailsPage() {
     }
 
     loadRole();
+  }, []);
+
+  useEffect(() => {
+    async function loadOrgCurrency() {
+      try {
+        const response = await apiFetch("/api/organization/settings");
+        setOrgDefaultCurrency(response.data?.currency ?? "USD");
+      } catch {
+        // Non-fatal — "Effective currency" falls back to showing the
+        // property's own override (if any) without the org-default
+        // context text.
+      }
+    }
+
+    loadOrgCurrency();
   }, []);
 
   if (loading) {
@@ -223,6 +240,15 @@ export default function PropertyDetailsPage() {
             <InfoCard
               label="Maximum Guests"
               value={property.max_guests ?? "—"}
+            />
+
+            <InfoCard
+              label="Effective Currency"
+              value={
+                property.currency
+                  ? property.currency
+                  : `${orgDefaultCurrency} (org default)`
+              }
             />
           </div>
         </section>

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { CURRENCIES, SUPPORTED_CURRENCY_CODES } from "@/lib/currency";
 
 type Property = {
   id: string;
@@ -24,6 +25,7 @@ type Property = {
   check_out_time: string | null;
   house_manual_url: string | null;
   status: string;
+  currency: string | null;
 };
 
 export default function EditPropertyPage() {
@@ -36,6 +38,7 @@ export default function EditPropertyPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [orgDefaultCurrency, setOrgDefaultCurrency] = useState("USD");
 
   const [form, setForm] = useState({
     title: "",
@@ -56,6 +59,10 @@ export default function EditPropertyPage() {
     check_out_time: "",
     house_manual_url: "",
     status: "active",
+    /** Empty string = "use organization default" (persisted as
+     * null) — never confused with an actual currency code since none
+     * of the supported codes are empty strings. */
+    currency: "",
   });
 
   useEffect(() => {
@@ -108,6 +115,7 @@ export default function EditPropertyPage() {
           house_manual_url:
             property.house_manual_url ?? "",
           status: property.status ?? "active",
+          currency: property.currency ?? "",
         });
       } catch (err) {
         setError(
@@ -124,6 +132,20 @@ export default function EditPropertyPage() {
       loadProperty();
     }
   }, [propertyId]);
+
+  useEffect(() => {
+    async function loadOrgCurrency() {
+      try {
+        const response = await apiFetch("/api/organization/settings");
+        setOrgDefaultCurrency(response.data?.currency ?? "USD");
+      } catch {
+        // Non-fatal — the "using organization default: X" helper text
+        // just won't resolve a value; the dropdown itself still works.
+      }
+    }
+
+    loadOrgCurrency();
+  }, []);
 
   function updateField(
     field: keyof typeof form,
@@ -206,6 +228,8 @@ export default function EditPropertyPage() {
           form.house_manual_url || null,
 
         status: form.status,
+
+        currency: form.currency || null,
       };
 
       await apiFetch(
@@ -501,6 +525,48 @@ export default function EditPropertyPage() {
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
                 />
               </div>
+            </div>
+          </section>
+
+          {/* Pricing */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">
+              Pricing
+            </h2>
+
+            <div className="mt-6">
+              <label htmlFor="currency" className="mb-2 block text-sm font-medium text-slate-700">
+                Currency
+              </label>
+
+              <select
+                id="currency"
+                value={form.currency}
+                onChange={(e) => updateField("currency", e.target.value)}
+                className="w-full max-w-sm rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-slate-900"
+              >
+                <option value="">Use organization default</option>
+                {SUPPORTED_CURRENCY_CODES.map((code) => {
+                  const meta = CURRENCIES[code];
+                  return (
+                    <option key={code} value={code}>
+                      {code} — {meta?.name} ({meta?.symbol})
+                    </option>
+                  );
+                })}
+              </select>
+
+              <p className="mt-2 text-sm text-slate-500">
+                {form.currency
+                  ? `Effective currency: ${form.currency}`
+                  : `Using organization default: ${orgDefaultCurrency}`}
+              </p>
+
+              <p className="mt-1 text-xs text-slate-400">
+                Changing this only affects new reservations for this
+                property. Existing reservations keep the currency they were
+                created with.
+              </p>
             </div>
           </section>
 

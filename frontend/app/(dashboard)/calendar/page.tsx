@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EventInput } from "@fullcalendar/core";
 import { apiFetch } from "@/lib/api";
+import { formatMoney as formatMoneyShared } from "@/lib/currency";
 import FullCalendarView, {
   CalendarViewType,
   FullCalendarViewHandle,
@@ -144,14 +145,7 @@ function formatMoney(
   amount: number | null,
   currency: string | null
 ) {
-  if (amount === null) return "—";
-
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency ?? "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  return formatMoneyShared(amount, currency);
 }
 
 export default function CalendarPage() {

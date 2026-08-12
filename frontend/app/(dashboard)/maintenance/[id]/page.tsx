@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { formatMoney as formatMoneyShared } from "@/lib/currency";
 
 type MaintenanceTicket = {
   id: string;
@@ -52,14 +53,15 @@ function getStatusClasses(status: string) {
   }
 }
 
+/**
+ * Maintenance tickets have no currency field (see Phase 5's currency
+ * audit — internal repair-cost estimates, never guest-facing, out of
+ * scope for multi-currency support) — always formatted as USD,
+ * unchanged from before, just routed through the shared formatter for
+ * consistent rounding/precision behavior.
+ */
 function formatMoney(amount: number | null) {
-  if (amount === null) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  return formatMoneyShared(amount, "USD");
 }
 
 function formatDateTime(value: string | null) {

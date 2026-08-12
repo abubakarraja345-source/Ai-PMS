@@ -26,6 +26,7 @@ export async function findPropertiesByOrganization(
       beds,
       max_guests,
       status,
+      currency,
       created_at,
       updated_at
     `,
@@ -77,6 +78,7 @@ export async function createProperty(
 
       house_manual_url: input.house_manual_url,
       status: input.status ?? "active",
+      currency: input.currency,
     })
     .select("*")
     .single();
