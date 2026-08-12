@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import AvailabilityCheck from "@/components/reservations/availability-check";
 
 type Reservation = {
   id: string;
@@ -24,6 +25,10 @@ type Reservation = {
   taxes: number | null;
   currency: string | null;
   special_requests: string | null;
+  property?: {
+    id: string;
+    title: string;
+  } | null;
 };
 
 export default function EditReservationPage() {
@@ -38,6 +43,7 @@ export default function EditReservationPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [available, setAvailable] = useState<boolean | null>(null);
 
   const [form, setForm] = useState({
     booking_reference: "",
@@ -172,6 +178,15 @@ export default function EditReservationPage() {
         );
       }
 
+      // UX-only guard — the backend re-checks this same thing
+      // authoritatively on submit (reservations/service.ts's
+      // assertAvailableOrThrow).
+      if (available === false) {
+        throw new Error(
+          "This property is already booked for the selected dates."
+        );
+      }
+
       const start = new Date(
         `${form.check_in}T00:00:00`
       );
@@ -242,9 +257,22 @@ export default function EditReservationPage() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        throw new Error(
-          result.error || "Failed to update reservation"
-        );
+        // A 409 double-booking conflict carries structured details in
+        // `result.data` (reservations/routes.ts) — surface them so the
+        // user sees exactly what's already booked, not just a generic
+        // message.
+        const conflict = result.data as
+          | { checkIn?: string; checkOut?: string; guestName?: string }
+          | undefined;
+
+        const message =
+          conflict?.checkIn && conflict?.checkOut
+            ? `${result.error} — already booked from ${conflict.checkIn} to ${conflict.checkOut}${
+                conflict.guestName ? ` (Guest: ${conflict.guestName})` : ""
+              }.`
+            : result.error || "Failed to update reservation";
+
+        throw new Error(message);
       }
 
       router.push(`/reservations/${id}`);
@@ -336,6 +364,19 @@ export default function EditReservationPage() {
         onSubmit={handleSubmit}
         className="space-y-6"
       >
+        {/* Property (read-only context — property cannot be changed
+            from this form) */}
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+            Property
+          </p>
+
+          <p className="mt-1 text-lg font-semibold text-slate-900">
+            {reservation.property?.title || "Property"}
+          </p>
+        </section>
+
         {/* Booking */}
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -485,6 +526,16 @@ export default function EditReservationPage() {
               />
             </div>
           </div>
+
+          {reservation.property_id && (
+            <AvailabilityCheck
+              propertyId={reservation.property_id}
+              checkIn={form.check_in}
+              checkOut={form.check_out}
+              excludeReservationId={reservation.id}
+              onAvailabilityChange={setAvailable}
+            />
+          )}
         </section>
 
         {/* Guests */}
@@ -657,7 +708,7 @@ export default function EditReservationPage() {
 
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || available === false}
             className="rounded-lg bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving

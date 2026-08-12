@@ -23,6 +23,9 @@ import {
   validateUpdateRule,
 } from "./validation";
 
+import { getPropertyAvailabilityReport } from "../reservations/service";
+import { validateDate } from "../reservations/validation";
+
 function isKnownError(error: unknown): error is Error {
   return error instanceof Error && error.name !== "PostgrestError";
 }
@@ -35,6 +38,64 @@ function requirePropertyId(req: OrganizationRequest): string {
   }
 
   return propertyId;
+}
+
+/* ----------------------------- Availability ------------------------------ */
+
+export async function getAvailabilityController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  if (!req.organization) {
+    return res.status(403).json({ success: false, error: "Organization context is required" });
+  }
+
+  let start: string;
+  let end: string;
+
+  try {
+    start = validateDate(req.query.start, "start");
+    end = validateDate(req.query.end, "end");
+
+    if (end <= start) {
+      throw new Error("end must be after start");
+    }
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      error: isKnownError(error) ? error.message : "Invalid start/end date",
+    });
+  }
+
+  try {
+    // Optional: lets the reservation-edit UI check availability for a
+    // reservation's own current dates without that reservation
+    // appearing as a conflict with itself. Not part of the base
+    // contract (create-flow callers omit it entirely).
+    const excludeReservationId =
+      typeof req.query.exclude_reservation_id === "string" &&
+      req.query.exclude_reservation_id.trim()
+        ? req.query.exclude_reservation_id.trim()
+        : undefined;
+
+    const data = await getPropertyAvailabilityReport(
+      req.organization.id,
+      requirePropertyId(req),
+      start,
+      end,
+      excludeReservationId
+    );
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Get property availability error:", error);
+
+    if (isKnownError(error)) {
+      return res.status(404).json({ success: false, error: error.message });
+    }
+
+    return res.status(500).json({ success: false, error: "Unable to load property availability" });
+  }
 }
 
 /* ------------------------------- Amenities ------------------------------ */

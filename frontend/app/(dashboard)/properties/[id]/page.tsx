@@ -9,6 +9,7 @@ import PropertyAmenitiesSection from "@/components/properties/property-amenities
 import PropertyRulesSection from "@/components/properties/property-rules-section";
 import PropertyDocumentsSection from "@/components/properties/property-documents-section";
 import PropertyChannelLinksSection from "@/components/properties/property-channel-links-section";
+import PropertyCurrentBookingSection from "@/components/properties/property-current-booking-section";
 
 type Property = {
   id: string;
@@ -189,6 +190,8 @@ export default function PropertyDetailsPage() {
           propertyId={property.id}
           canManage={canManage}
         />
+
+        <PropertyCurrentBookingSection propertyId={property.id} />
 
         {/* Overview */}
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

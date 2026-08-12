@@ -102,6 +102,28 @@ export function validateDate(
   return date;
 }
 
+/**
+ * Today's date as YYYY-MM-DD, compared in UTC.
+ *
+ * No organization/property timezone configuration exists anywhere in
+ * the schema (checked directly — there is no timezone column on
+ * `organizations` or `properties`), so a genuinely per-org/property
+ * timezone-aware "is this before today" comparison isn't possible
+ * without inventing a new column, which this phase is not authorized
+ * to do silently. UTC calendar-date comparison is used instead,
+ * matching the same convention every existing date helper in this
+ * file already relies on (`Date.UTC(...)` above).
+ */
+function todayUTCDateString(): string {
+  const now = new Date();
+
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(now.getUTCDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 function validateNonNegativeNumber(
   value: unknown,
   fieldName: string,
@@ -213,6 +235,16 @@ export function validateCreateReservation(
   if (checkOutDate <= checkInDate) {
     throw new Error(
       "Check-out date must be after check-in date"
+    );
+  }
+
+  // Only applies to manually-created bookings (this function is never
+  // called by the iCal sync path, which writes reservations directly
+  // via repository.createReservation and intentionally supports
+  // historical/past-dated events).
+  if (checkIn < todayUTCDateString()) {
+    throw new Error(
+      "Check-in date cannot be before today"
     );
   }
 

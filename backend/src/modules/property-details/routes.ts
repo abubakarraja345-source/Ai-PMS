@@ -11,6 +11,7 @@ import {
   deleteAmenityController,
   deleteDocumentController,
   deleteRuleController,
+  getAvailabilityController,
   listAmenitiesController,
   listDocumentsController,
   listRulesController,
@@ -24,6 +25,8 @@ const router = Router({ mergeParams: true });
 router.use(requireAuth, requireOrganization);
 
 const mutate = requireRole("owner", "company_admin");
+
+router.get("/availability", getAvailabilityController);
 
 router.get("/amenities", listAmenitiesController);
 router.post("/amenities", mutate, createAmenityController);

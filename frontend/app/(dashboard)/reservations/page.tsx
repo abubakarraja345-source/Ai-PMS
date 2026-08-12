@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { PaginationControls } from "@/components/shared/pagination-controls";
+import AvailabilityCheck from "@/components/reservations/availability-check";
 
 interface PropertySummary {
   id: string;
@@ -179,6 +180,36 @@ function getGuestName(
   }`.trim();
 }
 
+interface ConflictErrorData {
+  checkIn?: string;
+  checkOut?: string;
+  guestName?: string;
+}
+
+/**
+ * lib/api.ts attaches the backend's response `data` to thrown errors —
+ * for a 409 double-booking conflict that's the structured
+ * `{propertyId, propertyName, conflictingReservationId, checkIn,
+ * checkOut, guestName}` payload (reservations/routes.ts). Falls back
+ * to the plain error message for every other error shape.
+ */
+function formatReservationError(
+  err: unknown,
+  fallback: string
+): string {
+  if (!(err instanceof Error)) return fallback;
+
+  const data = (err as Error & { data?: ConflictErrorData }).data;
+
+  if (data?.checkIn && data?.checkOut) {
+    return `${err.message} — already booked from ${data.checkIn} to ${data.checkOut}${
+      data.guestName ? ` (Guest: ${data.guestName})` : ""
+    }.`;
+  }
+
+  return err.message || fallback;
+}
+
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<
     Reservation[]
@@ -203,11 +234,17 @@ export default function ReservationsPage() {
   const [showCreateModal, setShowCreateModal] =
     useState(false);
 
+  const [createAvailable, setCreateAvailable] =
+    useState<boolean | null>(null);
+
   const [selectedReservation, setSelectedReservation] =
     useState<Reservation | null>(null);
 
   const [modalMode, setModalMode] =
     useState<ModalMode>(null);
+
+  const [editAvailable, setEditAvailable] =
+    useState<boolean | null>(null);
 
   const [search, setSearch] = useState("");
 
@@ -311,6 +348,7 @@ export default function ReservationsPage() {
 
   function resetForm() {
     setForm(initialForm);
+    setCreateAvailable(null);
   }
 
   function openCreateModal() {
@@ -342,6 +380,17 @@ export default function ReservationsPage() {
     if (nights <= 0) {
       setError(
         "Check-out date must be after check-in date."
+      );
+      return;
+    }
+
+    // UX-only guard — the backend is authoritative and re-checks this
+    // exact same thing on submit (see reservations/service.ts's
+    // assertAvailableOrThrow), so this only saves the user a round
+    // trip on an already-known conflict.
+    if (createAvailable === false) {
+      setError(
+        "This property is already booked for the selected dates."
       );
       return;
     }
@@ -418,11 +467,7 @@ export default function ReservationsPage() {
 
       closeCreateModal();
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to create reservation"
-      );
+      setError(formatReservationError(err, "Failed to create reservation"));
     } finally {
       setSaving(false);
     }
@@ -455,6 +500,7 @@ export default function ReservationsPage() {
 
     setModalMode("edit");
     setError("");
+    setEditAvailable(null);
   }
 
   /*
@@ -465,6 +511,7 @@ export default function ReservationsPage() {
 
     setSelectedReservation(null);
     setModalMode(null);
+    setEditAvailable(null);
   }
 
   /*
@@ -481,6 +528,13 @@ export default function ReservationsPage() {
     if (nights <= 0) {
       setError(
         "Check-out date must be after check-in date."
+      );
+      return;
+    }
+
+    if (editAvailable === false) {
+      setError(
+        "This property is already booked for the selected dates."
       );
       return;
     }
@@ -539,11 +593,7 @@ export default function ReservationsPage() {
       setSelectedReservation(null);
       setModalMode(null);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to update reservation"
-      );
+      setError(formatReservationError(err, "Failed to update reservation"));
     } finally {
       setSaving(false);
     }
@@ -1387,6 +1437,13 @@ export default function ReservationsPage() {
                   </div>
 
                 </div>
+
+                <AvailabilityCheck
+                  propertyId={form.property_id}
+                  checkIn={form.check_in}
+                  checkOut={form.check_out}
+                  onAvailabilityChange={setCreateAvailable}
+                />
               </div>
 
               {/* Guest Count */}
@@ -1596,7 +1653,8 @@ export default function ReservationsPage() {
                   disabled={
                     saving ||
                     !form.property_id ||
-                    !form.guest_id
+                    !form.guest_id ||
+                    createAvailable === false
                   }
                   className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -1934,6 +1992,14 @@ export default function ReservationsPage() {
                           }
                           className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
                         />
+
+                        <AvailabilityCheck
+                          propertyId={selectedReservation.property_id}
+                          checkIn={selectedReservation.check_in}
+                          checkOut={selectedReservation.check_out}
+                          excludeReservationId={selectedReservation.id}
+                          onAvailabilityChange={setEditAvailable}
+                        />
                       </div>
 
                       <div>
@@ -2129,7 +2195,7 @@ export default function ReservationsPage() {
                       <button
                         type="button"
                         onClick={updateReservation}
-                        disabled={saving}
+                        disabled={saving || editAvailable === false}
                         className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
                       >
                         {saving

@@ -22,6 +22,181 @@ import {
   notifyReservationStatusChanged,
 } from "../notifications/service";
 
+import { withPropertyLock } from "./propertyLock";
+import { ReservationListItem } from "./types";
+
+/**
+ * Thrown when a create/edit would double-book a property. Carries a
+ * client-safe, organization-scoped conflict payload so the route
+ * handler can return the exact 409 shape this phase's spec requires,
+ * distinct from every other thrown `Error` in this module (which the
+ * routes render as a 400 with the raw message).
+ */
+export class ReservationConflictError extends Error {
+  constructor(
+    public readonly conflict: {
+      propertyId: string;
+      propertyName: string;
+      conflictingReservationId: string;
+      checkIn: string;
+      checkOut: string;
+      guestName: string;
+    }
+  ) {
+    super("Property is already booked for these dates");
+    this.name = "ReservationConflictError";
+  }
+}
+
+export interface ConflictSummary {
+  reservationId: string;
+  checkIn: string;
+  checkOut: string;
+  guestName: string;
+  status: string | null;
+}
+
+function guestNameOf(guest: ReservationListItem["guest"]): string {
+  if (!guest) return "Guest";
+  return `${guest.first_name} ${guest.last_name ?? ""}`.trim();
+}
+
+function toConflictSummary(r: ReservationListItem): ConflictSummary {
+  return {
+    reservationId: r.id,
+    checkIn: r.check_in,
+    checkOut: r.check_out,
+    guestName: guestNameOf(r.guest),
+    status: r.status,
+  };
+}
+
+async function getPropertyTitle(
+  organizationId: string,
+  propertyId: string
+): Promise<string> {
+  const { data, error } = await supabase
+    .from("properties")
+    .select("title")
+    .eq("id", propertyId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.title ?? "Property";
+}
+
+/**
+ * Server-side availability check for a property/date range, backing
+ * both the create/edit hard-block below and the public availability
+ * API. Reuses the existing overlap query and existing
+ * cancelled-reservations-don't-block rule (both already implemented
+ * in repository.ts) rather than reimplementing overlap math.
+ */
+export async function checkPropertyAvailability(
+  organizationId: string,
+  propertyId: string,
+  checkIn: string,
+  checkOut: string,
+  excludeReservationId?: string
+): Promise<{ available: boolean; conflicts: ConflictSummary[] }> {
+  const conflicts = await findConflictingReservations(
+    organizationId,
+    propertyId,
+    checkIn,
+    checkOut,
+    excludeReservationId
+  );
+
+  return {
+    available: conflicts.length === 0,
+    conflicts: conflicts.map(toConflictSummary),
+  };
+}
+
+async function assertAvailableOrThrow(
+  organizationId: string,
+  propertyId: string,
+  checkIn: string,
+  checkOut: string,
+  excludeReservationId?: string
+): Promise<void> {
+  const { available, conflicts } = await checkPropertyAvailability(
+    organizationId,
+    propertyId,
+    checkIn,
+    checkOut,
+    excludeReservationId
+  );
+
+  const first = conflicts[0];
+
+  if (!available && first) {
+    throw new ReservationConflictError({
+      propertyId,
+      propertyName: await getPropertyTitle(organizationId, propertyId),
+      conflictingReservationId: first.reservationId,
+      checkIn: first.checkIn,
+      checkOut: first.checkOut,
+      guestName: first.guestName,
+    });
+  }
+}
+
+export interface PropertyAvailabilityReport {
+  available: boolean;
+  propertyId: string;
+  propertyName: string;
+  start: string;
+  end: string;
+  conflicts: ConflictSummary[];
+}
+
+/**
+ * Backs `GET /api/properties/:id/availability`. Verifies the property
+ * belongs to the caller's organization first (throws the same
+ * "not found in your organization" message every other property-
+ * scoped write in this codebase already uses), so a cross-org caller
+ * gets a clean 404 rather than ever seeing another organization's
+ * reservation data.
+ */
+export async function getPropertyAvailabilityReport(
+  organizationId: string,
+  propertyId: string,
+  start: string,
+  end: string,
+  excludeReservationId?: string
+): Promise<PropertyAvailabilityReport> {
+  const propertyExists = await verifyProperty(organizationId, propertyId);
+
+  if (!propertyExists) {
+    throw new Error("Property not found in your organization");
+  }
+
+  const [propertyName, availability] = await Promise.all([
+    getPropertyTitle(organizationId, propertyId),
+    checkPropertyAvailability(
+      organizationId,
+      propertyId,
+      start,
+      end,
+      excludeReservationId
+    ),
+  ]);
+
+  return {
+    available: availability.available,
+    propertyId,
+    propertyName,
+    start,
+    end,
+    conflicts: availability.conflicts,
+  };
+}
+
 export async function getReservations(
   organizationId: string,
   filters: ReservationFilters,
@@ -46,15 +221,15 @@ export async function getReservationStatusCounts(
 }
 
 /**
- * Non-blocking overlap check for the same property, excluding a
- * given reservation (used on edit, so a reservation never
- * "conflicts with itself") and cancelled reservations (which don't
- * occupy the property). This never prevents a save — double-
- * booking prevention was explicitly flagged earlier in this
- * project as an unresolved business-rule decision, so this only
- * surfaces the information for the UI to display, matching this
- * phase's "conflict detection" requirement without silently
- * changing existing create/update behavior.
+ * Raw overlap query for the same property, excluding a given
+ * reservation (used on edit, so a reservation never "conflicts with
+ * itself") and cancelled reservations (which don't occupy the
+ * property). Used both by `checkPropertyAvailability`/
+ * `assertAvailableOrThrow` below (which DO block create/edit on a
+ * real conflict) and by the reservations list route's informational,
+ * non-blocking `conflictCount` on PATCH — the same query serves both
+ * a hard gate and a soft informational surface depending on the
+ * caller.
  */
 export async function findConflictingReservations(
   organizationId: string,
@@ -231,14 +406,58 @@ export async function addReservation(
     );
   }
 
-  const reservation = await createReservation(
-    organizationId,
-    input
-  );
+  return withPropertyLock(input.property_id, async () => {
+    // Serialized per-property (see propertyLock.ts) so this
+    // check-then-insert can't race with another concurrent create for
+    // the same property within this backend instance.
+    await assertAvailableOrThrow(
+      organizationId,
+      input.property_id,
+      input.check_in,
+      input.check_out
+    );
 
-  await notifyReservationCreated(organizationId, reservation);
+    const reservation = await createReservation(
+      organizationId,
+      input
+    );
 
-  return reservation;
+    // Defense-in-depth: re-verify after the write actually lands.
+    // Under the current single-instance backend this should never find
+    // anything (the lock above already serialized this property), but
+    // it costs one cheap query and means a conflict is never silently
+    // lost even if this backend were ever run as more than one
+    // instance — it gets flagged for staff review via the same
+    // existing needs_review workflow sync conflicts already use,
+    // rather than either blocking here (too late — bookings often
+    // shouldn't be prevented mid-race, per the same "import but flag"
+    // policy already chosen for sync) or pretending no conflict
+    // happened.
+    const postInsertCheck = await checkPropertyAvailability(
+      organizationId,
+      input.property_id,
+      input.check_in,
+      input.check_out,
+      reservation.id
+    );
+
+    if (!postInsertCheck.available) {
+      const flagged = await updateReservation(
+        organizationId,
+        reservation.id,
+        { needs_review: true }
+      );
+
+      if (flagged) {
+        await notifyReservationCreated(organizationId, flagged);
+        return flagged;
+      }
+    }
+
+    await notifyReservationCreated(organizationId, reservation);
+
+    return reservation;
+  });
 }
 
 /**
@@ -551,12 +770,61 @@ export async function editReservation(
     updates.status !== existing.status;
 
   /*
-   * Update reservation.
+   * OVERLAP VALIDATION
+   *
+   * Only re-checked when the edit could actually change which dates
+   * this reservation occupies: its own check-in/check-out, its
+   * property, or reactivating it out of "cancelled" (which is the one
+   * status transition that starts occupying the property again without
+   * touching dates). Editing unrelated fields (guest count, price,
+   * special requests, source, booking reference) never triggers this —
+   * a reservation that already existed shouldn't suddenly fail to save
+   * because some other, unrelated booking was created afterward.
    */
-  const updated = await updateReservation(
-    organizationId,
-    reservationId,
-    updates
+  const effectivePropertyId =
+    (updates.property_id as string | undefined) ?? existing.property_id;
+
+  const willBeCancelled =
+    updates.status !== undefined
+      ? updates.status === "cancelled"
+      : existing.status === "cancelled";
+
+  const reactivating =
+    existing.status === "cancelled" && !willBeCancelled;
+
+  const datesOrPropertyChanged =
+    updates.check_in !== undefined ||
+    updates.check_out !== undefined ||
+    updates.property_id !== undefined;
+
+  const shouldCheckAvailability =
+    !willBeCancelled && (datesOrPropertyChanged || reactivating);
+
+  /*
+   * Update reservation. Serialized per-property (see propertyLock.ts)
+   * alongside reservation creation, so an edit that reactivates or
+   * moves a reservation can't race a concurrent create for the same
+   * property.
+   */
+  const updated = await withPropertyLock(
+    effectivePropertyId,
+    async () => {
+      if (shouldCheckAvailability) {
+        await assertAvailableOrThrow(
+          organizationId,
+          effectivePropertyId,
+          checkIn,
+          checkOut,
+          reservationId
+        );
+      }
+
+      return updateReservation(
+        organizationId,
+        reservationId,
+        updates
+      );
+    }
   );
 
   if (updated && statusChanged) {

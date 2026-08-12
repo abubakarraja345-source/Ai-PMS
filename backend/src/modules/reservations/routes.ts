@@ -20,6 +20,7 @@ import {
   getReservations,
   getReservationStatusCounts,
   removeReservation,
+  ReservationConflictError,
 } from "./service";
 import {
   buildPaginationMeta,
@@ -206,24 +207,30 @@ reservationRouter.post(
         input
       );
 
-      const conflicts = await findConflictingReservations(
-        req.organization.id,
-        data.property_id,
-        data.check_in,
-        data.check_out,
-        data.id
-      );
-
       return res.status(201).json({
         success: true,
         data,
-        conflictCount: conflicts.length,
+        // Creation now hard-blocks on a real conflict (see
+        // ReservationConflictError below), so this is only ever
+        // nonzero in the rare case the post-insert safety net in
+        // addReservation had to flag a race-created conflict for
+        // review — kept as `conflictCount` for the existing frontend
+        // contract rather than a boolean.
+        conflictCount: data.needs_review ? 1 : 0,
       });
     } catch (error) {
       console.error(
         "Create reservation error:",
         error
       );
+
+      if (error instanceof ReservationConflictError) {
+        return res.status(409).json({
+          success: false,
+          error: error.message,
+          data: error.conflict,
+        });
+      }
 
       return res.status(400).json({
         success: false,
@@ -279,6 +286,14 @@ reservationRouter.patch(
         "Update reservation error:",
         error
       );
+
+      if (error instanceof ReservationConflictError) {
+        return res.status(409).json({
+          success: false,
+          error: error.message,
+          data: error.conflict,
+        });
+      }
 
       return res.status(400).json({
         success: false,
