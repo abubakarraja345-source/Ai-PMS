@@ -2,20 +2,21 @@ import { Router } from "express";
 
 import { requireAuth } from "../../middleware/auth.middleware";
 import { requireOrganization } from "../../middleware/organization.middleware";
-import { requireRole } from "../../middleware/role.middleware";
+import { requirePermission } from "../../middleware/permission.middleware";
 
 import { listAuditLogController } from "./controller";
 
 const router = Router();
 
-// Activity history is sensitive across the whole organization — only
-// owner/company_admin can view it, matching the same gate used for
-// GET /api/organization/invitations.
+// Phase 7 — migrated from requireRole("owner","company_admin") to
+// audit.read. Matrix grants it to owner/company_admin (unchanged) plus
+// manager (new — matches the spec's "Audit Log ✓Manager" example),
+// reproducing today's exact access for every existing role.
 router.get(
   "/",
   requireAuth,
   requireOrganization,
-  requireRole("owner", "company_admin"),
+  requirePermission("audit.read"),
   listAuditLogController
 );
 

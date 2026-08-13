@@ -10,6 +10,8 @@ import {
 } from "./service";
 
 import { validateChangeRole } from "./validation";
+import { ROLE_LABELS } from "../permissions/roles";
+import { getEffectivePermissions } from "../permissions/service";
 
 /**
  * Our own validation/business-rule checks throw plain `Error`s
@@ -155,6 +157,15 @@ export async function removeMemberController(
  * the caller's organization context by the time this runs. Used by
  * the frontend to decide dashboard vs. onboarding without duplicating
  * that resolution logic client-side.
+ *
+ * Phase 7 — additively extended with the caller's effective
+ * permissions, computed by the exact same getEffectivePermissions()
+ * function requirePermission() itself calls to enforce every route
+ * (see permissions/service.ts) — this is what guarantees the
+ * frontend's can()/effectOf() UI hints can never drift out of sync
+ * with what the backend actually enforces. `id`/`name`/`role` are
+ * untouched, so no existing frontend code reading this response
+ * breaks.
  */
 export async function getMyOrganizationController(
   req: OrganizationRequest,
@@ -167,10 +178,43 @@ export async function getMyOrganizationController(
     });
   }
 
-  return res.status(200).json({
-    success: true,
-    data: req.organization,
-  });
+  try {
+    const { permissions, permissionEffects } = await getEffectivePermissions(
+      req.organization.id,
+      req.organization.role
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...req.organization,
+        roleLabel: ROLE_LABELS[req.organization.role],
+        permissions,
+        permissionEffects,
+        isPlatformAdminViewing: req.isPlatformAdminOverride === true,
+      },
+    });
+  } catch (error) {
+    // Express 4 does not auto-catch async rejections — an uncaught
+    // one here would crash the whole process, not just this request.
+    // Falls back to the base organization payload (no permissions)
+    // rather than letting a permission-lookup hiccup take the app
+    // down; every existing frontend consumer already handles a
+    // missing `permissions` field gracefully since it didn't exist
+    // before this phase.
+    console.error("Get effective permissions error:", error);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...req.organization,
+        roleLabel: ROLE_LABELS[req.organization.role],
+        permissions: [],
+        permissionEffects: {},
+        isPlatformAdminViewing: req.isPlatformAdminOverride === true,
+      },
+    });
+  }
 }
 
 /**

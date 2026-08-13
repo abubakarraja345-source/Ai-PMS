@@ -3,6 +3,14 @@ import { createClient } from "@/lib/supabase/client";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+/** sessionStorage key for an active platform-admin "entered
+ * organization" session token — see app/admin's enter-organization
+ * flow and (dashboard)/layout.tsx's viewing-as banner. sessionStorage
+ * (not localStorage) deliberately: this is a short-lived (15 min),
+ * read-only viewing session that should never silently persist across
+ * browser restarts. */
+export const PLATFORM_ADMIN_SESSION_KEY = "hostly_platform_admin_session";
+
 export async function apiFetch(
   path: string,
   options: RequestInit = {}
@@ -21,6 +29,22 @@ export async function apiFetch(
 
   headers.set("Authorization", `Bearer ${session.access_token}`);
   headers.set("Content-Type", "application/json");
+
+  if (typeof window !== "undefined") {
+    const raw = window.sessionStorage.getItem(PLATFORM_ADMIN_SESSION_KEY);
+
+    if (raw) {
+      try {
+        const { token } = JSON.parse(raw) as { token: string };
+        if (token) {
+          headers.set("X-Platform-Admin-Session", token);
+        }
+      } catch {
+        // Malformed sessionStorage entry — ignore, request proceeds
+        // as a normal (non-override) authenticated request.
+      }
+    }
+  }
 
   const response = await fetch(`${API_URL}${path}`, {
     ...options,

@@ -2,7 +2,7 @@ import { Router } from "express";
 
 import { requireAuth } from "../../middleware/auth.middleware";
 import { requireOrganization } from "../../middleware/organization.middleware";
-import { requireRole } from "../../middleware/role.middleware";
+import { requirePermission } from "../../middleware/permission.middleware";
 import { invitationRateLimiter } from "../../middleware/rateLimiter";
 
 import {
@@ -25,10 +25,12 @@ import {
 const router = Router();
 
 /**
- * Only owner/company_admin may invite, list, resend, or revoke
- * invitations — same coarse gate as member management just below.
+ * Phase 7 — migrated from requireRole("owner","company_admin") to
+ * team.invite. Matrix grants it only to owner/company_admin, exactly
+ * reproducing today's access for every existing role — no behavior
+ * change for any organization that hasn't assigned a new role yet.
  */
-const manageInvitations = requireRole("owner", "company_admin");
+const manageInvitations = requirePermission("team.invite");
 
 // POST /api/organization/invitations/accept
 // Authenticated only, deliberately NOT requireOrganization — the
@@ -117,15 +119,17 @@ router.get(
 );
 
 // PATCH /api/organization/members/:id
-// Coarse gate: only owner/company_admin may even attempt this.
-// Fine-grained rules (can't touch the owner, can't change your
-// own role) are enforced in the service layer, since they
-// depend on which specific member is targeted.
+// Phase 7 — migrated to team.manage_roles (owner/company_admin only
+// in the matrix, same as before). Fine-grained rules (can't touch the
+// owner, can't change your own role) are still enforced in the
+// service layer, since they depend on which specific member is
+// targeted — permission engine only answers "is this role even
+// allowed to attempt this at all."
 router.patch(
   "/members/:id",
   requireAuth,
   requireOrganization,
-  requireRole("owner", "company_admin"),
+  requirePermission("team.manage_roles"),
   changeMemberRoleController
 );
 
@@ -134,7 +138,7 @@ router.delete(
   "/members/:id",
   requireAuth,
   requireOrganization,
-  requireRole("owner", "company_admin"),
+  requirePermission("team.remove"),
   removeMemberController
 );
 

@@ -6,7 +6,7 @@ import {
   requireOrganization,
   OrganizationRequest,
 } from "../../middleware/organization.middleware";
-import { requireRole } from "../../middleware/role.middleware";
+import { requirePermission } from "../../middleware/permission.middleware";
 import {
   validateCreateReservation,
   validateReservationFilters,
@@ -38,8 +38,16 @@ reservationRouter.use(requireOrganization);
  * reservations remains open to every role, since that's the core
  * front-desk workflow. This was a pre-existing gap: any "member"
  * could previously delete any reservation with no role check.
+ *
+ * Phase 7: migrated from requireRole("owner","company_admin") to
+ * requirePermission per-action (reservations.review /
+ * reservations.delete), same effective access as before for every
+ * existing role. The generic PATCH /:id endpoint below is
+ * deliberately NOT migrated to requirePermission here — it gets the
+ * field-diff approval interceptor in the next checkpoint instead of a
+ * single coarse gate, since one generic endpoint covers many
+ * different kinds of edits with different permission requirements.
  */
-const destructive = requireRole("owner", "company_admin");
 
 /**
  * Returns a client-safe error message.
@@ -316,7 +324,7 @@ reservationRouter.patch(
 // with the general "PATCH /:id" route above regardless of order.
 reservationRouter.patch(
   "/:id/review",
-  destructive,
+  requirePermission("reservations.review"),
   async (req: OrganizationRequest, res) => {
     try {
       if (!req.organization) {
@@ -369,7 +377,7 @@ reservationRouter.patch(
 // DELETE /api/reservations/:id
 reservationRouter.delete(
   "/:id",
-  destructive,
+  requirePermission("reservations.delete"),
   async (req: OrganizationRequest, res) => {
     try {
       if (!req.organization) {

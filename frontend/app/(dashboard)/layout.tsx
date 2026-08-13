@@ -4,10 +4,10 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, ShieldAlert, X } from "lucide-react";
 import NotificationBell from "@/components/notifications/notification-bell";
 import ReviewCountBadge from "@/components/reservations/review-count-badge";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, PLATFORM_ADMIN_SESSION_KEY } from "@/lib/api";
 
 /**
  * requireOrganization's exact 403 message (backend/src/middleware/
@@ -18,6 +18,26 @@ import { apiFetch } from "@/lib/api";
  * through to showing the create-workspace form either way.
  */
 const NOT_A_MEMBER_MESSAGE = "User is not a member of an organization";
+
+interface PlatformAdminSession {
+  token: string;
+  organizationId: string;
+  organizationName: string;
+  reason: string;
+}
+
+function readPlatformAdminSession(): PlatformAdminSession | null {
+  if (typeof window === "undefined") return null;
+
+  const raw = window.sessionStorage.getItem(PLATFORM_ADMIN_SESSION_KEY);
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as PlatformAdminSession;
+  } catch {
+    return null;
+  }
+}
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard" },
@@ -48,6 +68,29 @@ export default function DashboardLayout({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [orgCheckReady, setOrgCheckReady] = useState(false);
+  const [platformAdminSession, setPlatformAdminSession] =
+    useState<PlatformAdminSession | null>(null);
+
+  useEffect(() => {
+    setPlatformAdminSession(readPlatformAdminSession());
+  }, []);
+
+  async function exitPlatformAdminView() {
+    const session = readPlatformAdminSession();
+
+    if (session) {
+      await apiFetch(
+        `/api/platform-admin/organizations/${session.organizationId}/exit`,
+        { method: "POST" }
+      ).catch(() => {
+        // Best-effort — the local session is cleared regardless, same
+        // posture as every other logout-adjacent action in this app.
+      });
+    }
+
+    window.sessionStorage.removeItem(PLATFORM_ADMIN_SESSION_KEY);
+    router.push("/admin");
+  }
 
   // The backend (never the client) resolves organization membership —
   // proxy.ts can only gate on authentication (the anon Postgres role
@@ -72,6 +115,18 @@ export default function DashboardLayout({
           err instanceof Error &&
           err.message === NOT_A_MEMBER_MESSAGE
         ) {
+          // A platform admin has no real organization_members row —
+          // if we get this specific 403 while a platform-admin
+          // viewing session was active, the 15-minute session simply
+          // expired (or a request raced its expiry), not "this user
+          // genuinely needs onboarding." Send them back to the admin
+          // area to re-enter rather than into the onboarding flow.
+          if (readPlatformAdminSession()) {
+            window.sessionStorage.removeItem(PLATFORM_ADMIN_SESSION_KEY);
+            router.replace("/admin");
+            return;
+          }
+
           router.replace("/onboarding");
           return;
         }
@@ -264,6 +319,33 @@ export default function DashboardLayout({
             <NotificationBell />
           </div>
         </header>
+
+        {/* Persistent, unmissable — never a small dismissible toast.
+            Rendered from local sessionStorage state (populated by the
+            enter-organization flow in app/admin), but the backend is
+            the actual authority: every request while this is active
+            is independently verified server-side (see
+            organization.middleware.ts's resolvePlatformAdminOverride)
+            and read-only-enforced regardless of what this banner
+            shows. */}
+        {platformAdminSession && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-300 bg-amber-50 px-6 py-3 text-amber-900">
+            <div className="flex items-center gap-2 text-sm">
+              <ShieldAlert size={18} className="shrink-0" />
+              <span>
+                <strong>Viewing as Platform Administrator</strong> —{" "}
+                {platformAdminSession.organizationName}. Reason: &quot;
+                {platformAdminSession.reason}&quot;. Read-only.
+              </span>
+            </div>
+            <button
+              onClick={exitPlatformAdminView}
+              className="shrink-0 rounded-lg border border-amber-400 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100"
+            >
+              Exit organization view
+            </button>
+          </div>
+        )}
 
         <main className="p-6 lg:p-8">{children}</main>
       </div>

@@ -2,7 +2,7 @@ import { Router } from "express";
 
 import { requireAuth } from "../../middleware/auth.middleware";
 import { requireOrganization } from "../../middleware/organization.middleware";
-import { requireRole } from "../../middleware/role.middleware";
+import { requirePermission } from "../../middleware/permission.middleware";
 
 import {
   listProperties,
@@ -17,20 +17,20 @@ const router = Router();
 router.use(requireAuth, requireOrganization);
 
 /**
- * Managing the property portfolio itself (as opposed to day-to-day
- * operations against an existing property) is owner/company_admin
- * only — matching every adjacent property-scoped module
- * (property-media, property-details, inventory), which were already
- * gated this way. This was a pre-existing gap: any "member" could
- * previously create/edit/delete any property with no role check.
+ * Phase 7 — migrated from requireRole("owner","company_admin") to the
+ * granular permission engine. The matrix (permissions/matrix.ts)
+ * reproduces the exact same effective access for every existing role
+ * (owner/company_admin: allow, member: deny) — the only actual change
+ * is that "manager" (a brand new role no existing organization has
+ * assigned yet) now gets properties.update, matching its "manage
+ * assigned properties" spec definition. Create/delete remain
+ * owner/admin only, same as before.
  */
-const mutate = requireRole("owner", "company_admin");
+router.get("/", requirePermission("properties.read"), listProperties);
 
-router.get("/", listProperties);
-
-router.post("/", mutate, createPropertyController);
-router.get("/:id", getPropertyController);
-router.patch("/:id", mutate, updatePropertyController);
-router.delete("/:id", mutate, deletePropertyController);
+router.post("/", requirePermission("properties.create"), createPropertyController);
+router.get("/:id", requirePermission("properties.read"), getPropertyController);
+router.patch("/:id", requirePermission("properties.update"), updatePropertyController);
+router.delete("/:id", requirePermission("properties.delete"), deletePropertyController);
 
 export default router;
