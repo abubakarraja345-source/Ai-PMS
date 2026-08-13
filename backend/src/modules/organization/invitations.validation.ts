@@ -4,8 +4,20 @@
  * owner is unique, assigned only at organization-creation time). Same
  * exclusion already enforced for the member-role-change endpoint in
  * organization/validation.ts's ASSIGNABLE_ROLES.
+ *
+ * Phase 7 — widened from the original 2 to all 5 non-owner roles,
+ * matching the widened organization_invitations_role_check CHECK
+ * constraint (20260817000000_widen_invitation_roles.sql) — this list
+ * and that constraint must stay in sync; this is the app-level
+ * validation layer, the DB constraint is the backstop.
  */
-export const INVITABLE_ROLES = ["company_admin", "member"] as const;
+export const INVITABLE_ROLES = [
+  "company_admin",
+  "manager",
+  "host",
+  "member",
+  "spectator",
+] as const;
 
 export type InvitableRole = (typeof INVITABLE_ROLES)[number];
 

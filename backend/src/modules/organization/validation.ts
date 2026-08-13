@@ -5,10 +5,20 @@ import { OrganizationRole } from "../../middleware/organization.middleware";
  * is deliberately excluded — ownership transfer is explicitly
  * out of scope (approved rule: "Cannot transfer ownership"), so
  * nobody can be promoted to owner through this endpoint.
+ *
+ * Phase 7 — widened from the original 2 to all 5 non-owner roles.
+ * This is a separate allowlist from permissions/roles.ts's
+ * ORGANIZATION_ROLES by design (defense in depth: input validation
+ * and the permission engine are independent layers), but it must be
+ * kept in sync with it — a role added to one without the other is a
+ * bug, not a feature.
  */
 const ASSIGNABLE_ROLES = [
   "company_admin",
+  "manager",
+  "host",
   "member",
+  "spectator",
 ] as const;
 
 type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];

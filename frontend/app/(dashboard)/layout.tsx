@@ -8,16 +8,7 @@ import { Menu, ShieldAlert, X } from "lucide-react";
 import NotificationBell from "@/components/notifications/notification-bell";
 import ReviewCountBadge from "@/components/reservations/review-count-badge";
 import { apiFetch, PLATFORM_ADMIN_SESSION_KEY } from "@/lib/api";
-
-/**
- * requireOrganization's exact 403 message (backend/src/middleware/
- * organization.middleware.ts) — matched literally rather than just
- * checking "any error" because this layout needs to tell "no
- * organization yet" apart from a transient/network failure, unlike
- * the onboarding page's own check where any failure safely falls
- * through to showing the create-workspace form either way.
- */
-const NOT_A_MEMBER_MESSAGE = "User is not a member of an organization";
+import { PermissionProvider, usePermission } from "@/lib/permission-context";
 
 interface PlatformAdminSession {
   token: string;
@@ -59,18 +50,22 @@ const navItems = [
   { name: "AI Assistant", href: "/ai" },
 ];
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+/**
+ * Phase 7.5 — PermissionProvider now owns the single
+ * GET /api/organization/me call this layout used to make standalone
+ * (including the "not a member yet -> onboarding" and "platform admin
+ * session expired -> /admin" redirects) — see lib/permission-context.tsx.
+ * This inner component just consumes its `ready`/`isPlatformAdminViewing`
+ * state instead of tracking its own copy.
+ */
+function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const [orgCheckReady, setOrgCheckReady] = useState(false);
   const [platformAdminSession, setPlatformAdminSession] =
     useState<PlatformAdminSession | null>(null);
+  const { ready } = usePermission();
 
   useEffect(() => {
     setPlatformAdminSession(readPlatformAdminSession());
@@ -92,60 +87,6 @@ export default function DashboardLayout({
     window.sessionStorage.removeItem(PLATFORM_ADMIN_SESSION_KEY);
     router.push("/admin");
   }
-
-  // The backend (never the client) resolves organization membership —
-  // proxy.ts can only gate on authentication (the anon Postgres role
-  // has no table grants), so this is the actual enforcement point for
-  // "authenticated but no organization yet" across every dashboard
-  // route. A user who fails this check is sent to onboarding instead
-  // of ever seeing dashboard content.
-  useEffect(() => {
-    let cancelled = false;
-
-    async function checkOrganization() {
-      try {
-        await apiFetch("/api/organization/me");
-
-        if (!cancelled) {
-          setOrgCheckReady(true);
-        }
-      } catch (err) {
-        if (cancelled) return;
-
-        if (
-          err instanceof Error &&
-          err.message === NOT_A_MEMBER_MESSAGE
-        ) {
-          // A platform admin has no real organization_members row —
-          // if we get this specific 403 while a platform-admin
-          // viewing session was active, the 15-minute session simply
-          // expired (or a request raced its expiry), not "this user
-          // genuinely needs onboarding." Send them back to the admin
-          // area to re-enter rather than into the onboarding flow.
-          if (readPlatformAdminSession()) {
-            window.sessionStorage.removeItem(PLATFORM_ADMIN_SESSION_KEY);
-            router.replace("/admin");
-            return;
-          }
-
-          router.replace("/onboarding");
-          return;
-        }
-
-        // Any other failure (network hiccup, transient auth refresh)
-        // shouldn't trap the user on a blank screen — render normally
-        // and let the page's own data calls surface a real error if
-        // something is genuinely wrong.
-        setOrgCheckReady(true);
-      }
-    }
-
-    checkOrganization();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {
@@ -228,7 +169,7 @@ export default function DashboardLayout({
     </>
   );
 
-  if (!orgCheckReady) {
+  if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <p className="text-slate-500">Loading...</p>
@@ -351,5 +292,13 @@ export default function DashboardLayout({
         <main className="p-6 lg:p-8">{children}</main>
       </div>
     </div>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  return (
+    <PermissionProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </PermissionProvider>
   );
 }

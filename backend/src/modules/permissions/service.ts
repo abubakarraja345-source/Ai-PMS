@@ -1,4 +1,4 @@
-import { OrganizationRole } from "./roles";
+import { OrganizationRole, ORGANIZATION_ROLES } from "./roles";
 import { RESOURCE_ACTIONS, ResourceAction } from "./resourceActions";
 import { PERMISSION_MATRIX, PermissionEffect } from "./matrix";
 import {
@@ -70,6 +70,25 @@ export async function getEffectivePermissions(
   );
 
   return { permissions, permissionEffects };
+}
+
+/**
+ * Every role's effective permissions for this organization (overrides
+ * applied), in one call — backs the Team page's "Change Role" preview
+ * (Phase 7.5), computed from the exact same getEffectivePermissions()
+ * every other consumer uses, so the preview can never show something
+ * different from what's actually enforced.
+ */
+export async function getRoleMatrixForOrganization(
+  organizationId: string
+): Promise<Record<OrganizationRole, EffectivePermissions>> {
+  const entries = await Promise.all(
+    ORGANIZATION_ROLES.map(
+      async (role) => [role, await getEffectivePermissions(organizationId, role)] as const
+    )
+  );
+
+  return Object.fromEntries(entries) as Record<OrganizationRole, EffectivePermissions>;
 }
 
 /** The 3 resource_actions the matrix defaults to "approval" for

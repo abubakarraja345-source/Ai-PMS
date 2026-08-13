@@ -4,9 +4,17 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import { usePermission } from "@/lib/permission-context";
+import ConfirmDialog from "@/components/shared/confirm-dialog";
 
-type OrganizationRole = "owner" | "company_admin" | "member";
-type InvitableRole = "company_admin" | "member";
+type OrganizationRole =
+  | "owner"
+  | "company_admin"
+  | "manager"
+  | "host"
+  | "member"
+  | "spectator";
+type InvitableRole = Exclude<OrganizationRole, "owner">;
 type InvitationStatus = "pending" | "accepted" | "revoked" | "expired";
 
 interface Member {
@@ -29,12 +37,26 @@ interface Invitation {
   acceptedAt: string | null;
 }
 
+interface RoleEffectivePermissions {
+  permissions: string[];
+  permissionEffects: Record<string, "allow" | "deny" | "approval">;
+}
+
 const ASSIGNABLE_ROLES: OrganizationRole[] = [
   "company_admin",
+  "manager",
+  "host",
   "member",
+  "spectator",
 ];
 
-const INVITABLE_ROLES: InvitableRole[] = ["member", "company_admin"];
+const INVITABLE_ROLES: InvitableRole[] = [
+  "member",
+  "manager",
+  "host",
+  "spectator",
+  "company_admin",
+];
 
 function getInvitationStatusClasses(status: InvitationStatus) {
   switch (status) {
@@ -55,14 +77,29 @@ function getRoleClasses(role: OrganizationRole) {
       return "bg-violet-50 text-violet-700 border-violet-200";
     case "company_admin":
       return "bg-blue-50 text-blue-700 border-blue-200";
+    case "manager":
+      return "bg-teal-50 text-teal-700 border-teal-200";
+    case "host":
+      return "bg-amber-50 text-amber-700 border-amber-200";
+    case "spectator":
+      return "bg-slate-100 text-slate-500 border-slate-200";
     default:
       return "bg-slate-50 text-slate-700 border-slate-200";
   }
 }
 
-function formatRole(role: OrganizationRole) {
-  if (role === "company_admin") return "Company Admin";
-  return role.charAt(0).toUpperCase() + role.slice(1);
+const ROLE_LABEL_FALLBACK: Record<OrganizationRole, string> = {
+  owner: "Owner",
+  company_admin: "Admin",
+  manager: "Manager",
+  host: "Host",
+  member: "Member",
+  spectator: "Spectator",
+};
+
+function humanizeAction(action: string) {
+  const [resource, ...rest] = action.split(".");
+  return `${resource} — ${rest.join(" ").replace(/_/g, " ")}`;
 }
 
 function formatDate(value: string) {
@@ -74,6 +111,8 @@ function formatDate(value: string) {
 }
 
 export default function TeamPage() {
+  const { can, roleLabel: selfRoleLabel } = usePermission();
+
   const [members, setMembers] = useState<Member[]>([]);
   const [selfUserId, setSelfUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,6 +132,22 @@ export default function TeamPage() {
 
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<Invitation | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<Member | null>(null);
+
+  // Phase 7.5
+  const [roleLabels, setRoleLabels] = useState<Record<string, string>>(ROLE_LABEL_FALLBACK);
+  const [roleMatrix, setRoleMatrix] = useState<Record<string, RoleEffectivePermissions>>({});
+  const [assignmentsByUser, setAssignmentsByUser] = useState<Record<string, string[]>>({});
+  const [pendingApprovalsByUser, setPendingApprovalsByUser] = useState<Record<string, number>>({});
+  const [roleChangeTarget, setRoleChangeTarget] = useState<{
+    member: Member;
+    newRole: OrganizationRole;
+  } | null>(null);
+
+  const canManageTeam = can("team.invite");
+  const canChangeRoles = can("team.manage_roles");
+  const canRemoveMembers = can("team.remove");
 
   const loadMembers = useCallback(async () => {
     try {
@@ -125,18 +180,58 @@ export default function TeamPage() {
       const response = await apiFetch("/api/organization/invitations");
       setInvitations(response.data ?? []);
     } catch {
-      // Expected (403) for the "member" role, which the backend
-      // correctly never allows to list invitations — the section
-      // simply doesn't render for them (see canManage below), so this
-      // is not a page-level error.
+      // Expected (403) for roles without team.invite — the section
+      // simply doesn't render for them (see canManageTeam below), so
+      // this is not a page-level error.
       setInvitations([]);
+    }
+  }, []);
+
+  const loadRoleMatrix = useCallback(async () => {
+    try {
+      const response = await apiFetch("/api/organization/role-matrix");
+      setRoleLabels(response.data?.roleLabels ?? ROLE_LABEL_FALLBACK);
+      setRoleMatrix(response.data?.matrix ?? {});
+    } catch {
+      // Non-fatal — the "Change Role" preview just won't show gained/
+      // lost detail; the change itself still works via the backend's
+      // own enforcement regardless.
+    }
+  }, []);
+
+  const loadAssignments = useCallback(async () => {
+    try {
+      const response = await apiFetch("/api/organization/property-assignments");
+      const byUser: Record<string, string[]> = {};
+      for (const row of response.data ?? []) {
+        (byUser[row.userId] ??= []).push(row.propertyTitle);
+      }
+      setAssignmentsByUser(byUser);
+    } catch {
+      setAssignmentsByUser({});
+    }
+  }, []);
+
+  const loadPendingApprovals = useCallback(async () => {
+    try {
+      const response = await apiFetch("/api/approvals?status=pending");
+      const byUser: Record<string, number> = {};
+      for (const request of response.data ?? []) {
+        byUser[request.requestedBy] = (byUser[request.requestedBy] ?? 0) + 1;
+      }
+      setPendingApprovalsByUser(byUser);
+    } catch {
+      setPendingApprovalsByUser({});
     }
   }, []);
 
   useEffect(() => {
     loadMembers();
     loadInvitations();
-  }, [loadMembers, loadInvitations]);
+    loadRoleMatrix();
+    loadAssignments();
+    loadPendingApprovals();
+  }, [loadMembers, loadInvitations, loadRoleMatrix, loadAssignments, loadPendingApprovals]);
 
   async function sendInvitation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -194,42 +289,46 @@ export default function TeamPage() {
     }
   }
 
-  async function revokeInvitation(invitationId: string, email: string) {
-    const confirmed = window.confirm(
-      `Revoke the invitation to ${email}?\n\nThe invitation link will stop working.`
-    );
-
-    if (!confirmed) return;
+  async function handleRevokeConfirmed() {
+    if (!revokeTarget) return;
 
     try {
-      setRevokingId(invitationId);
+      setRevokingId(revokeTarget.id);
       setError("");
 
-      await apiFetch(`/api/organization/invitations/${invitationId}/revoke`, {
+      await apiFetch(`/api/organization/invitations/${revokeTarget.id}/revoke`, {
         method: "POST",
       });
 
-      setSuccess(`Invitation to ${email} revoked.`);
+      setSuccess(`Invitation to ${revokeTarget.email} revoked.`);
+      setRevokeTarget(null);
       await loadInvitations();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to revoke invitation."
       );
+      setRevokeTarget(null);
     } finally {
       setRevokingId(null);
     }
   }
 
-  async function changeRole(memberId: string, role: OrganizationRole) {
-    try {
-      setSavingId(memberId);
-      setError("");
+  async function applyRoleChange() {
+    if (!roleChangeTarget) return;
 
-      await apiFetch(`/api/organization/members/${memberId}`, {
+    const { member, newRole } = roleChangeTarget;
+
+    try {
+      setSavingId(member.id);
+      setError("");
+      setRoleChangeTarget(null);
+
+      await apiFetch(`/api/organization/members/${member.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ role }),
+        body: JSON.stringify({ role: newRole }),
       });
 
+      setSuccess(`${member.email ?? "Member"}'s role changed to ${roleLabels[newRole] ?? newRole}.`);
       await loadMembers();
     } catch (err) {
       setError(
@@ -242,38 +341,47 @@ export default function TeamPage() {
     }
   }
 
-  async function removeMember(memberId: string, label: string) {
-    const confirmed = window.confirm(
-      `Are you sure you want to remove ${label} from this organization?\n\nThis action cannot be undone.`
-    );
-
-    if (!confirmed) return;
+  async function handleRemoveConfirmed() {
+    if (!removeTarget) return;
 
     try {
-      setRemovingId(memberId);
+      setRemovingId(removeTarget.id);
       setError("");
 
-      await apiFetch(`/api/organization/members/${memberId}`, {
+      await apiFetch(`/api/organization/members/${removeTarget.id}`, {
         method: "DELETE",
       });
 
       setMembers((current) =>
-        current.filter((member) => member.id !== memberId)
+        current.filter((member) => member.id !== removeTarget.id)
       );
+      setRemoveTarget(null);
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
           : "Failed to remove member."
       );
+      setRemoveTarget(null);
     } finally {
       setRemovingId(null);
     }
   }
 
+  function formatRole(role: string) {
+    return roleLabels[role] ?? ROLE_LABEL_FALLBACK[role as OrganizationRole] ?? role;
+  }
+
   const self = members.find((member) => member.userId === selfUserId);
-  const canManage =
-    self?.role === "owner" || self?.role === "company_admin";
+
+  const gainedLost = (() => {
+    if (!roleChangeTarget) return null;
+    const current = roleMatrix[roleChangeTarget.member.role]?.permissions ?? [];
+    const next = roleMatrix[roleChangeTarget.newRole]?.permissions ?? [];
+    const gained = next.filter((a) => !current.includes(a));
+    const lost = current.filter((a) => !next.includes(a));
+    return { gained, lost };
+  })();
 
   return (
     <main className="min-h-screen bg-slate-50 p-10">
@@ -286,10 +394,15 @@ export default function TeamPage() {
           <p className="mt-3 text-lg text-slate-500">
             View your organization&apos;s members and manage their
             roles.
+            {selfRoleLabel && (
+              <span className="ml-2 text-sm text-slate-400">
+                You are signed in as {selfRoleLabel}.
+              </span>
+            )}
           </p>
         </div>
 
-        {canManage && (
+        {canManageTeam && (
           <button
             onClick={() => setShowInviteModal(true)}
             className="rounded-xl bg-[#10172a] px-6 py-4 text-white hover:bg-[#18213a]"
@@ -323,7 +436,7 @@ export default function TeamPage() {
         </div>
       ) : (
         <div className="mt-10 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full min-w-[700px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
                 <th className="px-6 py-4 font-medium text-slate-500">
@@ -333,9 +446,12 @@ export default function TeamPage() {
                   Role
                 </th>
                 <th className="px-6 py-4 font-medium text-slate-500">
+                  Assigned Properties
+                </th>
+                <th className="px-6 py-4 font-medium text-slate-500">
                   Joined
                 </th>
-                {canManage && (
+                {(canChangeRoles || canRemoveMembers) && (
                   <th className="px-6 py-4 font-medium text-slate-500">
                     Actions
                   </th>
@@ -354,20 +470,27 @@ export default function TeamPage() {
                   ? "The organization owner cannot be changed"
                   : isSelf
                   ? "You cannot change your own role"
+                  : !canChangeRoles
+                  ? "You don't have permission to perform this action."
                   : undefined;
 
                 const removeDisabledReason = isOwner
                   ? "The organization owner cannot be removed"
                   : isSelf
                   ? "You cannot remove yourself"
+                  : !canRemoveMembers
+                  ? "You don't have permission to perform this action."
                   : undefined;
+
+                const assignedProperties = assignmentsByUser[member.userId] ?? [];
+                const pendingCount = pendingApprovalsByUser[member.userId] ?? 0;
 
                 return (
                   <tr
                     key={member.id}
                     className="border-b border-slate-100 last:border-0"
                   >
-                    <td className="max-w-[260px] px-6 py-4">
+                    <td className="max-w-[240px] px-6 py-4">
                       <p className="truncate font-medium text-slate-900">
                         {member.email ?? "Unknown email"}
                         {isSelf && (
@@ -376,6 +499,14 @@ export default function TeamPage() {
                           </span>
                         )}
                       </p>
+                      {pendingCount > 0 && (
+                        <Link
+                          href="/approvals"
+                          className="mt-1 inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700 hover:bg-violet-100"
+                        >
+                          {pendingCount} pending approval{pendingCount === 1 ? "" : "s"}
+                        </Link>
+                      )}
                     </td>
 
                     <td className="px-6 py-4">
@@ -388,11 +519,25 @@ export default function TeamPage() {
                       </span>
                     </td>
 
+                    <td className="max-w-[220px] px-6 py-4 text-slate-600">
+                      {["manager", "host", "spectator"].includes(member.role) ? (
+                        assignedProperties.length > 0 ? (
+                          <span className="truncate" title={assignedProperties.join(", ")}>
+                            {assignedProperties.join(", ")}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-amber-600">None assigned</span>
+                        )
+                      ) : (
+                        <span className="text-xs text-slate-400">All properties</span>
+                      )}
+                    </td>
+
                     <td className="px-6 py-4 text-slate-500">
                       {formatDate(member.createdAt)}
                     </td>
 
-                    {canManage && (
+                    {(canChangeRoles || canRemoveMembers) && (
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <Link
@@ -402,51 +547,49 @@ export default function TeamPage() {
                             Activity
                           </Link>
 
-                          <select
-                            value={
-                              ASSIGNABLE_ROLES.includes(member.role)
-                                ? member.role
-                                : ""
-                            }
-                            disabled={Boolean(disabledReason) || busy}
-                            title={disabledReason}
-                            onChange={(event) =>
-                              changeRole(
-                                member.id,
-                                event.target.value as OrganizationRole
-                              )
-                            }
-                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {!ASSIGNABLE_ROLES.includes(member.role) && (
-                              <option value="">
-                                {formatRole(member.role)}
-                              </option>
-                            )}
-                            {ASSIGNABLE_ROLES.map((role) => (
-                              <option key={role} value={role}>
-                                {formatRole(role)}
-                              </option>
-                            ))}
-                          </select>
+                          {canChangeRoles && (
+                            <select
+                              value={
+                                ASSIGNABLE_ROLES.includes(member.role)
+                                  ? member.role
+                                  : ""
+                              }
+                              disabled={Boolean(disabledReason) || busy}
+                              title={disabledReason}
+                              onChange={(event) => {
+                                const newRole = event.target.value as OrganizationRole;
+                                if (newRole === member.role) return;
+                                setRoleChangeTarget({ member, newRole });
+                              }}
+                              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {!ASSIGNABLE_ROLES.includes(member.role) && (
+                                <option value="">
+                                  {formatRole(member.role)}
+                                </option>
+                              )}
+                              {ASSIGNABLE_ROLES.map((role) => (
+                                <option key={role} value={role}>
+                                  {formatRole(role)}
+                                </option>
+                              ))}
+                            </select>
+                          )}
 
-                          <button
-                            onClick={() =>
-                              removeMember(
-                                member.id,
-                                member.email ?? "this member"
-                              )
-                            }
-                            disabled={
-                              Boolean(removeDisabledReason) || busy
-                            }
-                            title={removeDisabledReason}
-                            className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {removingId === member.id
-                              ? "Removing..."
-                              : "Remove"}
-                          </button>
+                          {canRemoveMembers && (
+                            <button
+                              onClick={() => setRemoveTarget(member)}
+                              disabled={
+                                Boolean(removeDisabledReason) || busy
+                              }
+                              title={removeDisabledReason}
+                              className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {removingId === member.id
+                                ? "Removing..."
+                                : "Remove"}
+                            </button>
+                          )}
                         </div>
                       </td>
                     )}
@@ -458,7 +601,7 @@ export default function TeamPage() {
         </div>
       )}
 
-      {canManage && invitations.length > 0 && (
+      {canManageTeam && invitations.length > 0 && (
         <div className="mt-12">
           <h2 className="text-2xl font-semibold text-slate-950">
             Pending Invitations
@@ -551,12 +694,7 @@ export default function TeamPage() {
                           </button>
 
                           <button
-                            onClick={() =>
-                              revokeInvitation(
-                                invitation.id,
-                                invitation.email
-                              )
-                            }
+                            onClick={() => setRevokeTarget(invitation)}
                             disabled={!isPending || busy}
                             className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                           >
@@ -675,6 +813,94 @@ export default function TeamPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!removeTarget}
+        title="Remove team member?"
+        tone="warning"
+        confirmLabel={removingId ? "Removing..." : "Remove"}
+        description={
+          <>
+            Are you sure you want to remove{" "}
+            <strong>{removeTarget?.email ?? "this member"}</strong> from this
+            organization? This action cannot be undone.
+          </>
+        }
+        onConfirm={handleRemoveConfirmed}
+        onCancel={() => setRemoveTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={!!revokeTarget}
+        title="Revoke invitation?"
+        tone="warning"
+        confirmLabel={revokingId ? "Revoking..." : "Revoke"}
+        description={
+          <>
+            Revoke the invitation to <strong>{revokeTarget?.email}</strong>?
+            The invitation link will stop working.
+          </>
+        }
+        onConfirm={handleRevokeConfirmed}
+        onCancel={() => setRevokeTarget(null)}
+      />
+
+      {/* Phase 7.5 — Change Role preview: shows exactly what's gained/
+          lost, computed from the same effective-permissions data the
+          backend itself enforces (see role-matrix endpoint), so this
+          can never promise something the backend doesn't actually do. */}
+      <ConfirmDialog
+        open={!!roleChangeTarget}
+        title="Change role?"
+        tone="warning"
+        confirmLabel={savingId ? "Saving..." : "Change Role"}
+        description={
+          roleChangeTarget && (
+            <div>
+              <p>
+                Changing <strong>{roleChangeTarget.member.email}</strong> from{" "}
+                <strong>{formatRole(roleChangeTarget.member.role)}</strong> to{" "}
+                <strong>{formatRole(roleChangeTarget.newRole)}</strong>.
+              </p>
+
+              {gainedLost && (gainedLost.gained.length > 0 || gainedLost.lost.length > 0) && (
+                <div className="mt-3 max-h-64 space-y-3 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-3">
+                  {gainedLost.gained.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                        Gains
+                      </p>
+                      <ul className="mt-1 space-y-0.5">
+                        {gainedLost.gained.map((a) => (
+                          <li key={a} className="text-xs text-emerald-800">
+                            + {humanizeAction(a)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {gainedLost.lost.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-red-700">
+                        Loses
+                      </p>
+                      <ul className="mt-1 space-y-0.5">
+                        {gainedLost.lost.map((a) => (
+                          <li key={a} className="text-xs text-red-800">
+                            − {humanizeAction(a)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        }
+        onConfirm={applyRoleChange}
+        onCancel={() => setRoleChangeTarget(null)}
+      />
     </main>
   );
 }

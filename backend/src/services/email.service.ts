@@ -1,4 +1,19 @@
 import { env } from "../config/env";
+import { ROLE_LABELS } from "../modules/permissions/roles";
+import { OrganizationRole } from "../middleware/organization.middleware";
+
+/**
+ * Phase 7 bug fix: this used to hardcode `role === "company_admin" ?
+ * "Company Admin" : "Member"`, silently mislabeling every invitation
+ * to a manager/host/spectator as "Member" once those roles existed —
+ * caught during Checkpoint 7.5 live testing. Now reads from the same
+ * ROLE_LABELS map the rest of the app uses, so it can never drift out
+ * of sync with a role added there. Falls back to the raw value for
+ * anything genuinely unrecognized rather than a wrong label.
+ */
+function roleDisplayLabel(role: string): string {
+  return ROLE_LABELS[role as OrganizationRole] ?? role;
+}
 
 /**
  * Brevo's transactional email REST API (v3) — a single well-documented
@@ -28,7 +43,7 @@ export interface SendEmailResult {
 }
 
 function invitationHtml(params: SendInvitationEmailParams): string {
-  const roleLabel = params.role === "company_admin" ? "Company Admin" : "Member";
+  const roleLabel = roleDisplayLabel(params.role);
   const inviter = params.inviterEmail ? ` by ${params.inviterEmail}` : "";
 
   return `
@@ -44,7 +59,7 @@ function invitationHtml(params: SendInvitationEmailParams): string {
 /** Plain-text fallback for clients that don't render HTML — same
  * content as invitationHtml, no formatting. */
 function invitationText(params: SendInvitationEmailParams): string {
-  const roleLabel = params.role === "company_admin" ? "Company Admin" : "Member";
+  const roleLabel = roleDisplayLabel(params.role);
   const inviter = params.inviterEmail ? ` by ${params.inviterEmail}` : "";
 
   return [

@@ -26,6 +26,44 @@ export async function findAssignedPropertyIds(
   return (data ?? []).map((r) => r.property_id);
 }
 
+export interface OrganizationAssignmentSummaryRow {
+  user_id: string;
+  property_id: string;
+  property_title: string;
+}
+
+/**
+ * Every assignment across the whole organization, joined with the
+ * property's title — backs the Team page's "assigned properties"
+ * display (Phase 7.5). Gated the same as the member roster itself
+ * (any authenticated org member — see organization/routes.ts's
+ * GET /members comment on why viewing the roster isn't a "manage"
+ * action).
+ */
+export async function findAllAssignmentsForOrganization(
+  organizationId: string
+): Promise<OrganizationAssignmentSummaryRow[]> {
+  const { data, error } = await supabase
+    .from("property_assignments")
+    .select("user_id, property_id, properties(title)")
+    .eq("organization_id", organizationId);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => {
+    const propertyRelation = row.properties as unknown as { title: string } | { title: string }[] | null;
+    const title = Array.isArray(propertyRelation)
+      ? (propertyRelation[0]?.title ?? "Unknown property")
+      : (propertyRelation?.title ?? "Unknown property");
+
+    return {
+      user_id: row.user_id,
+      property_id: row.property_id,
+      property_title: title,
+    };
+  });
+}
+
 export async function findAssignmentsForProperty(
   organizationId: string,
   propertyId: string

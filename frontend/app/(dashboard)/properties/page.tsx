@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { PaginationControls } from "@/components/shared/pagination-controls";
+import { usePermission } from "@/lib/permission-context";
 
 interface Property {
   id: string;
@@ -17,6 +18,11 @@ interface Property {
 }
 
 export default function PropertiesPage() {
+  const { can } = usePermission();
+  const canCreate = can("properties.create");
+  const canUpdate = can("properties.update");
+  const canDelete = can("properties.delete");
+
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -92,14 +98,16 @@ export default function PropertiesPage() {
           </p>
         </div>
 
-        <button
-          className="rounded-xl bg-[#10172a] px-6 py-4 text-white hover:bg-[#18213a]"
-          onClick={() => {
-            window.location.href = "/properties/new";
-          }}
-        >
-          + Add Property
-        </button>
+        {canCreate && (
+          <button
+            className="rounded-xl bg-[#10172a] px-6 py-4 text-white hover:bg-[#18213a]"
+            onClick={() => {
+              window.location.href = "/properties/new";
+            }}
+          >
+            + Add Property
+          </button>
+        )}
       </div>
 
       {error && (
@@ -191,14 +199,17 @@ export default function PropertiesPage() {
                   onClick={() =>
                     (window.location.href = `/properties/${property.id}/edit`)
                   }
-                  className="rounded-xl bg-[#10172a] px-4 py-3 text-white hover:bg-[#18213a]"
+                  disabled={!canUpdate}
+                  title={canUpdate ? undefined : "You don't have permission to perform this action."}
+                  className="rounded-xl bg-[#10172a] px-4 py-3 text-white hover:bg-[#18213a] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Edit
                 </button>
 
                 <button
                   onClick={() => deleteProperty(property.id)}
-                  disabled={deletingId === property.id}
+                  disabled={deletingId === property.id || !canDelete}
+                  title={canDelete ? undefined : "You don't have permission to perform this action."}
                   className="rounded-xl border border-red-200 px-4 py-3 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {deletingId === property.id

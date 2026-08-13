@@ -24,7 +24,7 @@ export interface InvitationSummary {
   id: string;
   email: string;
   fullName: string | null;
-  role: "company_admin" | "member";
+  role: "company_admin" | "manager" | "host" | "member" | "spectator";
   status: "pending" | "accepted" | "revoked" | "expired";
   expiresAt: string;
   invitedBy: string;

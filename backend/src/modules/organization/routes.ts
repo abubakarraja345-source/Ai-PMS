@@ -25,6 +25,8 @@ import {
 import {
   getApprovalSettingController,
   updateApprovalSettingController,
+  listOrganizationAssignmentsController,
+  getRoleMatrixController,
 } from "../permissions/controller";
 
 const router = Router();
@@ -44,6 +46,24 @@ router.post(
   requireOrganization,
   requirePermission("organization.update"),
   updateApprovalSettingController
+);
+
+// GET /api/organization/property-assignments — org-wide summary, same
+// gate as GET /members (viewing isn't a "manage" action).
+router.get(
+  "/property-assignments",
+  requireAuth,
+  requireOrganization,
+  listOrganizationAssignmentsController
+);
+
+// GET /api/organization/role-matrix — every role's effective
+// permissions, backing the Team page's "Change Role" preview.
+router.get(
+  "/role-matrix",
+  requireAuth,
+  requireOrganization,
+  getRoleMatrixController
 );
 
 /**
