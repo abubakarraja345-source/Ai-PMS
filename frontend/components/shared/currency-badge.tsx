@@ -19,12 +19,12 @@ const VARIANT_STYLES: Record<
   string
 > = {
   compact:
-    "border border-slate-200 bg-slate-50 text-slate-700 px-2 py-0.5",
+    "border border-border bg-muted text-foreground/80 px-2 py-0.5",
   expanded:
-    "border border-slate-200 bg-slate-50 text-slate-700 px-2 py-0.5",
+    "border border-border bg-muted text-foreground/80 px-2 py-0.5",
   financial:
-    "border border-blue-100 bg-blue-50 text-blue-700 px-2.5 py-1",
-  muted: "border-none bg-transparent text-slate-400 px-0 py-0",
+    "border border-primary/20 bg-primary/10 text-primary px-2.5 py-1",
+  muted: "border-none bg-transparent text-muted-foreground/80 px-0 py-0",
 };
 
 export default function CurrencyBadge({
@@ -40,14 +40,14 @@ export default function CurrencyBadge({
       className={`inline-flex items-center gap-1.5 rounded-md text-xs font-medium tabular-nums ${VARIANT_STYLES[variant]} ${className ?? ""}`}
     >
       {showDetail && (
-        <span className={variant === "financial" ? "text-blue-400" : "text-slate-400"}>
+        <span className={variant === "financial" ? "text-primary/70" : "text-muted-foreground/80"}>
           {meta.symbol}
         </span>
       )}
       {meta.code}
       {showDetail && (
         <span
-          className={`font-normal ${variant === "financial" ? "text-blue-400" : "text-slate-400"}`}
+          className={`font-normal ${variant === "financial" ? "text-primary/70" : "text-muted-foreground/80"}`}
         >
           · {meta.name}
         </span>

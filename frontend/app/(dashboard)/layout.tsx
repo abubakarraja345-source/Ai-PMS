@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Menu, ShieldAlert, X } from "lucide-react";
 import NotificationBell from "@/components/notifications/notification-bell";
 import ReviewCountBadge from "@/components/reservations/review-count-badge";
+import ThemeToggle from "@/components/shared/theme-toggle";
 import { apiFetch, PLATFORM_ADMIN_SESSION_KEY } from "@/lib/api";
 import { PermissionProvider, usePermission } from "@/lib/permission-context";
 
@@ -143,7 +144,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             onClick={onNavigate}
             className={`mt-1 flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition ${
               active
-                ? "bg-white/10 text-white"
+                ? "bg-gradient-to-r from-indigo-500/90 to-violet-500/90 text-white shadow-lg shadow-indigo-950/30"
                 : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
           >
@@ -171,20 +172,20 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-slate-500">Loading...</p>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       {/* Sidebar (desktop) */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden h-screen w-64 flex-col border-r border-slate-800 bg-slate-950 lg:flex">
+      <aside className="glass-sidebar fixed inset-y-0 left-0 z-30 hidden h-screen w-64 flex-col border-r border-sidebar-border lg:flex">
         <div className="flex h-16 shrink-0 items-center border-b border-white/10 px-6">
           <Link
             href="/dashboard"
-            className="text-xl font-bold tracking-tight text-white"
+            className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-xl font-bold tracking-tight text-transparent"
           >
             AI PMS
           </Link>
@@ -193,6 +194,10 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
         <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto p-4">
           {navLinks()}
         </nav>
+
+        <div className="shrink-0 border-t border-white/10 p-4">
+          <ThemeToggle />
+        </div>
       </aside>
 
       {/* Mobile navigation drawer */}
@@ -208,12 +213,12 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="fixed inset-y-0 left-0 flex h-screen w-72 flex-col border-r border-slate-800 bg-slate-950 shadow-xl"
+            className="glass-sidebar fixed inset-y-0 left-0 flex h-screen w-72 flex-col border-r border-sidebar-border shadow-xl"
           >
             <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-6">
               <Link
                 href="/dashboard"
-                className="text-xl font-bold tracking-tight text-white"
+                className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-xl font-bold tracking-tight text-transparent"
                 onClick={() => setMobileNavOpen(false)}
               >
                 AI PMS
@@ -231,27 +236,31 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto p-4">
               {navLinks(() => setMobileNavOpen(false))}
             </nav>
+
+            <div className="shrink-0 border-t border-white/10 p-4">
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       )}
 
       {/* Main area */}
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b bg-white/95 px-6 backdrop-blur">
+        <header className="glass-topbar sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border px-6">
           <div className="flex items-center gap-3">
             <button
               ref={menuButtonRef}
               onClick={() => setMobileNavOpen(true)}
               aria-label="Open navigation menu"
               aria-expanded={mobileNavOpen}
-              className="-ml-2 rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+              className="-ml-2 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
             >
               <Menu size={22} />
             </button>
 
             <div>
-              <p className="text-sm font-semibold text-slate-900">AI PMS</p>
-              <p className="hidden text-xs text-slate-500 sm:block">
+              <p className="text-sm font-semibold text-foreground">AI PMS</p>
+              <p className="hidden text-xs text-muted-foreground sm:block">
                 Property Management System
               </p>
             </div>
@@ -271,7 +280,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             and read-only-enforced regardless of what this banner
             shows. */}
         {platformAdminSession && (
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-300 bg-amber-50 px-6 py-3 text-amber-900">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-300 bg-amber-50 px-6 py-3 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
             <div className="flex items-center gap-2 text-sm">
               <ShieldAlert size={18} className="shrink-0" />
               <span>
@@ -282,14 +291,14 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             </div>
             <button
               onClick={exitPlatformAdminView}
-              className="shrink-0 rounded-lg border border-amber-400 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100"
+              className="shrink-0 rounded-lg border border-amber-400 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-transparent dark:text-amber-300 dark:hover:bg-amber-500/10"
             >
               Exit organization view
             </button>
           </div>
         )}
 
-        <main className="p-6 lg:p-8">{children}</main>
+        <main className="bg-background p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

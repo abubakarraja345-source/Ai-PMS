@@ -135,15 +135,15 @@ function getGuestName(guest: GuestSummary | null | undefined) {
 function getStatusClasses(status: string | null) {
   switch (status) {
     case "confirmed":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      return "bg-success/10 text-success border-success/30";
     case "pending":
-      return "bg-amber-50 text-amber-700 border-amber-200";
+      return "bg-warning/10 text-warning border-warning/30";
     case "cancelled":
-      return "bg-red-50 text-red-700 border-red-200";
+      return "bg-destructive/10 text-destructive border-destructive/30";
     case "completed":
-      return "bg-blue-50 text-blue-700 border-blue-200";
+      return "bg-primary/10 text-primary border-primary/30";
     default:
-      return "bg-slate-50 text-slate-700 border-slate-200";
+      return "bg-muted text-muted-foreground border-border";
   }
 }
 
@@ -216,7 +216,7 @@ export default function DashboardStats() {
         {Array.from({ length: 6 }).map((_, index) => (
           <div
             key={index}
-            className="h-36 animate-pulse rounded-2xl bg-white"
+            className="h-36 animate-pulse rounded-2xl bg-muted"
           />
         ))}
       </div>
@@ -225,7 +225,7 @@ export default function DashboardStats() {
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-600">
+      <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive">
         {error}
 
         <button
@@ -306,21 +306,19 @@ export default function DashboardStats() {
           return (
             <div
               key={card.title}
-              className={`group rounded-2xl border p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-                isAlert
-                  ? "border-amber-200 bg-amber-50/40"
-                  : "border-slate-200/80 bg-white"
+              className={`group glass-panel rounded-2xl p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                isAlert ? "ring-2 ring-inset ring-warning/40" : ""
               }`}
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">
+                  <p className="text-sm font-medium text-muted-foreground">
                     {card.title}
                   </p>
 
                   <p
                     className={`mt-3 text-3xl font-semibold tracking-tight ${
-                      isAlert ? "text-amber-700" : "text-slate-900"
+                      isAlert ? "text-warning" : "text-foreground"
                     }`}
                   >
                     {card.value}
@@ -330,15 +328,15 @@ export default function DashboardStats() {
                 <div
                   className={`rounded-xl p-3 transition-colors ${
                     isAlert
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-slate-100 text-slate-700 group-hover:bg-slate-900 group-hover:text-white"
+                      ? "bg-warning/15 text-warning"
+                      : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
                   }`}
                 >
                   <Icon size={20} />
                 </div>
               </div>
 
-              <p className="mt-4 text-xs text-slate-400">
+              <p className="mt-4 text-xs text-muted-foreground/80">
                 {card.description}
               </p>
             </div>
@@ -352,14 +350,14 @@ export default function DashboardStats() {
       {/* Today + Occupancy + Revenue */}
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Today */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm lg:col-span-2">
+        <div className="glass-panel rounded-2xl p-6 lg:col-span-2">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">
+              <h2 className="text-lg font-semibold text-foreground">
                 Today
               </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {new Date(
                   `${today.date}T00:00:00Z`
                 ).toLocaleDateString("en-US", {
@@ -370,7 +368,7 @@ export default function DashboardStats() {
               </p>
             </div>
 
-            <Clock size={20} className="text-slate-400" />
+            <Clock size={20} className="text-muted-foreground/80" />
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -410,28 +408,28 @@ export default function DashboardStats() {
         </div>
 
         {/* Occupancy */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+        <div className="glass-panel rounded-2xl p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">
+            <h2 className="text-lg font-semibold text-foreground">
               Occupancy
             </h2>
 
-            <BedDouble size={20} className="text-slate-400" />
+            <BedDouble size={20} className="text-muted-foreground/80" />
           </div>
 
-          <p className="mt-6 text-4xl font-semibold tracking-tight text-slate-900">
+          <p className="mt-6 text-4xl font-semibold tracking-tight text-foreground">
             {occupancy.occupancyRate}%
           </p>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             {occupancy.occupiedProperties} of{" "}
             {occupancy.activeProperties} active properties
             occupied
           </p>
 
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-slate-900"
+              className="h-full rounded-full bg-primary"
               style={{
                 width: `${Math.min(
                   occupancy.occupancyRate,
@@ -446,30 +444,30 @@ export default function DashboardStats() {
       {/* Revenue + Quick Actions */}
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Revenue */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm lg:col-span-2">
+        <div className="glass-panel rounded-2xl p-6 lg:col-span-2">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">
+              <h2 className="text-lg font-semibold text-foreground">
                 Financial Overview
               </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Revenue from confirmed and completed reservations, grouped
                 by currency.
               </p>
             </div>
 
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <DollarSign size={18} />
             </div>
           </div>
 
           {revenue.byCurrency.length === 0 ? (
-            <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 py-10 text-center">
-              <p className="text-sm font-medium text-slate-600">
+            <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-10 text-center">
+              <p className="text-sm font-medium text-foreground/70">
                 No financial data yet
               </p>
-              <p className="mt-1 max-w-xs text-xs text-slate-400">
+              <p className="mt-1 max-w-xs text-xs text-muted-foreground/80">
                 New reservation financial activity will appear here once
                 bookings are confirmed.
               </p>
@@ -481,13 +479,13 @@ export default function DashboardStats() {
                   key={entry.currency}
                   className={`relative overflow-hidden rounded-xl border pl-6 pr-5 py-5 transition hover:shadow-sm ${
                     index === 0
-                      ? "border-blue-100 bg-blue-50/40"
-                      : "border-slate-100 bg-slate-50"
+                      ? "border-primary/20 bg-primary/5"
+                      : "border-border bg-muted/40"
                   }`}
                 >
                   <span
                     className={`absolute inset-y-0 left-0 w-1 ${
-                      index === 0 ? "bg-blue-500" : "bg-slate-300"
+                      index === 0 ? "bg-primary" : "bg-border"
                     }`}
                   />
 
@@ -497,13 +495,13 @@ export default function DashboardStats() {
                       variant={index === 0 ? "financial" : "compact"}
                     />
 
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-muted-foreground/80">
                       {entry.count} reservation
                       {entry.count === 1 ? "" : "s"}
                     </span>
                   </div>
 
-                  <p className="mt-3 text-2xl font-bold tabular-nums text-slate-900">
+                  <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">
                     {formatMoney(
                       entry.total,
                       entry.currency
@@ -516,7 +514,7 @@ export default function DashboardStats() {
 
           <div className="mt-5 flex items-center justify-between gap-4">
             {revenue.byCurrency.length > 1 ? (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground/80">
                 Shown separately per currency — amounts are not combined.
               </p>
             ) : (
@@ -525,7 +523,7 @@ export default function DashboardStats() {
 
             <Link
               href="/reports"
-              className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
+              className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary hover:opacity-80"
             >
               View financial details
               <ArrowUpRight size={14} />
@@ -534,24 +532,24 @@ export default function DashboardStats() {
         </div>
 
         {/* Operations */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">
+        <div className="glass-panel rounded-2xl p-6">
+          <h2 className="text-lg font-semibold text-foreground">
             Operations
           </h2>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             What needs attention right now.
           </p>
 
           <div className="mt-5 space-y-3">
             <Link
               href="/cleaning"
-              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
+              className="flex items-center justify-between rounded-xl bg-muted/60 px-4 py-3 hover:bg-muted"
             >
-              <span className="text-sm text-slate-700">
+              <span className="text-sm text-foreground/80">
                 Cleaning tasks
               </span>
-              <span className="text-sm font-medium text-slate-900">
+              <span className="text-sm font-medium text-foreground">
                 {summary.cleaning.pending +
                   summary.cleaning.inProgress}{" "}
                 active
@@ -560,16 +558,16 @@ export default function DashboardStats() {
 
             <Link
               href="/maintenance"
-              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
+              className="flex items-center justify-between rounded-xl bg-muted/60 px-4 py-3 hover:bg-muted"
             >
-              <span className="text-sm text-slate-700">
+              <span className="text-sm text-foreground/80">
                 Maintenance tickets
               </span>
               <span
                 className={`text-sm font-medium ${
                   summary.maintenance.urgent > 0
-                    ? "text-red-600"
-                    : "text-slate-900"
+                    ? "text-destructive"
+                    : "text-foreground"
                 }`}
               >
                 {summary.maintenance.open +
@@ -583,16 +581,16 @@ export default function DashboardStats() {
 
             <Link
               href="/inventory"
-              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
+              className="flex items-center justify-between rounded-xl bg-muted/60 px-4 py-3 hover:bg-muted"
             >
-              <span className="text-sm text-slate-700">
+              <span className="text-sm text-foreground/80">
                 Low-stock inventory
               </span>
               <span
                 className={`text-sm font-medium ${
                   summary.inventory.lowStockCount > 0
-                    ? "text-red-600"
-                    : "text-slate-900"
+                    ? "text-destructive"
+                    : "text-foreground"
                 }`}
               >
                 {summary.inventory.lowStockCount} item
@@ -602,16 +600,16 @@ export default function DashboardStats() {
 
             <Link
               href="/integrations"
-              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
+              className="flex items-center justify-between rounded-xl bg-muted/60 px-4 py-3 hover:bg-muted"
             >
-              <span className="text-sm text-slate-700">
+              <span className="text-sm text-foreground/80">
                 Integrations
               </span>
               <span
                 className={`text-sm font-medium ${
                   summary.integrations.error > 0
-                    ? "text-red-600"
-                    : "text-slate-900"
+                    ? "text-destructive"
+                    : "text-foreground"
                 }`}
               >
                 {summary.integrations.active} active
@@ -623,16 +621,16 @@ export default function DashboardStats() {
 
             <Link
               href="/status"
-              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
+              className="flex items-center justify-between rounded-xl bg-muted/60 px-4 py-3 hover:bg-muted"
             >
-              <span className="text-sm text-slate-700">
+              <span className="text-sm text-foreground/80">
                 Calendar health
               </span>
               <span
                 className={`text-sm font-medium ${
                   calendarHealth.needsAttention > 0
-                    ? "text-amber-600"
-                    : "text-emerald-600"
+                    ? "text-warning"
+                    : "text-success"
                 }`}
               >
                 {calendarHealth.needsAttention > 0
@@ -643,16 +641,16 @@ export default function DashboardStats() {
 
             <Link
               href="/reservations/review"
-              className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100"
+              className="flex items-center justify-between rounded-xl bg-muted/60 px-4 py-3 hover:bg-muted"
             >
-              <span className="text-sm text-slate-700">
+              <span className="text-sm text-foreground/80">
                 Review required
               </span>
               <span
                 className={`text-sm font-medium ${
                   stats.reviewRequired > 0
-                    ? "text-amber-600"
-                    : "text-slate-900"
+                    ? "text-warning"
+                    : "text-foreground"
                 }`}
               >
                 {stats.reviewRequired} reservation
@@ -663,12 +661,12 @@ export default function DashboardStats() {
         </div>
 
         {/* Quick actions */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">
+        <div className="glass-panel rounded-2xl p-6">
+          <h2 className="text-lg font-semibold text-foreground">
             Quick Actions
           </h2>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage your PMS quickly.
           </p>
 
@@ -699,18 +697,18 @@ export default function DashboardStats() {
       </div>
 
       {/* Upcoming reservations */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">
+      <div className="glass-panel rounded-2xl p-6">
+        <h2 className="text-lg font-semibold text-foreground">
           Upcoming Reservations
         </h2>
 
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           The next confirmed and pending stays.
         </p>
 
         {upcomingReservations.length === 0 ? (
           <div className="flex min-h-32 items-center justify-center">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-muted-foreground/80">
               No upcoming reservations.
             </p>
           </div>
@@ -718,7 +716,7 @@ export default function DashboardStats() {
           <div className="mt-5 overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
+                <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground/80">
                   <th className="pb-3 pr-4 font-medium">
                     Reference
                   </th>
@@ -747,25 +745,25 @@ export default function DashboardStats() {
                 {upcomingReservations.map((reservation) => (
                   <tr
                     key={reservation.id}
-                    className="border-b border-slate-50 last:border-0"
+                    className="border-b border-border/60 last:border-0"
                   >
-                    <td className="py-3 pr-4 text-slate-500">
+                    <td className="py-3 pr-4 text-muted-foreground">
                       {reservation.booking_reference ??
                         "—"}
                     </td>
-                    <td className="py-3 pr-4 font-medium text-slate-900">
+                    <td className="py-3 pr-4 font-medium text-foreground">
                       {getGuestName(reservation.guest)}
                     </td>
-                    <td className="py-3 pr-4 text-slate-700">
+                    <td className="py-3 pr-4 text-foreground/80">
                       {reservation.property?.title ??
                         "Unknown property"}
                     </td>
-                    <td className="py-3 pr-4 text-slate-700">
+                    <td className="py-3 pr-4 text-foreground/80">
                       {formatDateShort(
                         reservation.check_in
                       )}
                     </td>
-                    <td className="py-3 pr-4 text-slate-700">
+                    <td className="py-3 pr-4 text-foreground/80">
                       {formatDateShort(
                         reservation.check_out
                       )}
@@ -779,7 +777,7 @@ export default function DashboardStats() {
                         {reservation.status ?? "unknown"}
                       </span>
                     </td>
-                    <td className="py-3 text-slate-700">
+                    <td className="py-3 text-foreground/80">
                       {formatMoney(
                         reservation.total_amount,
                         reservation.currency ?? "USD"
@@ -794,12 +792,12 @@ export default function DashboardStats() {
       </div>
 
       {/* Recent activity */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">
+      <div className="glass-panel rounded-2xl p-6">
+        <h2 className="text-lg font-semibold text-foreground">
           Recent Activity
         </h2>
 
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           Recent reservations and guests across your
           organization.
         </p>
@@ -807,25 +805,25 @@ export default function DashboardStats() {
         {recentActivity.length === 0 ? (
           <div className="flex min-h-32 items-center justify-center">
             <div className="text-center">
-              <p className="text-sm font-medium text-slate-600">
+              <p className="text-sm font-medium text-foreground/70">
                 No recent activity
               </p>
 
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-muted-foreground/80">
                 Activity will appear here as you manage your
                 properties.
               </p>
             </div>
           </div>
         ) : (
-          <ul className="mt-5 divide-y divide-slate-50">
+          <ul className="mt-5 divide-y divide-border/60">
             {recentActivity.map((item) => (
               <li
                 key={`${item.type}-${item.id}`}
                 className="flex items-center justify-between py-3"
               >
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-slate-100 p-2 text-slate-600">
+                  <div className="rounded-lg bg-primary/10 p-2 text-primary">
                     {item.type === "reservation_created" ? (
                       <CalendarDays size={16} />
                     ) : (
@@ -834,14 +832,14 @@ export default function DashboardStats() {
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-foreground">
                       {item.type === "reservation_created"
                         ? `New reservation for ${item.guest}`
                         : `New guest: ${item.guest}`}
                     </p>
 
                     {item.type === "reservation_created" && (
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-muted-foreground/80">
                         {item.property}
                         {item.booking_reference
                           ? ` · ${item.booking_reference}`
@@ -851,7 +849,7 @@ export default function DashboardStats() {
                   </div>
                 </div>
 
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-muted-foreground/80">
                   {formatTimeAgo(item.created_at)}
                 </span>
               </li>
@@ -871,11 +869,11 @@ function TodayStat({
   value: number;
 }) {
   return (
-    <div className="rounded-xl bg-slate-50 p-4">
-      <p className="text-2xl font-semibold text-slate-900">
+    <div className="rounded-xl bg-muted/60 p-4">
+      <p className="text-2xl font-semibold text-foreground">
         {value}
       </p>
-      <p className="mt-1 text-xs text-slate-500">{label}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }
@@ -893,13 +891,13 @@ function TodayList({
 }) {
   return (
     <div>
-      <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+      <div className="flex items-center gap-2 text-sm font-medium text-foreground/80">
         <Icon size={15} />
         {title}
       </div>
 
       {reservations.length === 0 ? (
-        <p className="mt-2 text-xs text-slate-400">
+        <p className="mt-2 text-xs text-muted-foreground/80">
           {emptyText}
         </p>
       ) : (
@@ -907,12 +905,12 @@ function TodayList({
           {reservations.map((reservation) => (
             <li
               key={reservation.id}
-              className="rounded-lg border border-slate-100 px-3 py-2 text-xs"
+              className="rounded-lg border border-border px-3 py-2 text-xs"
             >
-              <p className="font-medium text-slate-900">
+              <p className="font-medium text-foreground">
                 {getGuestName(reservation.guest)}
               </p>
-              <p className="mt-0.5 text-slate-500">
+              <p className="mt-0.5 text-muted-foreground">
                 {reservation.property?.title ??
                   "Unknown property"}
               </p>
@@ -940,8 +938,8 @@ function QuickAction({
       href={href}
       className={`flex items-center justify-between rounded-xl p-4 transition ${
         primary
-          ? "bg-slate-900 text-white hover:bg-slate-800"
-          : "border border-slate-200 hover:bg-slate-50"
+          ? "bg-primary text-primary-foreground hover:opacity-90"
+          : "border border-border hover:bg-muted"
       }`}
     >
       <span className="flex items-center gap-3">

@@ -18,9 +18,9 @@ interface PlatformStats {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
+    <div className="glass-panel rounded-2xl p-5">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-2 text-3xl font-semibold text-foreground">{value}</p>
     </div>
   );
 }
@@ -49,13 +49,13 @@ export default function PlatformOverviewPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold text-white">Platform Overview</h1>
-      <p className="mt-2 text-slate-400">Cross-organization health and activity.</p>
+      <h1 className="text-3xl font-semibold text-foreground">Platform Overview</h1>
+      <p className="mt-2 text-muted-foreground">Cross-organization health and activity.</p>
 
       {loading ? (
-        <p className="mt-6 text-slate-400">Loading...</p>
+        <p className="mt-6 text-muted-foreground">Loading...</p>
       ) : error ? (
-        <div className="mt-6 rounded-2xl border border-red-900/40 bg-red-950/40 p-6 text-red-300">
+        <div className="mt-6 rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-destructive">
           {error}
         </div>
       ) : (
@@ -74,14 +74,14 @@ export default function PlatformOverviewPage() {
         )
       )}
 
-      <div className="mt-8 rounded-2xl border border-violet-900/40 bg-violet-950/20 p-6">
-        <p className="text-sm text-slate-300">
+      <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6 backdrop-blur-xl">
+        <p className="text-sm text-muted-foreground">
           For per-organization detail — team, properties, integrations, currency, recent
           activity — see the Organizations list.
         </p>
         <Link
           href="/admin/organizations"
-          className="mt-3 inline-flex items-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-500"
+          className="mt-3 inline-flex items-center rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
         >
           View Organizations →
         </Link>

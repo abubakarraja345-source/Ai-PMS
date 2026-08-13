@@ -50,15 +50,23 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   if (!checked) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <p className="text-slate-400">Verifying platform access...</p>
+      <div className="dark flex min-h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Verifying platform access...</p>
       </div>
     );
   }
 
+  /*
+   * Phase 7.6 — the Super Admin section keeps a permanently dark
+   * "platform" identity (the `dark` class forced here scopes every
+   * design token underneath it to the dark palette) independent of
+   * the org dashboard's light/dark toggle. This is a deliberate,
+   * common pattern for admin/ops consoles, not an oversight — see
+   * the checkpoint report for the full rationale.
+   */
   return (
-    <div className="min-h-screen bg-slate-950">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden h-screen w-64 flex-col border-r border-violet-900/40 bg-slate-950 lg:flex">
+    <div className="dark min-h-screen bg-background">
+      <aside className="glass-sidebar fixed inset-y-0 left-0 z-30 hidden h-screen w-64 flex-col border-r border-sidebar-border lg:flex">
         <div className="flex h-16 shrink-0 items-center border-b border-white/10 px-6">
           <Link href="/admin" className="text-xl font-bold tracking-tight text-white">
             Hostly <span className="text-violet-400">Platform</span>
@@ -76,7 +84,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               href={item.href}
               className={`mt-1 flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                 isActive(item.href)
-                  ? "bg-violet-500/20 text-white"
+                  ? "bg-gradient-to-r from-indigo-500/90 to-violet-500/90 text-white shadow-lg shadow-indigo-950/30"
                   : "text-slate-300 hover:bg-white/10 hover:text-white"
               }`}
             >
@@ -96,9 +104,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-violet-900/40 bg-slate-950/95 px-6 backdrop-blur">
+        <header className="glass-topbar sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border px-6">
           <div>
-            <p className="text-sm font-semibold text-white">Platform Administration</p>
+            <p className="text-sm font-semibold text-foreground">Platform Administration</p>
             <p className="text-xs text-violet-400">Super Admin — cross-organization view</p>
           </div>
         </header>

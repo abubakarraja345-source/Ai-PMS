@@ -108,25 +108,25 @@ export default function PlatformOrganizationDetailPage() {
   }
 
   if (loading) {
-    return <p className="text-slate-400">Loading organization...</p>;
+    return <p className="text-muted-foreground">Loading organization...</p>;
   }
 
   if (error && !org) {
-    return <div className="rounded-2xl border border-red-900/40 bg-red-950/40 p-6 text-red-300">{error}</div>;
+    return <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-destructive">{error}</div>;
   }
 
   if (!org) return null;
 
   return (
     <div>
-      <Link href="/admin/organizations" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/admin/organizations" className="text-sm text-muted-foreground hover:text-foreground">
         ← Organizations
       </Link>
 
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold text-white">{org.name}</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-3xl font-semibold text-foreground">{org.name}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             {org.email ?? "No contact email"} · {org.currency} · Plan: {org.subscriptionPlan}
           </p>
         </div>
@@ -134,7 +134,7 @@ export default function PlatformOrganizationDetailPage() {
         <div className="flex gap-3">
           <button
             onClick={() => setEnterDialogOpen(true)}
-            className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-500"
+            className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
           >
             Enter Organization
           </button>
@@ -142,8 +142,8 @@ export default function PlatformOrganizationDetailPage() {
             onClick={() => setSuspendConfirmOpen(true)}
             className={`rounded-lg border px-4 py-2.5 text-sm font-medium ${
               org.subscriptionStatus === "suspended"
-                ? "border-emerald-700 text-emerald-400 hover:bg-emerald-950/40"
-                : "border-red-700 text-red-400 hover:bg-red-950/40"
+                ? "border-success/40 text-success hover:bg-success/10"
+                : "border-destructive/40 text-destructive hover:bg-destructive/10"
             }`}
           >
             {org.subscriptionStatus === "suspended" ? "Reactivate" : "Suspend"}
@@ -152,77 +152,77 @@ export default function PlatformOrganizationDetailPage() {
       </div>
 
       {actionMessage && (
-        <div className="mt-4 rounded-lg border border-emerald-800 bg-emerald-950/40 px-4 py-2.5 text-sm text-emerald-300">
+        <div className="mt-4 rounded-lg border border-success/30 bg-success/10 px-4 py-2.5 text-sm text-success">
           {actionMessage}
         </div>
       )}
       {error && (
-        <div className="mt-4 rounded-lg border border-red-800 bg-red-950/40 px-4 py-2.5 text-sm text-red-300">
+        <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
           {error}
         </div>
       )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
-          <h2 className="text-lg font-semibold text-slate-900">Team</h2>
+        <section className="solid-panel rounded-2xl p-6 lg:col-span-2">
+          <h2 className="text-lg font-semibold text-foreground">Team</h2>
           <table className="mt-4 w-full text-left text-sm">
             <thead>
-              <tr className="border-b text-xs uppercase text-slate-400">
+              <tr className="border-b border-border text-xs uppercase text-muted-foreground/80">
                 <th className="pb-2 font-medium">Email</th>
                 <th className="pb-2 font-medium">Role</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-border">
               {org.members.map((m) => (
                 <tr key={m.userId}>
-                  <td className="py-2 text-slate-900">{m.email ?? m.userId}</td>
-                  <td className="py-2 capitalize text-slate-600">{m.role.replace("_", " ")}</td>
+                  <td className="py-2 text-foreground">{m.email ?? m.userId}</td>
+                  <td className="py-2 capitalize text-muted-foreground">{m.role.replace("_", " ")}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Usage</h2>
+        <section className="glass-panel rounded-2xl p-6">
+          <h2 className="text-lg font-semibold text-foreground">Usage</h2>
           <dl className="mt-4 space-y-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-slate-500">Properties</dt>
-              <dd className="font-medium text-slate-900">{org.propertyCount}</dd>
+              <dt className="text-muted-foreground">Properties</dt>
+              <dd className="font-medium text-foreground">{org.propertyCount}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Reservations</dt>
-              <dd className="font-medium text-slate-900">{org.reservationCount}</dd>
+              <dt className="text-muted-foreground">Reservations</dt>
+              <dd className="font-medium text-foreground">{org.reservationCount}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Integrations</dt>
-              <dd className="font-medium text-slate-900">{org.integrations.length}</dd>
+              <dt className="text-muted-foreground">Integrations</dt>
+              <dd className="font-medium text-foreground">{org.integrations.length}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Created</dt>
-              <dd className="font-medium text-slate-900">
+              <dt className="text-muted-foreground">Created</dt>
+              <dd className="font-medium text-foreground">
                 {new Date(org.createdAt).toLocaleDateString()}
               </dd>
             </div>
           </dl>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Integrations</h2>
+        <section className="glass-panel rounded-2xl p-6">
+          <h2 className="text-lg font-semibold text-foreground">Integrations</h2>
           {org.integrations.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-400">No integrations connected.</p>
+            <p className="mt-3 text-sm text-muted-foreground/80">No integrations connected.</p>
           ) : (
             <ul className="mt-3 space-y-2">
               {org.integrations.map((i) => (
                 <li key={i.id} className="flex items-center justify-between text-sm">
-                  <span className="capitalize text-slate-700">
+                  <span className="capitalize text-foreground/80">
                     {i.provider} {i.accountName ? `— ${i.accountName}` : ""}
                   </span>
                   <span
                     className={`rounded-full border px-2 py-0.5 text-xs ${
                       i.status === "error"
-                        ? "border-red-200 bg-red-50 text-red-700"
-                        : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        ? "border-destructive/30 bg-destructive/10 text-destructive"
+                        : "border-success/30 bg-success/10 text-success"
                     }`}
                   >
                     {i.status}
@@ -233,18 +233,18 @@ export default function PlatformOrganizationDetailPage() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
-          <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
+        <section className="glass-panel rounded-2xl p-6 lg:col-span-2">
+          <h2 className="text-lg font-semibold text-foreground">Recent Activity</h2>
           {org.recentAuditEvents.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-400">No recorded activity yet.</p>
+            <p className="mt-3 text-sm text-muted-foreground/80">No recorded activity yet.</p>
           ) : (
-            <ul className="mt-3 divide-y">
+            <ul className="mt-3 divide-y divide-border">
               {org.recentAuditEvents.map((e) => (
                 <li key={e.id} className="flex items-center justify-between py-2 text-sm">
-                  <span className="text-slate-700">
+                  <span className="text-foreground/80">
                     {e.actorLabel ?? "System"} — <span className="font-mono">{e.action}</span>
                   </span>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-muted-foreground/80">
                     {new Date(e.createdAt).toLocaleString()}
                   </span>
                 </li>

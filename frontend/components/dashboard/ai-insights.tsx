@@ -13,11 +13,11 @@ type Insight = {
 function severityClasses(severity: Insight["severity"]) {
   switch (severity) {
     case "critical":
-      return "border-red-200 bg-red-50 text-red-700";
+      return "border-destructive/30 bg-destructive/10 text-destructive";
     case "warning":
-      return "border-amber-200 bg-amber-50 text-amber-700";
+      return "border-warning/30 bg-warning/10 text-warning";
     default:
-      return "border-slate-200 bg-slate-50 text-slate-700";
+      return "border-border bg-muted text-foreground/80";
   }
 }
 
@@ -52,25 +52,25 @@ export default function AiInsights() {
   }, []);
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+    <div className="glass-panel rounded-2xl p-6">
       <div className="flex items-center gap-2">
-        <Sparkles size={18} className="text-slate-400" />
-        <h2 className="text-lg font-semibold text-slate-900">
+        <Sparkles size={18} className="text-primary" />
+        <h2 className="text-lg font-semibold text-foreground">
           AI Insights
         </h2>
       </div>
 
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-muted-foreground">
         Automatically derived from your current PMS data.
       </p>
 
       <div className="mt-5">
         {loading ? (
-          <div className="h-16 animate-pulse rounded-xl bg-slate-50" />
+          <div className="h-16 animate-pulse rounded-xl bg-muted" />
         ) : error ? (
-          <p className="text-sm text-red-600">{error}</p>
+          <p className="text-sm text-destructive">{error}</p>
         ) : !insights || insights.length === 0 ? (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-muted-foreground/80">
             Nothing needs attention right now.
           </p>
         ) : (

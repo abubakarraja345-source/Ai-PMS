@@ -61,30 +61,30 @@ const INVITABLE_ROLES: InvitableRole[] = [
 function getInvitationStatusClasses(status: InvitationStatus) {
   switch (status) {
     case "pending":
-      return "bg-amber-50 text-amber-700 border-amber-200";
+      return "bg-warning/10 text-warning border-warning/30";
     case "accepted":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      return "bg-success/10 text-success border-success/30";
     case "revoked":
-      return "bg-red-50 text-red-700 border-red-200";
+      return "bg-destructive/10 text-destructive border-destructive/30";
     default:
-      return "bg-slate-50 text-slate-500 border-slate-200";
+      return "bg-muted text-muted-foreground border-border";
   }
 }
 
 function getRoleClasses(role: OrganizationRole) {
   switch (role) {
     case "owner":
-      return "bg-violet-50 text-violet-700 border-violet-200";
+      return "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/30";
     case "company_admin":
-      return "bg-blue-50 text-blue-700 border-blue-200";
+      return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30";
     case "manager":
-      return "bg-teal-50 text-teal-700 border-teal-200";
+      return "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30";
     case "host":
-      return "bg-amber-50 text-amber-700 border-amber-200";
+      return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30";
     case "spectator":
-      return "bg-slate-100 text-slate-500 border-slate-200";
+      return "bg-muted text-muted-foreground border-border";
     default:
-      return "bg-slate-50 text-slate-700 border-slate-200";
+      return "bg-muted text-foreground/70 border-border";
   }
 }
 
@@ -384,18 +384,18 @@ export default function TeamPage() {
   })();
 
   return (
-    <main className="min-h-screen bg-slate-50 p-10">
+    <main className="min-h-screen bg-background p-10">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-5xl font-semibold text-slate-950">
+          <h1 className="text-5xl font-semibold text-foreground">
             Team
           </h1>
 
-          <p className="mt-3 text-lg text-slate-500">
+          <p className="mt-3 text-lg text-muted-foreground">
             View your organization&apos;s members and manage their
             roles.
             {selfRoleLabel && (
-              <span className="ml-2 text-sm text-slate-400">
+              <span className="ml-2 text-sm text-muted-foreground/80">
                 You are signed in as {selfRoleLabel}.
               </span>
             )}
@@ -405,7 +405,7 @@ export default function TeamPage() {
         {canManageTeam && (
           <button
             onClick={() => setShowInviteModal(true)}
-            className="rounded-xl bg-[#10172a] px-6 py-4 text-white hover:bg-[#18213a]"
+            className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-4 text-white shadow-lg shadow-indigo-950/20 hover:opacity-90"
           >
             + Invite Member
           </button>
@@ -413,46 +413,46 @@ export default function TeamPage() {
       </div>
 
       {error && (
-        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+        <div className="mt-6 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-destructive">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
+        <div className="mt-6 rounded-xl border border-success/30 bg-success/10 p-4 text-success">
           {success}
         </div>
       )}
 
       {loading ? (
-        <div className="mt-10 text-slate-500">
+        <div className="mt-10 text-muted-foreground">
           Loading team members...
         </div>
       ) : members.length === 0 ? (
-        <div className="mt-10 rounded-2xl border bg-white p-10 text-center">
-          <h2 className="text-2xl font-semibold text-slate-900">
+        <div className="mt-10 glass-panel rounded-2xl p-10 text-center">
+          <h2 className="text-2xl font-semibold text-foreground">
             No members found
           </h2>
         </div>
       ) : (
-        <div className="mt-10 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="mt-10 overflow-x-auto rounded-2xl solid-panel shadow-sm">
           <table className="w-full min-w-[900px] text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50">
+            <thead className="border-b border-border bg-muted/50">
               <tr>
-                <th className="px-6 py-4 font-medium text-slate-500">
+                <th className="px-6 py-4 font-medium text-muted-foreground">
                   Member
                 </th>
-                <th className="px-6 py-4 font-medium text-slate-500">
+                <th className="px-6 py-4 font-medium text-muted-foreground">
                   Role
                 </th>
-                <th className="px-6 py-4 font-medium text-slate-500">
+                <th className="px-6 py-4 font-medium text-muted-foreground">
                   Assigned Properties
                 </th>
-                <th className="px-6 py-4 font-medium text-slate-500">
+                <th className="px-6 py-4 font-medium text-muted-foreground">
                   Joined
                 </th>
                 {(canChangeRoles || canRemoveMembers) && (
-                  <th className="px-6 py-4 font-medium text-slate-500">
+                  <th className="px-6 py-4 font-medium text-muted-foreground">
                     Actions
                   </th>
                 )}
@@ -488,13 +488,13 @@ export default function TeamPage() {
                 return (
                   <tr
                     key={member.id}
-                    className="border-b border-slate-100 last:border-0"
+                    className="border-b border-border last:border-0"
                   >
                     <td className="max-w-[240px] px-6 py-4">
-                      <p className="truncate font-medium text-slate-900">
+                      <p className="truncate font-medium text-foreground">
                         {member.email ?? "Unknown email"}
                         {isSelf && (
-                          <span className="ml-2 text-xs font-normal text-slate-400">
+                          <span className="ml-2 text-xs font-normal text-muted-foreground/80">
                             (you)
                           </span>
                         )}
@@ -502,7 +502,7 @@ export default function TeamPage() {
                       {pendingCount > 0 && (
                         <Link
                           href="/approvals"
-                          className="mt-1 inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700 hover:bg-violet-100"
+                          className="mt-1 inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/20"
                         >
                           {pendingCount} pending approval{pendingCount === 1 ? "" : "s"}
                         </Link>
@@ -519,21 +519,21 @@ export default function TeamPage() {
                       </span>
                     </td>
 
-                    <td className="max-w-[220px] px-6 py-4 text-slate-600">
+                    <td className="max-w-[220px] px-6 py-4 text-foreground/70">
                       {["manager", "host", "spectator"].includes(member.role) ? (
                         assignedProperties.length > 0 ? (
                           <span className="truncate" title={assignedProperties.join(", ")}>
                             {assignedProperties.join(", ")}
                           </span>
                         ) : (
-                          <span className="text-xs text-amber-600">None assigned</span>
+                          <span className="text-xs text-warning">None assigned</span>
                         )
                       ) : (
-                        <span className="text-xs text-slate-400">All properties</span>
+                        <span className="text-xs text-muted-foreground/80">All properties</span>
                       )}
                     </td>
 
-                    <td className="px-6 py-4 text-slate-500">
+                    <td className="px-6 py-4 text-muted-foreground">
                       {formatDate(member.createdAt)}
                     </td>
 
@@ -542,7 +542,7 @@ export default function TeamPage() {
                         <div className="flex items-center gap-3">
                           <Link
                             href={`/audit-log?entity_type=member&entity_id=${member.id}`}
-                            className="text-sm font-medium text-slate-500 hover:text-slate-900"
+                            className="text-sm font-medium text-muted-foreground hover:text-foreground"
                           >
                             Activity
                           </Link>
@@ -561,7 +561,7 @@ export default function TeamPage() {
                                 if (newRole === member.role) return;
                                 setRoleChangeTarget({ member, newRole });
                               }}
-                              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {!ASSIGNABLE_ROLES.includes(member.role) && (
                                 <option value="">
@@ -583,7 +583,7 @@ export default function TeamPage() {
                                 Boolean(removeDisabledReason) || busy
                               }
                               title={removeDisabledReason}
-                              className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="rounded-lg border border-destructive/30 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {removingId === member.id
                                 ? "Removing..."
@@ -603,30 +603,30 @@ export default function TeamPage() {
 
       {canManageTeam && invitations.length > 0 && (
         <div className="mt-12">
-          <h2 className="text-2xl font-semibold text-slate-950">
+          <h2 className="text-2xl font-semibold text-foreground">
             Pending Invitations
           </h2>
 
-          <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="mt-5 overflow-x-auto rounded-2xl solid-panel shadow-sm">
             <table className="w-full min-w-[800px] text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50">
+              <thead className="border-b border-border bg-muted/50">
                 <tr>
-                  <th className="px-6 py-4 font-medium text-slate-500">
+                  <th className="px-6 py-4 font-medium text-muted-foreground">
                     Email
                   </th>
-                  <th className="px-6 py-4 font-medium text-slate-500">
+                  <th className="px-6 py-4 font-medium text-muted-foreground">
                     Name
                   </th>
-                  <th className="px-6 py-4 font-medium text-slate-500">
+                  <th className="px-6 py-4 font-medium text-muted-foreground">
                     Role
                   </th>
-                  <th className="px-6 py-4 font-medium text-slate-500">
+                  <th className="px-6 py-4 font-medium text-muted-foreground">
                     Status
                   </th>
-                  <th className="px-6 py-4 font-medium text-slate-500">
+                  <th className="px-6 py-4 font-medium text-muted-foreground">
                     Expires
                   </th>
-                  <th className="px-6 py-4 font-medium text-slate-500">
+                  <th className="px-6 py-4 font-medium text-muted-foreground">
                     Actions
                   </th>
                 </tr>
@@ -642,13 +642,13 @@ export default function TeamPage() {
                   return (
                     <tr
                       key={invitation.id}
-                      className="border-b border-slate-100 last:border-0"
+                      className="border-b border-border last:border-0"
                     >
-                      <td className="max-w-[220px] truncate px-6 py-4 font-medium text-slate-900">
+                      <td className="max-w-[220px] truncate px-6 py-4 font-medium text-foreground">
                         {invitation.email}
                       </td>
 
-                      <td className="px-6 py-4 text-slate-700">
+                      <td className="px-6 py-4 text-foreground/80">
                         {invitation.fullName ?? "—"}
                       </td>
 
@@ -672,7 +672,7 @@ export default function TeamPage() {
                         </span>
                       </td>
 
-                      <td className="px-6 py-4 text-slate-500">
+                      <td className="px-6 py-4 text-muted-foreground">
                         {formatDate(invitation.expiresAt)}
                       </td>
 
@@ -686,7 +686,7 @@ export default function TeamPage() {
                               )
                             }
                             disabled={!isPending || busy}
-                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-lg border border-border px-3 py-2 text-sm text-foreground/80 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {resendingId === invitation.id
                               ? "Resending..."
@@ -696,7 +696,7 @@ export default function TeamPage() {
                           <button
                             onClick={() => setRevokeTarget(invitation)}
                             disabled={!isPending || busy}
-                            className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-lg border border-destructive/30 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {revokingId === invitation.id
                               ? "Revoking..."
@@ -715,8 +715,8 @@ export default function TeamPage() {
 
       {showInviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 className="text-xl font-semibold text-slate-950">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            <h2 className="text-xl font-semibold text-foreground">
               Invite Member
             </h2>
 
@@ -724,7 +724,7 @@ export default function TeamPage() {
               <div>
                 <label
                   htmlFor="invite-full-name"
-                  className="mb-2 block text-sm font-medium text-slate-700"
+                  className="mb-2 block text-sm font-medium text-foreground/80"
                 >
                   Full Name
                 </label>
@@ -735,14 +735,14 @@ export default function TeamPage() {
                   value={inviteFullName}
                   onChange={(e) => setInviteFullName(e.target.value)}
                   placeholder="Jane Doe"
-                  className="w-full rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-slate-400"
+                  className="w-full rounded-lg border border-border bg-background px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="invite-email"
-                  className="mb-2 block text-sm font-medium text-slate-700"
+                  className="mb-2 block text-sm font-medium text-foreground/80"
                 >
                   Email
                 </label>
@@ -754,14 +754,14 @@ export default function TeamPage() {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="teammate@example.com"
-                  className="w-full rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-slate-400"
+                  className="w-full rounded-lg border border-border bg-background px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="invite-role"
-                  className="mb-2 block text-sm font-medium text-slate-700"
+                  className="mb-2 block text-sm font-medium text-foreground/80"
                 >
                   Role
                 </label>
@@ -772,7 +772,7 @@ export default function TeamPage() {
                   onChange={(e) =>
                     setInviteRole(e.target.value as InvitableRole)
                   }
-                  className="w-full rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-slate-400"
+                  className="w-full rounded-lg border border-border bg-background px-4 py-3 outline-none focus:border-primary"
                 >
                   {INVITABLE_ROLES.map((role) => (
                     <option key={role} value={role}>
@@ -783,7 +783,7 @@ export default function TeamPage() {
               </div>
 
               {inviteError && (
-                <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                   {inviteError}
                 </p>
               )}
@@ -796,7 +796,7 @@ export default function TeamPage() {
                     setShowInviteModal(false);
                     setInviteError("");
                   }}
-                  className="rounded-lg border border-slate-200 px-5 py-2.5 text-slate-700 hover:bg-slate-50"
+                  className="rounded-lg border border-border px-5 py-2.5 text-foreground/80 hover:bg-muted"
                 >
                   Cancel
                 </button>
@@ -804,7 +804,7 @@ export default function TeamPage() {
                 <button
                   type="submit"
                   disabled={inviting}
-                  className="rounded-lg bg-[#10172a] px-5 py-2.5 text-white hover:bg-[#18213a] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {inviting ? "Sending..." : "Send Invitation"}
                 </button>
@@ -864,15 +864,15 @@ export default function TeamPage() {
               </p>
 
               {gainedLost && (gainedLost.gained.length > 0 || gainedLost.lost.length > 0) && (
-                <div className="mt-3 max-h-64 space-y-3 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <div className="mt-3 max-h-64 space-y-3 overflow-y-auto rounded-lg border border-border bg-muted p-3">
                   {gainedLost.gained.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-success">
                         Gains
                       </p>
                       <ul className="mt-1 space-y-0.5">
                         {gainedLost.gained.map((a) => (
-                          <li key={a} className="text-xs text-emerald-800">
+                          <li key={a} className="text-xs text-success">
                             + {humanizeAction(a)}
                           </li>
                         ))}
@@ -881,12 +881,12 @@ export default function TeamPage() {
                   )}
                   {gainedLost.lost.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-red-700">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-destructive">
                         Loses
                       </p>
                       <ul className="mt-1 space-y-0.5">
                         {gainedLost.lost.map((a) => (
-                          <li key={a} className="text-xs text-red-800">
+                          <li key={a} className="text-xs text-destructive">
                             − {humanizeAction(a)}
                           </li>
                         ))}
