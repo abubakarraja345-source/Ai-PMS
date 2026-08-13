@@ -293,6 +293,8 @@ export interface CleaningTaskFilters {
   start?: string;
   end?: string;
   assignedTo?: string;
+  /** Phase 7.4 — server-set only, never client input. */
+  propertyIds?: string[];
 }
 
 /**

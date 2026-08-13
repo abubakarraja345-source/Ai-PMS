@@ -57,7 +57,8 @@ export async function listCleaningTasks(
     const { data, total } = await getCleaningTasks(
       req.organization.id,
       filters,
-      getRange(page, limit)
+      getRange(page, limit),
+      req.user ? { role: req.organization.role, userId: req.user.id } : undefined
     );
 
     return res.status(200).json({
@@ -96,7 +97,8 @@ export async function getCleaningTaskController(
 
     const task = await getCleaningTask(
       req.organization.id,
-      req.params.id
+      req.params.id,
+      req.user ? { role: req.organization.role, userId: req.user.id } : undefined
     );
 
     if (!task) {

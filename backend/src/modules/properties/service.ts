@@ -18,16 +18,38 @@ import { IMAGES_BUCKET } from "../property-media/validation";
 import { findDocumentPathsByProperty } from "../property-details/repository";
 import { DOCUMENTS_BUCKET } from "../property-details/validation";
 import { logAudit } from "../auditLog/service";
+import { OrganizationRole } from "../permissions/roles";
+import { resolvePropertyScope } from "../permissions/propertyScope";
+
+export interface CallerScopeContext {
+  role: OrganizationRole;
+  userId: string;
+}
 
 export async function getProperties(
   organizationId: string,
-  range: { from: number; to: number }
+  range: { from: number; to: number },
+  caller?: CallerScopeContext
 ) {
   if (!organizationId) {
     throw new Error("Organization ID is required");
   }
 
-  return findPropertiesByOrganization(organizationId, range);
+  if (!caller) {
+    return findPropertiesByOrganization(organizationId, range);
+  }
+
+  const scope = await resolvePropertyScope(organizationId, caller.role, caller.userId);
+
+  if (scope.restricted && scope.propertyIds.length === 0) {
+    return { data: [], total: 0 };
+  }
+
+  return findPropertiesByOrganization(
+    organizationId,
+    range,
+    scope.restricted ? scope.propertyIds : undefined
+  );
 }
 
 export async function addProperty(
@@ -54,7 +76,8 @@ export async function addProperty(
 }
 export async function getProperty(
   organizationId: string,
-  propertyId: string
+  propertyId: string,
+  caller?: CallerScopeContext
 ) {
   if (!organizationId) {
     throw new Error("Organization ID is required");
@@ -64,17 +87,36 @@ export async function getProperty(
     throw new Error("Property ID is required");
   }
 
-  return findPropertyById(
+  const property = await findPropertyById(
     organizationId,
     propertyId
   );
+
+  if (!property || !caller) {
+    return property;
+  }
+
+  // Service-layer check for "is this SPECIFIC record in my assigned
+  // set" — same layer changeMemberRole's self-change rule already
+  // lives in (organization/service.ts). A restricted caller fetching
+  // a property outside their scope gets the same null-as-not-found
+  // result an org-mismatch already produces, never a distinct
+  // "forbidden" signal.
+  const scope = await resolvePropertyScope(organizationId, caller.role, caller.userId);
+
+  if (scope.restricted && !scope.propertyIds.includes(propertyId)) {
+    return null;
+  }
+
+  return property;
 }
 
 export async function editProperty(
   organizationId: string,
   propertyId: string,
   rawUpdates: unknown,
-  actor?: { id: string; email?: string }
+  actor?: { id: string; email?: string },
+  callerRole?: OrganizationRole
 ) {
   if (!organizationId) {
     throw new Error("Organization ID is required");
@@ -82,6 +124,18 @@ export async function editProperty(
 
   if (!propertyId) {
     throw new Error("Property ID is required");
+  }
+
+  // Property-level access (Phase 7.4) — a scope-restricted Manager
+  // can only edit properties actually assigned to them, even though
+  // the coarse route gate (properties.update) allows the role to
+  // attempt the endpoint at all.
+  if (actor && callerRole) {
+    const scope = await resolvePropertyScope(organizationId, callerRole, actor.id);
+
+    if (scope.restricted && !scope.propertyIds.includes(propertyId)) {
+      return null;
+    }
   }
 
   // Validates types and allowlists fields — protected

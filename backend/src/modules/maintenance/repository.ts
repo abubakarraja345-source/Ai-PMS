@@ -56,6 +56,10 @@ export async function findMaintenanceTicketsByOrganization(
     query = query.eq("property_id", filters.propertyId);
   }
 
+  if (filters.propertyIds) {
+    query = query.in("property_id", filters.propertyIds);
+  }
+
   if (filters.reservationId) {
     query = query.eq(
       "reservation_id",

@@ -11,6 +11,7 @@ import PropertyDocumentsSection from "@/components/properties/property-documents
 import PropertyChannelLinksSection from "@/components/properties/property-channel-links-section";
 import PropertyCurrentBookingSection from "@/components/properties/property-current-booking-section";
 import PropertyIcalExportSection from "@/components/properties/property-ical-export-section";
+import PropertyAssignmentsSection from "@/components/properties/property-assignments-section";
 import CurrencyDisplayCard from "@/components/shared/currency-display-card";
 
 type Property = {
@@ -418,6 +419,8 @@ export default function PropertyDetailsPage() {
           propertyId={property.id}
           canManage={canManage}
         />
+
+        <PropertyAssignmentsSection propertyId={property.id} />
 
         {/* Coordinates */}
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

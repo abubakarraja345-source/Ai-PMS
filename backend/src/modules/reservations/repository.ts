@@ -57,6 +57,11 @@ export interface ReservationListFilters {
   start?: string;
   end?: string;
   needsReview?: boolean;
+  /** Phase 7.4 — property-level access. Set only for scope-restricted
+   * callers (see permissions/propertyScope.ts); additive on top of
+   * the organization_id filter every query already applies, never a
+   * replacement for it. */
+  propertyIds?: string[];
 }
 
 /**
@@ -120,6 +125,7 @@ interface FilterableQuery<Q> {
   gte(column: string, value: unknown): Q;
   lte(column: string, value: unknown): Q;
   or(filters: string): Q;
+  in(column: string, values: readonly unknown[]): Q;
 }
 
 /**
@@ -144,6 +150,10 @@ function applyListFilters<Q extends FilterableQuery<Q>>(
 
   if (filters.propertyId) {
     scoped = scoped.eq("property_id", filters.propertyId);
+  }
+
+  if (filters.propertyIds) {
+    scoped = scoped.in("property_id", filters.propertyIds);
   }
 
   if (filters.status) {
@@ -285,7 +295,8 @@ export async function findReservationsByOrganizationInRange(
   organizationId: string,
   start: string,
   end: string,
-  propertyId?: string
+  propertyId?: string,
+  propertyIds?: string[]
 ): Promise<ReservationListItem[]> {
   let query = supabase
     .from("reservations")
@@ -300,6 +311,12 @@ export async function findReservationsByOrganizationInRange(
 
   if (propertyId) {
     query = query.eq("property_id", propertyId);
+  }
+
+  // Phase 7.4 — additive property-level access scoping, applied
+  // alongside (never instead of) the single-propertyId filter above.
+  if (propertyIds) {
+    query = query.in("property_id", propertyIds);
   }
 
   const { data, error } = await query;
@@ -329,14 +346,21 @@ export async function findReservationsByOrganizationInRange(
 export async function findActiveAndUpcomingReservations(
   organizationId: string,
   fromDate: string,
-  limit = 200
+  limit = 200,
+  propertyIds?: string[]
 ): Promise<ReservationListItem[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("reservations")
     .select(RESERVATION_SELECT)
     .eq("organization_id", organizationId)
     .in("status", ["confirmed", "pending"])
-    .gte("check_out", fromDate)
+    .gte("check_out", fromDate);
+
+  if (propertyIds) {
+    query = query.in("property_id", propertyIds);
+  }
+
+  const { data, error } = await query
     .order("check_in", {
       ascending: true,
     })
@@ -356,12 +380,19 @@ export async function findActiveAndUpcomingReservations(
  */
 export async function findRecentReservations(
   organizationId: string,
-  limit = 5
+  limit = 5,
+  propertyIds?: string[]
 ): Promise<ReservationListItem[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("reservations")
     .select(RESERVATION_SELECT)
-    .eq("organization_id", organizationId)
+    .eq("organization_id", organizationId);
+
+  if (propertyIds) {
+    query = query.in("property_id", propertyIds);
+  }
+
+  const { data, error } = await query
     .order("created_at", {
       ascending: false,
     })

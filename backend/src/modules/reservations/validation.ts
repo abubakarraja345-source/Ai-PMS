@@ -366,6 +366,11 @@ export interface ReservationFilters {
   start?: string;
   end?: string;
   needsReview?: boolean;
+  /** Phase 7.4 — never set by validateReservationFilters (client
+   * input); only ever added server-side by the route after resolving
+   * the caller's property scope (see
+   * reservations/service.ts's resolveReservationScopeFilters). */
+  propertyIds?: string[];
 }
 
 /**

@@ -7,9 +7,10 @@ import { CreatePropertyInput } from "./validation";
 
 export async function findPropertiesByOrganization(
   organizationId: string,
-  range: { from: number; to: number }
+  range: { from: number; to: number },
+  propertyIds?: string[]
 ): Promise<{ data: PropertyListItem[]; total: number }> {
-  const { data, error, count } = await supabase
+  let query = supabase
     .from("properties")
     .select(
       `
@@ -32,7 +33,16 @@ export async function findPropertiesByOrganization(
     `,
       { count: "exact" }
     )
-    .eq("organization_id", organizationId)
+    .eq("organization_id", organizationId);
+
+  // Additive on top of the org filter above, never a replacement —
+  // Phase 7.4 property-level access (see permissions/propertyScope.ts).
+  // Only applied when the caller is actually scope-restricted.
+  if (propertyIds) {
+    query = query.in("id", propertyIds);
+  }
+
+  const { data, error, count } = await query
     .order("created_at", {
       ascending: false,
     })

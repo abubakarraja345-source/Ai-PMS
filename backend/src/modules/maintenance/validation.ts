@@ -342,6 +342,8 @@ export interface MaintenanceTicketFilters {
   priority?: MaintenancePriority;
   category?: string;
   assignedTo?: string;
+  /** Phase 7.4 — server-set only, never client input. */
+  propertyIds?: string[];
 }
 
 export function validateMaintenanceFilters(

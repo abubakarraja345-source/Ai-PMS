@@ -21,23 +21,55 @@ import {
   notifyMaintenanceStatusChanged,
 } from "../notifications/service";
 
+import { OrganizationRole } from "../permissions/roles";
+import { resolvePropertyScope } from "../permissions/propertyScope";
+
+export interface CallerScopeContext {
+  role: OrganizationRole;
+  userId: string;
+}
+
 export async function getMaintenanceTickets(
   organizationId: string,
   filters: MaintenanceTicketFilters,
-  range: { from: number; to: number }
+  range: { from: number; to: number },
+  caller?: CallerScopeContext
 ) {
+  if (!caller) {
+    return findMaintenanceTicketsByOrganization(organizationId, filters, range);
+  }
+
+  const scope = await resolvePropertyScope(organizationId, caller.role, caller.userId);
+
+  if (scope.restricted && scope.propertyIds.length === 0) {
+    return { data: [], total: 0 };
+  }
+
   return findMaintenanceTicketsByOrganization(
     organizationId,
-    filters,
+    scope.restricted ? { ...filters, propertyIds: scope.propertyIds } : filters,
     range
   );
 }
 
 export async function getMaintenanceTicket(
   organizationId: string,
-  ticketId: string
+  ticketId: string,
+  caller?: CallerScopeContext
 ) {
-  return findMaintenanceTicketById(organizationId, ticketId);
+  const ticket = await findMaintenanceTicketById(organizationId, ticketId);
+
+  if (!ticket || !caller) {
+    return ticket;
+  }
+
+  const scope = await resolvePropertyScope(organizationId, caller.role, caller.userId);
+
+  if (scope.restricted && !scope.propertyIds.includes(ticket.property_id)) {
+    return null;
+  }
+
+  return ticket;
 }
 
 /**

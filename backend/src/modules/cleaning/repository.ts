@@ -52,6 +52,10 @@ export async function findCleaningTasksByOrganization(
     query = query.eq("property_id", filters.propertyId);
   }
 
+  if (filters.propertyIds) {
+    query = query.in("property_id", filters.propertyIds);
+  }
+
   if (filters.status) {
     query = query.eq("status", filters.status);
   }

@@ -28,6 +28,11 @@ import { getEffectivePropertyCurrency } from "../properties/currency";
 import { getOrganizationSettings } from "../settings/service";
 import { resolveExchangeRate } from "../exchangeRates/service";
 import { logAudit } from "../auditLog/service";
+import { OrganizationRole } from "../permissions/roles";
+import {
+  resolvePropertyScope,
+  reconcileSinglePropertyFilter,
+} from "../permissions/propertyScope";
 
 export interface AuditActor {
   id: string;
@@ -234,6 +239,31 @@ export async function getReservationStatusCounts(
 }
 
 /**
+ * Phase 7.4 — resolves a caller's property scope and folds it into
+ * ReservationFilters, reconciling it against any explicit
+ * `property_id` filter the caller also requested. Callers (routes)
+ * spread the result into the filters object they already build.
+ */
+export async function resolveReservationScopeFilters(
+  organizationId: string,
+  callerRole: OrganizationRole,
+  callerId: string,
+  requestedPropertyId: string | undefined
+): Promise<{ propertyId?: string; propertyIds?: string[] } | null> {
+  const scope = await resolvePropertyScope(organizationId, callerRole, callerId);
+  const reconciled = reconcileSinglePropertyFilter(scope, requestedPropertyId);
+
+  if (reconciled.empty) {
+    return null;
+  }
+
+  const result: { propertyId?: string; propertyIds?: string[] } = {};
+  if (reconciled.propertyId) result.propertyId = reconciled.propertyId;
+  if (reconciled.propertyIds) result.propertyIds = reconciled.propertyIds;
+  return result;
+}
+
+/**
  * Raw overlap query for the same property, excluding a given
  * reservation (used on edit, so a reservation never "conflicts with
  * itself") and cancelled reservations (which don't occupy the
@@ -265,12 +295,27 @@ export async function findConflictingReservations(
 
 export async function getReservation(
   organizationId: string,
-  reservationId: string
+  reservationId: string,
+  caller?: { role: OrganizationRole; userId: string }
 ) {
-  return findReservationById(
+  const reservation = await findReservationById(
     organizationId,
     reservationId
   );
+
+  if (!reservation || !caller) {
+    return reservation;
+  }
+
+  // Phase 7.4 — same "record outside my scope reads as not found"
+  // pattern as properties/service.ts's getProperty.
+  const scope = await resolvePropertyScope(organizationId, caller.role, caller.userId);
+
+  if (scope.restricted && !scope.propertyIds.includes(reservation.property_id)) {
+    return null;
+  }
+
+  return reservation;
 }
 
 /**
@@ -547,7 +592,8 @@ export async function editReservation(
   organizationId: string,
   reservationId: string,
   updates: Record<string, unknown>,
-  actor?: AuditActor
+  actor?: AuditActor,
+  callerRole?: OrganizationRole
 ) {
   const existing =
     await findReservationById(
@@ -557,6 +603,20 @@ export async function editReservation(
 
   if (!existing) {
     return null;
+  }
+
+  // Phase 7.4 — property-level access. callerRole is only passed on
+  // the direct (non-approval-replay) path from the PATCH route; when
+  // an approved request is later replayed via approvals/registry.ts,
+  // the reviewer applying it is a deliberately authorized action and
+  // is not re-scope-checked here (the requester's own scope was
+  // already the basis for requiring approval in the first place).
+  if (actor && callerRole) {
+    const scope = await resolvePropertyScope(organizationId, callerRole, actor.id);
+
+    if (scope.restricted && !scope.propertyIds.includes(existing.property_id)) {
+      return null;
+    }
   }
 
   /*
@@ -979,7 +1039,8 @@ export async function removeReservation(
 export async function clearReviewFlag(
   organizationId: string,
   reservationId: string,
-  actor?: AuditActor
+  actor?: AuditActor,
+  callerRole?: OrganizationRole
 ) {
   const existing = await findReservationById(
     organizationId,
@@ -988,6 +1049,14 @@ export async function clearReviewFlag(
 
   if (!existing) {
     return null;
+  }
+
+  if (actor && callerRole) {
+    const scope = await resolvePropertyScope(organizationId, callerRole, actor.id);
+
+    if (scope.restricted && !scope.propertyIds.includes(existing.property_id)) {
+      return null;
+    }
   }
 
   const updated = await updateReservation(organizationId, reservationId, {

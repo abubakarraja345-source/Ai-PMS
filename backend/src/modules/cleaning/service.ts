@@ -21,23 +21,55 @@ import {
   notifyCleaningStatusChanged,
 } from "../notifications/service";
 
+import { OrganizationRole } from "../permissions/roles";
+import { resolvePropertyScope } from "../permissions/propertyScope";
+
+export interface CallerScopeContext {
+  role: OrganizationRole;
+  userId: string;
+}
+
 export async function getCleaningTasks(
   organizationId: string,
   filters: CleaningTaskFilters,
-  range: { from: number; to: number }
+  range: { from: number; to: number },
+  caller?: CallerScopeContext
 ) {
+  if (!caller) {
+    return findCleaningTasksByOrganization(organizationId, filters, range);
+  }
+
+  const scope = await resolvePropertyScope(organizationId, caller.role, caller.userId);
+
+  if (scope.restricted && scope.propertyIds.length === 0) {
+    return { data: [], total: 0 };
+  }
+
   return findCleaningTasksByOrganization(
     organizationId,
-    filters,
+    scope.restricted ? { ...filters, propertyIds: scope.propertyIds } : filters,
     range
   );
 }
 
 export async function getCleaningTask(
   organizationId: string,
-  taskId: string
+  taskId: string,
+  caller?: CallerScopeContext
 ) {
-  return findCleaningTaskById(organizationId, taskId);
+  const task = await findCleaningTaskById(organizationId, taskId);
+
+  if (!task || !caller) {
+    return task;
+  }
+
+  const scope = await resolvePropertyScope(organizationId, caller.role, caller.userId);
+
+  if (scope.restricted && !scope.propertyIds.includes(task.property_id)) {
+    return null;
+  }
+
+  return task;
 }
 
 /**

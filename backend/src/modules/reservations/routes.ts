@@ -20,6 +20,7 @@ import {
   getReservations,
   getReservationStatusCounts,
   removeReservation,
+  resolveReservationScopeFilters,
   ReservationConflictError,
 } from "./service";
 import {
@@ -100,7 +101,7 @@ reservationRouter.get(
   "/",
   async (req: OrganizationRequest, res) => {
     try {
-      if (!req.organization) {
+      if (!req.organization || !req.user) {
         return res.status(403).json({
           success: false,
           error: "Organization context is required",
@@ -110,6 +111,30 @@ reservationRouter.get(
       const filters = validateReservationFilters(
         req.query as Record<string, unknown>
       );
+
+      // Phase 7.4 — property-level access. A restricted caller
+      // (Manager/Host/Spectator with no matching assignment for the
+      // requested property, or none at all) gets an empty result
+      // set here rather than ever reaching the query.
+      const scopeFilters = await resolveReservationScopeFilters(
+        req.organization.id,
+        req.organization.role,
+        req.user.id,
+        filters.propertyId
+      );
+
+      if (scopeFilters === null) {
+        return res.json({
+          success: true,
+          data: [],
+          meta: {
+            ...buildPaginationMeta(1, 20, 0),
+            statusCounts: {},
+          },
+        });
+      }
+
+      Object.assign(filters, scopeFilters);
 
       const { page, limit } = parsePagination(
         req.query as Record<string, unknown>
@@ -124,6 +149,8 @@ reservationRouter.get(
         filtersWithoutStatus.guestId = filters.guestId;
       if (filters.propertyId !== undefined)
         filtersWithoutStatus.propertyId = filters.propertyId;
+      if (filters.propertyIds !== undefined)
+        filtersWithoutStatus.propertyIds = filters.propertyIds;
       if (filters.search !== undefined)
         filtersWithoutStatus.search = filters.search;
       if (filters.start !== undefined)
@@ -180,7 +207,7 @@ reservationRouter.get(
   "/:id",
   async (req: OrganizationRequest, res) => {
     try {
-      if (!req.organization) {
+      if (!req.organization || !req.user) {
         return res.status(403).json({
           success: false,
           error: "Organization context is required",
@@ -189,7 +216,8 @@ reservationRouter.get(
 
       const data = await getReservation(
         req.organization.id,
-        req.params.id
+        req.params.id,
+        { role: req.organization.role, userId: req.user.id }
       );
 
       if (!data) {
@@ -307,7 +335,8 @@ reservationRouter.patch(
 
       const existing = await getReservation(
         req.organization.id,
-        reservationId
+        reservationId,
+        { role: req.organization.role, userId: req.user.id }
       );
 
       if (existing) {
@@ -336,7 +365,8 @@ reservationRouter.patch(
         req.organization.id,
         reservationId,
         req.body,
-        req.user
+        req.user,
+        req.organization.role
       );
 
       if (!data) {
@@ -421,7 +451,8 @@ reservationRouter.patch(
       const data = await clearReviewFlag(
         req.organization.id,
         reservationId,
-        req.user
+        req.user,
+        req.organization.role
       );
 
       if (!data) {

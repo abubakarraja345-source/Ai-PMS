@@ -40,6 +40,8 @@ export const AUDIT_ACTIONS = [
   "approval.approved",
   "approval.rejected",
   "permission_override.changed",
+  "property.assignment_added",
+  "property.assignment_removed",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

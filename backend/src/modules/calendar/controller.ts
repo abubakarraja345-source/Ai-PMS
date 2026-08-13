@@ -22,7 +22,7 @@ export async function listCalendarReservations(
   res: Response
 ) {
   try {
-    if (!req.organization) {
+    if (!req.organization || !req.user) {
       return res.status(403).json({
         success: false,
         error: "Organization context is required",
@@ -38,7 +38,8 @@ export async function listCalendarReservations(
       req.organization.id,
       start,
       end,
-      property_id
+      property_id,
+      { role: req.organization.role, userId: req.user.id }
     );
 
     return res.status(200).json({

@@ -15,9 +15,11 @@ import {
   findActiveAndUpcomingReservations,
   findRecentReservations,
 } from "../modules/reservations/repository";
+import { ReservationListItem } from "../modules/reservations/types";
 
 import { computeConnectionHealth } from "../modules/integrations/health";
 import { ConnectionHealth } from "../modules/integrations/types";
+import { resolvePropertyScope } from "../modules/permissions/propertyScope";
 
 const router = Router();
 
@@ -157,8 +159,140 @@ router.get(
  * currency, low-stock, etc. — instead of recomputing a second,
  * potentially conflicting definition.
  */
-export async function getDashboardSummary(organizationId: string) {
+/**
+ * Phase 7.4 fail-closed case — a restricted caller (Manager/Host/
+ * Spectator) with ZERO property_assignments rows sees an entirely
+ * empty dashboard rather than the org-wide one. Shape matches
+ * getDashboardSummary's own return value exactly.
+ */
+function buildEmptyDashboardSummary(today: string) {
+  return {
+    stats: {
+      totalProperties: 0,
+      activeProperties: 0,
+      availableProperties: 0,
+      totalReservations: 0,
+      pendingReservations: 0,
+      occupiedProperties: 0,
+      reviewRequired: 0,
+      totalGuests: 0,
+      cleaningTasks: 0,
+      maintenanceTickets: 0,
+    },
+    today: {
+      date: today,
+      checkIns: [] as ReservationListItem[],
+      checkOuts: [] as ReservationListItem[],
+      currentStaysCount: 0,
+      pendingReservations: 0,
+    },
+    upcomingReservations: [] as ReservationListItem[],
+    recentActivity: [] as Array<
+      | {
+          type: "reservation_created";
+          id: string;
+          created_at: string;
+          guest: string;
+          property: string;
+          status: string | null;
+          booking_reference: string | null;
+        }
+      | { type: "guest_created"; id: string; created_at: string; guest: string }
+    >,
+    revenue: { byCurrency: [] as { currency: string; total: number; count: number }[] },
+    occupancy: { occupiedProperties: 0, activeProperties: 0, occupancyRate: 0 },
+    cleaning: { total: 0, pending: 0, inProgress: 0 },
+    maintenance: { total: 0, open: 0, inProgress: 0, urgent: 0 },
+    inventory: { totalItems: 0, lowStockCount: 0 },
+    integrations: { total: 0, active: 0, error: 0 },
+    calendarHealth: {
+      healthy: 0,
+      warning: 0,
+      error: 0,
+      disabled: 0,
+      needsAttention: 0,
+    },
+  };
+}
+
+/**
+ * Phase 7.4 — scopedPropertyIds is only ever set for a property-scope-
+ * restricted caller (Manager/Host/Spectator with assignments — see
+ * permissions/propertyScope.ts). Undefined/null means unrestricted,
+ * the exact same queries as before this phase. Guests and
+ * integrations are deliberately NOT scoped here — a guest isn't
+ * attributable to a single property (they may have stays at several),
+ * and an org's connected integrations list isn't per-property
+ * sensitive data the way reservation/guest details are; both remain
+ * organization-wide regardless of the caller's property scope, same
+ * as Team page's org info. This is a documented boundary, not an
+ * oversight — see the Phase 7.4 checkpoint report.
+ */
+export async function getDashboardSummary(
+  organizationId: string,
+  scopedPropertyIds?: string[] | null
+) {
   const today = todayUTC();
+  const scoped = scopedPropertyIds && scopedPropertyIds.length > 0 ? scopedPropertyIds : null;
+
+  // A restricted caller with zero assignments must never fall back to
+  // "see everything" — an empty (non-null) array means "restricted,
+  // nothing assigned," which is deliberately distinct from
+  // scopedPropertyIds being undefined/null (unrestricted).
+  if (scopedPropertyIds && scopedPropertyIds.length === 0) {
+    return buildEmptyDashboardSummary(today);
+  }
+
+      let propertiesQuery = supabase
+        .from("properties")
+        .select("status")
+        .eq("organization_id", organizationId);
+      if (scoped) propertiesQuery = propertiesQuery.in("id", scoped);
+
+      let totalReservationsQuery = supabase
+        .from("reservations")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", organizationId);
+      if (scoped) totalReservationsQuery = totalReservationsQuery.in("property_id", scoped);
+
+      let pendingReservationsQuery = supabase
+        .from("reservations")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", organizationId)
+        .eq("status", "pending");
+      if (scoped) pendingReservationsQuery = pendingReservationsQuery.in("property_id", scoped);
+
+      let reviewRequiredQuery = supabase
+        .from("reservations")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", organizationId)
+        .eq("needs_review", true);
+      if (scoped) reviewRequiredQuery = reviewRequiredQuery.in("property_id", scoped);
+
+      let revenueQuery = supabase
+        .from("reservations")
+        .select("total_amount, currency")
+        .eq("organization_id", organizationId)
+        .in("status", ["confirmed", "completed"]);
+      if (scoped) revenueQuery = revenueQuery.in("property_id", scoped);
+
+      let cleaningTasksQuery = supabase
+        .from("cleaning_tasks")
+        .select("status")
+        .eq("organization_id", organizationId);
+      if (scoped) cleaningTasksQuery = cleaningTasksQuery.in("property_id", scoped);
+
+      let maintenanceTicketsQuery = supabase
+        .from("maintenance_tickets")
+        .select("status, priority")
+        .eq("organization_id", organizationId);
+      if (scoped) maintenanceTicketsQuery = maintenanceTicketsQuery.in("property_id", scoped);
+
+      let inventoryQuery = supabase
+        .from("inventory_items")
+        .select("quantity, minimum_quantity")
+        .eq("organization_id", organizationId);
+      if (scoped) inventoryQuery = inventoryQuery.in("property_id", scoped);
 
       const [
         propertiesResult,
@@ -175,41 +309,23 @@ export async function getDashboardSummary(organizationId: string) {
         inventoryResult,
         integrationsResult,
       ] = await Promise.all([
-        supabase
-          .from("properties")
-          .select("status")
-          .eq("organization_id", organizationId),
-
-        supabase
-          .from("reservations")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", organizationId),
-
-        supabase
-          .from("reservations")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", organizationId)
-          .eq("status", "pending"),
-
-        supabase
-          .from("reservations")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", organizationId)
-          .eq("needs_review", true),
+        propertiesQuery,
+        totalReservationsQuery,
+        pendingReservationsQuery,
+        reviewRequiredQuery,
 
         findActiveAndUpcomingReservations(
           organizationId,
-          today
+          today,
+          200,
+          scoped ?? undefined
         ),
 
-        supabase
-          .from("reservations")
-          .select("total_amount, currency")
-          .eq("organization_id", organizationId)
-          .in("status", ["confirmed", "completed"]),
+        revenueQuery,
 
-        findRecentReservations(organizationId, 5),
+        findRecentReservations(organizationId, 5, scoped ?? undefined),
 
+        // Not property-scoped — see this function's own comment.
         supabase
           .from("guests")
           .select(
@@ -224,21 +340,11 @@ export async function getDashboardSummary(organizationId: string) {
           .select("id", { count: "exact", head: true })
           .eq("organization_id", organizationId),
 
-        supabase
-          .from("cleaning_tasks")
-          .select("status")
-          .eq("organization_id", organizationId),
+        cleaningTasksQuery,
+        maintenanceTicketsQuery,
+        inventoryQuery,
 
-        supabase
-          .from("maintenance_tickets")
-          .select("status, priority")
-          .eq("organization_id", organizationId),
-
-        supabase
-          .from("inventory_items")
-          .select("quantity, minimum_quantity")
-          .eq("organization_id", organizationId),
-
+        // Not property-scoped — see this function's own comment.
         supabase
           .from("integrations")
           .select("id, status, consecutive_failure_count")
@@ -503,8 +609,17 @@ router.get(
   requireOrganization,
   async (req: OrganizationRequest, res: Response) => {
     try {
+      const scope = req.user
+        ? await resolvePropertyScope(
+            req.organization!.id,
+            req.organization!.role,
+            req.user.id
+          )
+        : { restricted: false, propertyIds: [] };
+
       const data = await getDashboardSummary(
-        req.organization!.id
+        req.organization!.id,
+        scope.restricted ? scope.propertyIds : undefined
       );
 
       return res.json({

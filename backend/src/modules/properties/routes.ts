@@ -10,6 +10,9 @@ import {
   getPropertyController,
   updatePropertyController,
   deletePropertyController,
+  listPropertyAssignmentsController,
+  addPropertyAssignmentController,
+  removePropertyAssignmentController,
 } from "./controller";
 
 const router = Router();
@@ -32,5 +35,23 @@ router.post("/", requirePermission("properties.create"), createPropertyControlle
 router.get("/:id", requirePermission("properties.read"), getPropertyController);
 router.patch("/:id", requirePermission("properties.update"), updatePropertyController);
 router.delete("/:id", requirePermission("properties.delete"), deletePropertyController);
+
+// Phase 7.4 — property-level access assignment. Gated
+// team.assign_properties (owner/company_admin/manager per the spec).
+router.get(
+  "/:id/assignments",
+  requirePermission("team.assign_properties"),
+  listPropertyAssignmentsController
+);
+router.post(
+  "/:id/assignments",
+  requirePermission("team.assign_properties"),
+  addPropertyAssignmentController
+);
+router.delete(
+  "/:id/assignments/:userId",
+  requirePermission("team.assign_properties"),
+  removePropertyAssignmentController
+);
 
 export default router;

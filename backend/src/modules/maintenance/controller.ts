@@ -57,7 +57,8 @@ export async function listMaintenanceTickets(
     const { data, total } = await getMaintenanceTickets(
       req.organization.id,
       filters,
-      getRange(page, limit)
+      getRange(page, limit),
+      req.user ? { role: req.organization.role, userId: req.user.id } : undefined
     );
 
     return res.status(200).json({
@@ -96,7 +97,8 @@ export async function getMaintenanceTicketController(
 
     const ticket = await getMaintenanceTicket(
       req.organization.id,
-      req.params.id
+      req.params.id,
+      req.user ? { role: req.organization.role, userId: req.user.id } : undefined
     );
 
     if (!ticket) {
