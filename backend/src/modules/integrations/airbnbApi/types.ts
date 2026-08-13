@@ -43,6 +43,18 @@ export interface AirbnbListing {
   bedrooms: number | null;
   bathrooms: number | null;
   maxGuests: number | null;
+  /** Phase 6B — richer discovery/import fields. All optional: a real
+   * adapter only ever populates what Airbnb's actual listing response
+   * contains for a given account/listing; never fabricated when
+   * absent (see Phase 6B spec's "Property Import" section). */
+  description?: string | null;
+  city?: string | null;
+  country?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  propertyType?: string | null;
+  listingUrl?: string | null;
+  currency?: string | null;
 }
 
 export interface AirbnbReservation {

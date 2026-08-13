@@ -35,7 +35,9 @@ import {
 import { findReservationByExternalRef } from "../sync.repository";
 import { getEffectivePropertyCurrency } from "../../properties/currency";
 import { createGuest } from "../../guests/repository";
+import { createProperty } from "../../properties/repository";
 import { logAudit } from "../../auditLog/service";
+import { NewPropertyFromListingInput } from "./validation";
 
 import {
   notifyIntegrationConnected,
@@ -287,6 +289,14 @@ export interface AvailableListing {
   bedrooms: number | null;
   bathrooms: number | null;
   maxGuests: number | null;
+  description: string | null;
+  city: string | null;
+  country: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  propertyType: string | null;
+  listingUrl: string | null;
+  currency: string | null;
   imported: boolean;
   mappedPropertyId: string | null;
 }
@@ -311,7 +321,20 @@ export async function listAvailableListings(
   );
 
   return listings.map((listing) => ({
-    ...listing,
+    externalListingId: listing.externalListingId,
+    name: listing.name,
+    address: listing.address,
+    bedrooms: listing.bedrooms,
+    bathrooms: listing.bathrooms,
+    maxGuests: listing.maxGuests,
+    description: listing.description ?? null,
+    city: listing.city ?? null,
+    country: listing.country ?? null,
+    latitude: listing.latitude ?? null,
+    longitude: listing.longitude ?? null,
+    propertyType: listing.propertyType ?? null,
+    listingUrl: listing.listingUrl ?? null,
+    currency: listing.currency ?? null,
     imported: mappingByListing.has(listing.externalListingId),
     mappedPropertyId:
       mappingByListing.get(listing.externalListingId)?.property_id ?? null,
@@ -330,10 +353,74 @@ export async function importListing(
   input: {
     externalListingId: string;
     externalListingName: string | null;
-    propertyId: string;
+    propertyId: string | null;
+    newProperty: NewPropertyFromListingInput | null;
   }
 ): Promise<AirbnbChannelLinkRow> {
-  const propertyExists = await verifyProperty(organizationId, input.propertyId);
+  let propertyId = input.propertyId;
+
+  // "Create New Property" branch — only fields the listing actually
+  // supplied are carried over (never fabricated); everything else is
+  // left null/default exactly like a manually-created property. The
+  // listing's own richer fields (address/bedrooms/etc.) are looked up
+  // fresh from the adapter rather than trusted from the request body,
+  // since the client only sent externalListingId/externalListingName.
+  if (input.newProperty) {
+    const connection = await findAirbnbApiConnection(organizationId);
+
+    if (!connection || !connection.access_token) {
+      throw new Error("Airbnb is not connected for this organization.");
+    }
+
+    const adapter = getAirbnbApiAdapter();
+    const listings = await adapter.getListings(connection.access_token);
+    const listing = listings.find(
+      (l) => l.externalListingId === input.externalListingId
+    );
+
+    const created = await createProperty(organizationId, actor.id, {
+      title: input.newProperty.title,
+      property_type: input.newProperty.propertyType,
+      description: listing?.description ?? null,
+      address: listing?.address ?? null,
+      city: listing?.city ?? null,
+      state: null,
+      country: listing?.country ?? null,
+      postal_code: null,
+      latitude: listing?.latitude ?? null,
+      longitude: listing?.longitude ?? null,
+      bedrooms: listing?.bedrooms ?? null,
+      bathrooms: listing?.bathrooms ?? null,
+      beds: null,
+      max_guests: listing?.maxGuests ?? null,
+      check_in_time: null,
+      check_out_time: null,
+      house_manual_url: null,
+      status: "active",
+      currency: listing?.currency ?? null,
+    });
+
+    propertyId = created.id;
+
+    void logAudit({
+      organizationId,
+      actorUserId: actor.id,
+      actorLabel: actor.email ?? actor.id,
+      action: "airbnb.property_created_from_listing",
+      entityType: "property",
+      entityId: created.id,
+      metadata: {
+        externalListingId: input.externalListingId,
+        externalListingName: input.externalListingName,
+      },
+    });
+  }
+
+  if (!propertyId) {
+    throw new Error("propertyId is required");
+  }
+
+  const propertyExists = await verifyProperty(organizationId, propertyId);
 
   if (!propertyExists) {
     throw new Error("Property not found in your organization");
@@ -341,7 +428,7 @@ export async function importListing(
 
   try {
     const mapping = await createAirbnbListingMapping(organizationId, {
-      propertyId: input.propertyId,
+      propertyId,
       externalListingId: input.externalListingId,
       externalListingName: input.externalListingName,
     });
@@ -352,7 +439,7 @@ export async function importListing(
       actorLabel: actor.email ?? actor.id,
       action: "airbnb.listing_mapped",
       entityType: "property",
-      entityId: input.propertyId,
+      entityId: propertyId,
       metadata: {
         externalListingId: input.externalListingId,
         externalListingName: input.externalListingName,
@@ -401,6 +488,7 @@ export interface AirbnbSyncResult {
   cancelled: number;
   skipped: number;
   conflicts: number;
+  merged: number;
 }
 
 export function syncAirbnbApiConnection(
@@ -483,6 +571,7 @@ async function runSyncUnlocked(
   let cancelled = 0;
   let skipped = 0;
   let conflicts = 0;
+  let merged = 0;
 
   try {
     for (const mapping of mappings) {
@@ -588,6 +677,53 @@ async function runSyncUnlocked(
           mapping.property_id
         );
 
+        // Cross-source dedup — Phase 6B spec: "prefer official API data
+        // where overlap exists" / "never create duplicate reservations
+        // from both sources". An iCal-sourced Airbnb booking
+        // (booking_reference starts with "ical:", source "airbnb") for
+        // the exact same dates on this property is treated as the SAME
+        // real-world reservation, not a conflict: adopt it by
+        // repointing its booking_reference at this Airbnb-API external
+        // id, so this and every future sync resolve it directly via
+        // findReservationByExternalRef instead of re-detecting an
+        // overlap. Only an EXACT date match qualifies — anything less
+        // falls through to the existing conflict-flagging behavior
+        // below, which is the safer default when it's unclear whether
+        // two bookings are really the same stay.
+        const icalTwin = overlapping.find(
+          (r) =>
+            r.source === "airbnb" &&
+            r.status !== "cancelled" &&
+            typeof r.booking_reference === "string" &&
+            r.booking_reference.startsWith("ical:") &&
+            r.check_in === reservation.checkIn &&
+            r.check_out === reservation.checkOut
+        );
+
+        if (icalTwin) {
+          await updateReservation(organizationId, icalTwin.id, {
+            booking_reference: refKey,
+            needs_review: false,
+          });
+
+          void logAudit({
+            organizationId,
+            actorUserId: null,
+            actorLabel: "System (Airbnb sync)",
+            action: "airbnb.reservation_merged_from_ical",
+            entityType: "reservation",
+            entityId: icalTwin.id,
+            metadata: {
+              integrationId,
+              propertyId: mapping.property_id,
+              previousBookingReference: icalTwin.booking_reference,
+            },
+          });
+
+          merged++;
+          continue;
+        }
+
         const hasConflict = overlapping.length > 0;
 
         const guestId = await resolveGuestForReservation(
@@ -657,7 +793,7 @@ async function runSyncUnlocked(
     throw new Error(message);
   }
 
-  const response = { imported, updated, cancelled, skipped, conflicts };
+  const response = { imported, updated, cancelled, skipped, conflicts, merged };
   const durationMs = Date.now() - startedAt.getTime();
 
   await createSyncLogRow(integrationId, {

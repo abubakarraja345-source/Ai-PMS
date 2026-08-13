@@ -76,7 +76,7 @@ function toSummary(row: InvitationRowSafe) {
 /**
  * Attaches non-production-only diagnostics to an invitation response:
  * whether the email actually sent, and (outside production only) the
- * raw accept URL so a developer without Resend configured can still
+ * raw accept URL so a developer without Brevo configured can still
  * exercise the full flow. Never included in production responses —
  * this is the one deliberate place the raw token is allowed to leave
  * the backend process at all, and only into a response the calling

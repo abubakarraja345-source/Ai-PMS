@@ -30,6 +30,8 @@ import icalExportRoutes from "./modules/icalExport/routes";
 import aiRoutes from "./modules/ai/routes";
 import exchangeRatesRoutes from "./modules/exchangeRates/routes";
 import auditLogRoutes from "./modules/auditLog/routes";
+import messagingRoutes from "./modules/messaging/routes";
+import whatsappWebhookRoutes from "./modules/messaging/webhookRoutes";
 import { apiRateLimiter } from "./middleware/rateLimiter";
 import { errorMiddleware, notFoundHandler } from "./middleware/error.middleware";
 import { env } from "./config/env";
@@ -56,7 +58,18 @@ app.use(
 
 app.use(compression());
 app.use(morgan("dev"));
-app.use(express.json());
+app.use(
+  express.json({
+    // Captures the exact raw bytes of the request body onto
+    // req.rawBody — needed for WhatsApp webhook signature verification
+    // (messaging/whatsapp/adapter.ts), which must hash the same bytes
+    // Meta signed, not a re-serialization of the parsed JSON object.
+    // Harmless for every other route, which never reads req.rawBody.
+    verify: (req, _res, buf) => {
+      (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+    },
+  })
+);
 app.use(cookieParser());
 app.use(apiRateLimiter);
 
@@ -97,6 +110,8 @@ app.use("/api/integrations/airbnb", airbnbApiRoutes);
 app.use("/api/integrations", integrationsRoutes);
 app.use("/api/ical", icalExportRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/messaging", messagingRoutes);
+app.use("/api/webhooks/whatsapp", whatsappWebhookRoutes);
 
 app.use(notFoundHandler);
 app.use(errorMiddleware);

@@ -1,23 +1,18 @@
-import { Resend } from "resend";
 import { env } from "../config/env";
 
 /**
- * RESEND_API_KEY is a real config value in this project's env (the
- * `resend` package has been an installed dependency for a while), but
- * until now nothing ever actually called it — `send()` was a literal
- * no-op placeholder. This client is only constructed when the key is
- * present, so a deployment without it degrades to "email not
- * configured" instead of throwing.
+ * Brevo's transactional email REST API (v3) — a single well-documented
+ * POST endpoint, so this calls it directly via fetch rather than
+ * pulling in the official @getbrevo/brevo SDK, matching this
+ * codebase's existing convention for external HTTP integrations (see
+ * modules/messaging/whatsapp/adapter.ts, integrations/airbnbApi's
+ * OAuth calls — both plain fetch, no vendor SDK).
  */
-const resendClient = env.resendApiKey ? new Resend(env.resendApiKey) : null;
+const BREVO_SEND_EMAIL_URL = "https://api.brevo.com/v3/smtp/email";
 
-/**
- * Resend's own sandbox sender — works with no domain verification,
- * which is the honest, testable default for a project that hasn't
- * configured a custom sending domain. If a verified domain is added
- * later, this is the one line that needs to change.
- */
-const FROM_ADDRESS = "AI PMS <onboarding@resend.dev>";
+function isBrevoConfigured(): boolean {
+  return Boolean(env.brevoApiKey && env.brevoSenderEmail);
+}
 
 export interface SendInvitationEmailParams {
   to: string;
@@ -46,6 +41,103 @@ function invitationHtml(params: SendInvitationEmailParams): string {
   `;
 }
 
+/** Plain-text fallback for clients that don't render HTML — same
+ * content as invitationHtml, no formatting. */
+function invitationText(params: SendInvitationEmailParams): string {
+  const roleLabel = params.role === "company_admin" ? "Company Admin" : "Member";
+  const inviter = params.inviterEmail ? ` by ${params.inviterEmail}` : "";
+
+  return [
+    `You've been invited to ${params.organizationName}`,
+    ``,
+    `You've been invited${inviter} to join ${params.organizationName} on AI PMS as a ${roleLabel}.`,
+    ``,
+    `Accept your invitation: ${params.acceptUrl}`,
+  ].join("\n");
+}
+
+interface BrevoErrorBody {
+  code?: string;
+  message?: string;
+}
+
+/**
+ * Posts one transactional email to Brevo. Never throws — a failed or
+ * unconfigured send must not block invitation creation, which has
+ * already succeeded in the database by the time this is called (see
+ * invitations.service.ts: insertInvitation happens first, this is a
+ * best-effort follow-up).
+ *
+ * Only ever logs Brevo's own {code, message} error body (which never
+ * contains the email content, recipient PII beyond what the caller
+ * already knows, or any secret) — never the API key, never the
+ * accept URL/token, and never the raw response object wholesale.
+ *
+ * The boolean this returns reflects exactly one thing: whether Brevo
+ * accepted the send request (HTTP 2xx). It says nothing about actual
+ * inbox delivery — Brevo's API response doesn't and can't promise
+ * that, so this never claims more than it can prove.
+ */
+async function sendViaBrevo(params: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<SendEmailResult> {
+  if (!isBrevoConfigured()) {
+    return { sent: false, reason: "Email delivery is not configured" };
+  }
+
+  const senderName = env.brevoSenderName?.trim() || "Hostly";
+
+  try {
+    const response = await fetch(BREVO_SEND_EMAIL_URL, {
+      method: "POST",
+      headers: {
+        "api-key": env.brevoApiKey!,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        sender: { name: senderName, email: env.brevoSenderEmail },
+        to: [{ email: params.to }],
+        subject: params.subject,
+        htmlContent: params.html,
+        textContent: params.text,
+      }),
+    });
+
+    if (!response.ok) {
+      let errorBody: BrevoErrorBody | null = null;
+
+      try {
+        errorBody = (await response.json()) as BrevoErrorBody;
+      } catch {
+        // Brevo error responses are normally JSON; a non-JSON body
+        // (e.g. an upstream proxy error page) just means we have
+        // nothing more specific to log below.
+      }
+
+      console.error(
+        "Brevo rejected the email request:",
+        response.status,
+        errorBody?.code ?? "",
+        errorBody?.message ?? response.statusText
+      );
+
+      return { sent: false, reason: "Email delivery failed" };
+    }
+
+    return { sent: true };
+  } catch (err) {
+    console.error(
+      "Failed to reach Brevo:",
+      err instanceof Error ? err.message : "Unknown error"
+    );
+    return { sent: false, reason: "Email delivery failed" };
+  }
+}
+
 export class EmailService {
   /** Original placeholder call sites (none currently exist) keep working
    * unchanged — no behavior removed, only new capability added. */
@@ -54,42 +146,26 @@ export class EmailService {
   }
 
   /**
-   * Sends a team invitation email if Resend is configured; otherwise
+   * Sends a team invitation email if Brevo is configured; otherwise
    * returns a clear "not configured" result rather than pretending it
-   * worked. Never throws — a failed/unconfigured email must not block
-   * invitation creation, which already succeeded in the database by
-   * the time this is called.
-   *
-   * Never logs the accept URL or any token — only Resend's own error
-   * message (which never contains the email body) is logged on failure.
+   * worked. Never throws.
    */
   static async sendInvitation(
     params: SendInvitationEmailParams
   ): Promise<SendEmailResult> {
-    if (!resendClient) {
-      return { sent: false, reason: "Email delivery is not configured" };
-    }
-
-    try {
-      const { error } = await resendClient.emails.send({
-        from: FROM_ADDRESS,
-        to: params.to,
-        subject: `You've been invited to join ${params.organizationName} on AI PMS`,
-        html: invitationHtml(params),
-      });
-
-      if (error) {
-        console.error("Failed to send invitation email:", error.message);
-        return { sent: false, reason: "Email delivery failed" };
-      }
-
-      return { sent: true };
-    } catch (err) {
-      console.error(
-        "Failed to send invitation email:",
-        err instanceof Error ? err.message : "Unknown error"
-      );
-      return { sent: false, reason: "Email delivery failed" };
-    }
+    return sendViaBrevo({
+      to: params.to,
+      subject: `You've been invited to join ${params.organizationName} on AI PMS`,
+      html: invitationHtml(params),
+      text: invitationText(params),
+    });
   }
+}
+
+/** Startup-only, non-secret status line — see server.ts. Never prints
+ * the API key or sender identity beyond what's already public. */
+export function emailConfigStatusLine(): string {
+  return isBrevoConfigured()
+    ? "[Email] Brevo transactional email configured"
+    : "[Email] Brevo not configured — invitation emails will be skipped (dev accept links still work)";
 }

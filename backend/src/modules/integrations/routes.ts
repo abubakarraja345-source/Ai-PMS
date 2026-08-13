@@ -5,6 +5,7 @@ import { requireOrganization } from "../../middleware/organization.middleware";
 import { requireRole } from "../../middleware/role.middleware";
 
 import {
+  channelOverviewController,
   connectPropertyCalendarController,
   createIntegrationController,
   deleteIntegrationController,
@@ -35,6 +36,12 @@ const mutate = requireRole("owner", "company_admin");
 // otherwise greedily match a literal "/channel-links" request first
 // (Express matches by registration order, and ":id" matches any
 // single path segment, including the literal string "channel-links").
+// Phase 6B — unified per-property "which channel actually feeds this
+// property" read. Registered before "/:id" for the same reason as
+// channel-links/ical below: "overview" would otherwise be captured as
+// an :id param.
+router.get("/overview", channelOverviewController);
+
 router.get("/channel-links", listChannelLinksController);
 router.post("/channel-links", mutate, createChannelLinkController);
 router.delete("/channel-links/:id", mutate, deleteChannelLinkController);

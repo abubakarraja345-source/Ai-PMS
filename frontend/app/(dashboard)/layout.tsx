@@ -26,6 +26,7 @@ const navItems = [
   { name: "Review", href: "/reservations/review" },
   { name: "Calendar", href: "/calendar" },
   { name: "Guests", href: "/guests" },
+  { name: "Messages", href: "/messages" },
   { name: "Cleaning", href: "/cleaning" },
   { name: "Maintenance", href: "/maintenance" },
   { name: "Reports", href: "/reports" },

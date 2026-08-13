@@ -321,6 +321,12 @@ export default async function ReservationViewPage({
                   {reservation.guest.email}
                 </p>
               )}
+
+              {reservation.guest?.first_name === "Imported (Airbnb)" && (
+                <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                  Guest details unavailable through this connection.
+                </p>
+              )}
             </div>
 
             <div className="mt-6 border-t border-slate-100 pt-5">

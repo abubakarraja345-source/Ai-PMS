@@ -171,14 +171,27 @@ export default function GuestDetailsPage() {
             </p>
           </div>
 
-          <button
-            onClick={() =>
-              router.push(`/guests/${guest.id}/edit`)
-            }
-            className="rounded-xl bg-slate-900 px-6 py-3 font-medium text-white hover:bg-slate-800"
-          >
-            Edit Guest
-          </button>
+          <div className="flex gap-3">
+            {guest.phone && (
+              <button
+                onClick={() =>
+                  router.push(`/messages?guestId=${guest.id}`)
+                }
+                className="rounded-xl border border-slate-200 bg-white px-6 py-3 font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Message on WhatsApp
+              </button>
+            )}
+
+            <button
+              onClick={() =>
+                router.push(`/guests/${guest.id}/edit`)
+              }
+              className="rounded-xl bg-slate-900 px-6 py-3 font-medium text-white hover:bg-slate-800"
+            >
+              Edit Guest
+            </button>
+          </div>
         </div>
 
         {/* Contact Information */}

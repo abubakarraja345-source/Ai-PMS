@@ -92,12 +92,23 @@ const FullCalendarView = forwardRef<
       },
 
       eventContent: (arg) => {
+        // FullCalendar applies its own default text color
+        // (--fc-event-text-color, white) directly to elements it
+        // renders — that wins over inheriting our Tailwind text-color
+        // utility from the outer wrapper. Setting color inline with
+        // "important" priority here is the only thing guaranteed to
+        // beat it, regardless of stylesheet source order/specificity.
+        const textColor = (arg.event.extendedProps.textColor as
+          | string
+          | undefined) ?? "#1e293b";
+
         const wrapper = document.createElement("div");
         wrapper.className = "px-0.5 py-px overflow-hidden";
 
         const titleEl = document.createElement("div");
         titleEl.className =
           "truncate text-[11px] font-medium leading-tight";
+        titleEl.style.setProperty("color", textColor, "important");
         titleEl.textContent = arg.event.title;
         wrapper.appendChild(titleEl);
 
@@ -106,8 +117,9 @@ const FullCalendarView = forwardRef<
 
         if (propertyTitle) {
           const subEl = document.createElement("div");
-          subEl.className =
-            "truncate text-[10px] leading-tight opacity-80";
+          subEl.className = "truncate text-[10px] leading-tight";
+          subEl.style.setProperty("color", textColor, "important");
+          subEl.style.opacity = "0.8";
           subEl.textContent = propertyTitle;
           wrapper.appendChild(subEl);
         }

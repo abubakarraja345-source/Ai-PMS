@@ -48,6 +48,26 @@ interface PropertyOption {
   title: string;
 }
 
+interface ChannelOverviewRow {
+  propertyId: string;
+  propertyTitle: string;
+  officialApi: { provider: string; connected: boolean; externalListingId: string } | null;
+  ical: { provider: string; integrationId: string; status: string } | null;
+  effectiveSource: "official_api" | "ical" | "manual";
+}
+
+const SOURCE_LABELS: Record<ChannelOverviewRow["effectiveSource"], string> = {
+  official_api: "Official API",
+  ical: "iCal",
+  manual: "Manual / Not connected",
+};
+
+const SOURCE_CLASSES: Record<ChannelOverviewRow["effectiveSource"], string> = {
+  official_api: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  ical: "bg-blue-50 text-blue-700 border-blue-200",
+  manual: "bg-slate-50 text-slate-600 border-slate-200",
+};
+
 /**
  * Every provider here is delivered via iCal only — there is no
  * official Airbnb/Booking.com/VRBO API integration in this app (see
@@ -200,14 +220,17 @@ export default function IntegrationsPage() {
   const [history, setHistory] = useState<SyncLogEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  const [overview, setOverview] = useState<ChannelOverviewRow[]>([]);
+
   const loadAll = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const [integrationsRes, propertiesRes] = await Promise.all([
+      const [integrationsRes, propertiesRes, overviewRes] = await Promise.all([
         apiFetch("/api/integrations"),
         apiFetch("/api/properties?limit=100"),
+        apiFetch("/api/integrations/overview").catch(() => ({ data: [] })),
       ]);
 
       const loadedIntegrations: Integration[] = integrationsRes.data ?? [];
@@ -218,6 +241,7 @@ export default function IntegrationsPage() {
           title: p.title,
         }))
       );
+      setOverview(overviewRes.data ?? []);
 
       // Reuses the existing reservations search/filter endpoint with
       // limit=1 to get an exact count cheaply (Postgres's exact count
@@ -522,15 +546,16 @@ export default function IntegrationsPage() {
     <main className="min-h-screen bg-slate-50 p-6 lg:p-10">
       <h1 className="text-4xl font-semibold text-slate-950">Integrations</h1>
       <p className="mt-2 text-lg text-slate-500">
-        Manage your property calendar connections.
+        Connect your channels, import your listings, and keep
+        reservations in sync — automatically where possible.
       </p>
 
       <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
-        <strong>iCal connection, not an official API integration.</strong>{" "}
-        Calendar synchronization via iCal. This does not connect to
-        Airbnb&apos;s, Booking.com&apos;s, or VRBO&apos;s API — it imports
-        and exports standard calendar (.ics) files, the same mechanism
-        every major OTA already supports for third-party calendar sync.
+        <strong>Two ways to connect a channel.</strong> Airbnb supports a
+        direct Official API connection below. Every provider (including
+        Airbnb) can also be connected via iCal — a calendar (.ics) feed
+        that syncs availability but not guest details, the same
+        fallback mechanism every major OTA already supports.
       </div>
 
       {error && (
@@ -548,6 +573,168 @@ export default function IntegrationsPage() {
           <button onClick={() => setActionMessage("")} className="font-medium">
             ✕
           </button>
+        </div>
+      )}
+
+      {/* Connect a Channel — provider cards distinguishing Official API
+          from iCal from Manual setup, per Phase 6B. Airbnb's Official
+          API button scrolls to the AirbnbApiSection card below (which
+          owns the real connect/OAuth state) rather than duplicating
+          that logic here. */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold text-slate-900">
+          Connect a Channel
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Choose how each channel connects to your properties.
+        </p>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900">Airbnb</h3>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                Official API
+              </span>
+              <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                iCal
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-slate-500">
+              Connect directly for automatic listing and reservation
+              import, or use iCal as a calendar-only fallback.
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <a
+                href="#airbnb-official-api"
+                className="rounded-lg bg-[#10172a] px-3 py-2 text-center text-sm font-medium text-white hover:bg-[#18213a]"
+              >
+                Connect Official API
+              </a>
+              {canManage && (
+                <button
+                  onClick={() => openWizardForProvider("airbnb")}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Connect via iCal
+                </button>
+              )}
+            </div>
+          </div>
+
+          {[
+            { id: "booking.com", label: "Booking.com" },
+            { id: "vrbo", label: "VRBO" },
+            { id: "ical", label: "Other" },
+          ].map((provider) => (
+            <div
+              key={provider.id}
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
+              <h3 className="text-lg font-semibold text-slate-900">
+                {provider.label}
+              </h3>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                  iCal
+                </span>
+              </div>
+              <p className="mt-3 text-sm text-slate-500">
+                No official API partner integration is configured for this
+                provider yet. Connect via iCal calendar sync instead.
+              </p>
+              {canManage && (
+                <button
+                  onClick={() => openWizardForProvider(provider.id)}
+                  className="mt-4 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Connect via iCal
+                </button>
+              )}
+            </div>
+          ))}
+
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900">
+              Manual Setup
+            </h3>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600">
+                No channel
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-slate-500">
+              Create and manage a property entirely by hand, with no OTA
+              connection of any kind.
+            </p>
+            <a
+              href="/properties/new"
+              className="mt-4 block w-full rounded-lg border border-slate-200 px-3 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Create Property Manually
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Channel Status by Property */}
+      {overview.length > 0 && (
+        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Channel Status by Property
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px] text-left text-sm">
+              <thead className="border-b bg-slate-50">
+                <tr>
+                  <th className="px-5 py-3 font-medium text-slate-600">
+                    Property
+                  </th>
+                  <th className="px-5 py-3 font-medium text-slate-600">
+                    Official API
+                  </th>
+                  <th className="px-5 py-3 font-medium text-slate-600">
+                    iCal
+                  </th>
+                  <th className="px-5 py-3 font-medium text-slate-600">
+                    Active Source
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {overview.map((row) => (
+                  <tr key={row.propertyId}>
+                    <td className="px-5 py-3 font-medium text-slate-900">
+                      {row.propertyTitle}
+                    </td>
+                    <td className="px-5 py-3 text-slate-600">
+                      {row.officialApi
+                        ? row.officialApi.connected
+                          ? "Connected"
+                          : "Disconnected"
+                        : "—"}
+                    </td>
+                    <td className="px-5 py-3 text-slate-600">
+                      {row.ical
+                        ? row.ical.status === "disabled"
+                          ? "Disabled"
+                          : "Connected"
+                        : "—"}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${SOURCE_CLASSES[row.effectiveSource]}`}
+                      >
+                        {SOURCE_LABELS[row.effectiveSource]}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -704,38 +891,6 @@ export default function IntegrationsPage() {
             </table>
           </div>
         )}
-      </div>
-
-      {/* Available providers */}
-      <div className="mt-6">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Available Providers
-        </h3>
-
-        <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {CONNECTABLE_PROVIDERS.map((provider) => (
-            <div
-              key={provider.id}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <h4 className="text-lg font-semibold text-slate-900">
-                {provider.label}
-              </h4>
-              <p className="mt-1 text-sm text-slate-500">
-                iCal calendar synchronization
-              </p>
-
-              {canManage && (
-                <button
-                  onClick={() => openWizardForProvider(provider.id)}
-                  className="mt-4 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  Connect via iCal
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Airbnb Official API — a wholly separate connection from the

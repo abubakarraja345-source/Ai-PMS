@@ -16,6 +16,7 @@ import {
 
 import { runManualSync } from "./sync.service";
 import { findIntegrationById, findSyncLogsByIntegration } from "./repository";
+import { getChannelOverview } from "./overview";
 
 import {
   validateConnectPropertyCalendar,
@@ -66,6 +67,25 @@ export async function getIntegrationController(
     console.error("Get integration error:", error);
 
     return res.status(500).json({ success: false, error: "Unable to load integration" });
+  }
+}
+
+export async function channelOverviewController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  try {
+    if (!req.organization) {
+      return res.status(403).json({ success: false, error: "Organization context is required" });
+    }
+
+    const data = await getChannelOverview(req.organization.id);
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Channel overview error:", error);
+
+    return res.status(500).json({ success: false, error: "Unable to load channel overview" });
   }
 }
 

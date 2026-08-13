@@ -106,37 +106,78 @@ function getStatusBadgeClasses(status: string | null) {
   }
 }
 
+/**
+ * Tailwind v4 moved the "important" modifier from a leading `!`
+ * (v3: `!bg-emerald-100`) to a trailing `!` (v4: `bg-emerald-100!`) —
+ * see frontend/AGENTS.md's warning that this project's tooling has
+ * breaking changes from what training data assumes. The leading-`!`
+ * form isn't recognized syntax in v4 at all, so those classes were
+ * silently generating no CSS — FullCalendar's own bare default
+ * styling (very low contrast) was all that ever rendered.
+ */
+const EVENT_BASE_CLASSES = ["rounded-md!", "border-l-4!", "shadow-none!"];
+
+/**
+ * FullCalendar sets its own default event text color (--fc-event-
+ * text-color, white) directly on the elements it renders — that wins
+ * over plain CSS inheritance from our Tailwind text-color classes on
+ * the outer wrapper regardless of !important, since it's applied
+ * closer to (or directly on) the title text itself. full-calendar-
+ * view.tsx's eventContent reads this hex value and forces it via
+ * inline style + "important" priority on the exact elements it
+ * creates, which is the only thing guaranteed to win.
+ */
+function getEventTextColor(status: string | null): string {
+  switch (status) {
+    case "confirmed":
+      return "#065f46"; // emerald-800
+    case "pending":
+      return "#92400e"; // amber-800
+    case "completed":
+      return "#1e40af"; // blue-800
+    case "cancelled":
+      return "#991b1b"; // red-800
+    default:
+      return "#1e293b"; // slate-800
+  }
+}
+
 function getEventClassNames(status: string | null): string[] {
   switch (status) {
     case "confirmed":
       return [
-        "!bg-emerald-100",
-        "!border-emerald-300",
-        "!text-emerald-800",
+        ...EVENT_BASE_CLASSES,
+        "bg-emerald-50!",
+        "border-emerald-500!",
+        "text-emerald-800!",
       ];
     case "pending":
       return [
-        "!bg-amber-100",
-        "!border-amber-300",
-        "!text-amber-800",
+        ...EVENT_BASE_CLASSES,
+        "bg-amber-50!",
+        "border-amber-500!",
+        "text-amber-800!",
       ];
     case "completed":
       return [
-        "!bg-blue-100",
-        "!border-blue-300",
-        "!text-blue-800",
+        ...EVENT_BASE_CLASSES,
+        "bg-blue-50!",
+        "border-blue-500!",
+        "text-blue-800!",
       ];
     case "cancelled":
       return [
-        "!bg-red-100",
-        "!border-red-300",
-        "!text-red-800",
+        ...EVENT_BASE_CLASSES,
+        "bg-red-50!",
+        "border-red-500!",
+        "text-red-800!",
       ];
     default:
       return [
-        "!bg-slate-100",
-        "!border-slate-300",
-        "!text-slate-800",
+        ...EVENT_BASE_CLASSES,
+        "bg-slate-50!",
+        "border-slate-400!",
+        "text-slate-800!",
       ];
   }
 }
@@ -288,8 +329,8 @@ export default function CalendarPage() {
       allDay: true,
       classNames: [
         ...getEventClassNames(r.status),
-        ...(r.needs_review ? ["!ring-2", "!ring-amber-500"] : []),
-        ...(hasConflict ? ["!ring-2", "!ring-red-500"] : []),
+        ...(r.needs_review ? ["ring-2!", "ring-amber-500!"] : []),
+        ...(hasConflict ? ["ring-2!", "ring-red-500!"] : []),
       ],
       extendedProps: {
         propertyTitle: r.property?.title ?? "Unknown property",
@@ -297,6 +338,7 @@ export default function CalendarPage() {
         imported,
         hasConflict,
         needsReview: r.needs_review,
+        textColor: getEventTextColor(r.status),
       },
     };
   });
@@ -397,24 +439,24 @@ export default function CalendarPage() {
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500">
-        <LegendDot
-          className="bg-emerald-400"
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <LegendChip
+          dotClassName="bg-emerald-500"
           label="Confirmed"
         />
-        <LegendDot className="bg-amber-400" label="Pending" />
-        <LegendDot className="bg-blue-400" label="Completed" />
-        <LegendDot
-          className="bg-red-400"
+        <LegendChip dotClassName="bg-amber-500" label="Pending" />
+        <LegendChip dotClassName="bg-blue-500" label="Completed" />
+        <LegendChip
+          dotClassName="bg-red-500"
           label="Cancelled (hidden)"
         />
-        <span className="flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
           <span>⇄</span> Imported (iCal)
         </span>
-        <span className="flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
           <span>🔖</span> Needs review
         </span>
-        <span className="flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
           <span>⚠</span> Overlapping dates
         </span>
       </div>
@@ -508,6 +550,18 @@ export default function CalendarPage() {
               </div>
             </div>
 
+            <div className="mt-5 rounded-xl bg-slate-900 px-5 py-4 text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                Total Amount
+              </p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-white">
+                {formatMoney(
+                  selectedReservation.total_amount,
+                  selectedReservation.currency
+                )}
+              </p>
+            </div>
+
             <div className="mt-5 space-y-3 text-sm">
               <QuickRow
                 label="Property"
@@ -531,14 +585,6 @@ export default function CalendarPage() {
                 label="Nights"
                 value={String(
                   selectedReservation.nights ?? "—"
-                )}
-              />
-
-              <QuickRow
-                label="Total"
-                value={formatMoney(
-                  selectedReservation.total_amount,
-                  selectedReservation.currency
                 )}
               />
 
@@ -574,18 +620,16 @@ export default function CalendarPage() {
   );
 }
 
-function LegendDot({
-  className,
+function LegendChip({
+  dotClassName,
   label,
 }: {
-  className: string;
+  dotClassName: string;
   label: string;
 }) {
   return (
-    <span className="flex items-center gap-1.5">
-      <span
-        className={`h-2.5 w-2.5 rounded-full ${className}`}
-      />
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+      <span className={`h-2 w-2 rounded-full ${dotClassName}`} />
       {label}
     </span>
   );

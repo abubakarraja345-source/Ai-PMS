@@ -33,6 +33,9 @@ export const AUDIT_ACTIONS = [
   "airbnb.disconnected",
   "airbnb.listing_mapped",
   "airbnb.listing_unmapped",
+  "airbnb.property_created_from_listing",
+  "airbnb.reservation_merged_from_ical",
+  "message.conversation_linked",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -44,6 +47,7 @@ export const AUDIT_ENTITY_TYPES = [
   "integration",
   "organization",
   "property",
+  "guest",
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
