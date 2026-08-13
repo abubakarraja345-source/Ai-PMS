@@ -53,6 +53,7 @@ const navItems = [
   { name: "Inventory", href: "/inventory" },
   { name: "Integrations", href: "/integrations" },
   { name: "Status Center", href: "/status" },
+  { name: "Approvals", href: "/approvals" },
   { name: "Team", href: "/team" },
   { name: "Audit Log", href: "/audit-log" },
   { name: "AI Assistant", href: "/ai" },

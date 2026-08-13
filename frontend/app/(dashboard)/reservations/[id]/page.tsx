@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney as formatMoneyShared } from "@/lib/currency";
 import ReservationReviewBanner from "@/components/reservations/reservation-review-banner";
+import PendingApprovalBanner from "@/components/reservations/pending-approval-banner";
 import CurrencyBadge from "@/components/shared/currency-badge";
 
 type Reservation = {
@@ -196,6 +198,10 @@ export default async function ReservationViewPage({
 
       {/* Main */}
       <main className="mx-auto max-w-7xl px-6 py-8">
+        <Suspense fallback={null}>
+          <PendingApprovalBanner />
+        </Suspense>
+
         <ReservationReviewBanner
           reservationId={reservation.id}
           initialNeedsReview={reservation.needs_review}

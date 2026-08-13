@@ -36,6 +36,10 @@ export const AUDIT_ACTIONS = [
   "airbnb.property_created_from_listing",
   "airbnb.reservation_merged_from_ical",
   "message.conversation_linked",
+  "approval.requested",
+  "approval.approved",
+  "approval.rejected",
+  "permission_override.changed",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -48,6 +52,7 @@ export const AUDIT_ENTITY_TYPES = [
   "organization",
   "property",
   "guest",
+  "approval_request",
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

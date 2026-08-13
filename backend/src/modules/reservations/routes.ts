@@ -27,6 +27,28 @@ import {
   getRange,
   parsePagination,
 } from "../../utils/pagination";
+import {
+  interceptForApproval,
+  ApprovalDeniedError,
+  FieldTriggerMap,
+} from "../approvals/interceptor";
+
+/**
+ * Phase 7.3 — which fields on a reservation are sensitive enough that
+ * a role resolving to the matrix's "approval" effect must have the
+ * change deferred rather than applied immediately. Field names match
+ * the raw request body / DB columns exactly (see
+ * reservations/service.ts's editReservation, which this map is read
+ * alongside, not instead of).
+ */
+const RESERVATION_FIELD_TRIGGERS: FieldTriggerMap = {
+  check_in: "reservations.reschedule",
+  check_out: "reservations.reschedule",
+  status: (newValue) => (newValue === "cancelled" ? "reservations.cancel" : null),
+  total_amount: "reservations.financial_update",
+  cleaning_fee: "reservations.financial_update",
+  taxes: "reservations.financial_update",
+};
 
 export const reservationRouter = Router();
 
@@ -253,20 +275,66 @@ reservationRouter.post(
 );
 
 // PATCH /api/reservations/:id
+//
+// Phase 7.3 — before applying the edit, checks whether any changed
+// field is sensitive enough (per RESERVATION_FIELD_TRIGGERS and the
+// caller's role) to require approval instead of applying immediately.
+// This is deliberately NOT a coarse requirePermission(...) gate on
+// the route itself — one generic PATCH endpoint covers many different
+// kinds of edits (a guest note vs. a date change vs. a price change),
+// so the decision has to be made from the actual diff, not the route.
+// Unaffected fields / unaffected roles fall straight through to the
+// exact same editReservation(...) call as before this phase.
 reservationRouter.patch(
   "/:id",
   async (req: OrganizationRequest, res) => {
     try {
-      if (!req.organization) {
+      if (!req.organization || !req.user) {
         return res.status(403).json({
           success: false,
           error: "Organization context is required",
         });
       }
 
+      const reservationId = req.params.id;
+
+      if (!reservationId) {
+        return res.status(400).json({
+          success: false,
+          error: "Reservation ID is required",
+        });
+      }
+
+      const existing = await getReservation(
+        req.organization.id,
+        reservationId
+      );
+
+      if (existing) {
+        const intercepted = await interceptForApproval({
+          organizationId: req.organization.id,
+          role: req.organization.role,
+          requesterId: req.user.id,
+          requesterLabel: req.user.email ?? req.user.id,
+          entityType: "reservation",
+          entityId: reservationId,
+          existing: existing as unknown as Record<string, unknown>,
+          updates: req.body,
+          fieldTriggers: RESERVATION_FIELD_TRIGGERS,
+        });
+
+        if (intercepted.deferred) {
+          return res.status(202).json({
+            success: true,
+            pending: true,
+            data: intercepted.approvalRequest,
+          });
+        }
+      }
+
       const data = await editReservation(
         req.organization.id,
-        req.params.id,
+        reservationId,
         req.body,
         req.user
       );
@@ -296,6 +364,13 @@ reservationRouter.patch(
         "Update reservation error:",
         error
       );
+
+      if (error instanceof ApprovalDeniedError) {
+        return res.status(403).json({
+          success: false,
+          error: error.message,
+        });
+      }
 
       if (error instanceof ReservationConflictError) {
         return res.status(409).json({

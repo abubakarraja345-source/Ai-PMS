@@ -279,6 +279,17 @@ export default function EditReservationPage() {
         throw new Error(message);
       }
 
+      // Phase 7.3 — a 202 with pending:true means the change was NOT
+      // applied yet; it was deferred into the approval workflow
+      // because a senior role needs to review it (see
+      // reservations/routes.ts's interceptForApproval call). This is
+      // still a "success" HTTP-wise, so it must be distinguished from
+      // an actually-applied edit rather than silently treated the same.
+      if (result.pending) {
+        router.push(`/reservations/${id}?pendingApproval=1`);
+        return;
+      }
+
       router.push(`/reservations/${id}`);
       router.refresh();
     } catch (err) {

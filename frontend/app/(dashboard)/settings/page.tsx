@@ -11,6 +11,7 @@ import CurrencySelect from "@/components/shared/currency-select";
 import ConfirmDialog from "@/components/shared/confirm-dialog";
 import { useToast } from "@/components/shared/toast";
 import ExchangeRatesTable from "@/components/settings/exchange-rates-table";
+import ApprovalSettingsSection from "@/components/settings/approval-settings-section";
 
 interface OrganizationSettings {
   name: string;
@@ -566,6 +567,8 @@ export default function SettingsPage() {
             />
           </div>
         </section>
+
+        <ApprovalSettingsSection canEdit={canEdit} />
       </div>
 
       <ConfirmDialog

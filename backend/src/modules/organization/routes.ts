@@ -22,7 +22,29 @@ import {
   previewInvitationController,
 } from "./invitations.controller";
 
+import {
+  getApprovalSettingController,
+  updateApprovalSettingController,
+} from "../permissions/controller";
+
 const router = Router();
+
+// GET/POST /api/organization/approval-settings — the one bundled
+// Member-approval on/off toggle (Phase 7.3). Same gate as other
+// organization-configuration changes (settings, currency).
+router.get(
+  "/approval-settings",
+  requireAuth,
+  requireOrganization,
+  getApprovalSettingController
+);
+router.post(
+  "/approval-settings",
+  requireAuth,
+  requireOrganization,
+  requirePermission("organization.update"),
+  updateApprovalSettingController
+);
 
 /**
  * Phase 7 — migrated from requireRole("owner","company_admin") to

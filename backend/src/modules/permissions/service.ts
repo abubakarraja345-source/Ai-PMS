@@ -1,7 +1,11 @@
 import { OrganizationRole } from "./roles";
 import { RESOURCE_ACTIONS, ResourceAction } from "./resourceActions";
 import { PERMISSION_MATRIX, PermissionEffect } from "./matrix";
-import { findOverridesByOrganization } from "./repository";
+import {
+  deleteOverride,
+  findOverridesByOrganization,
+  upsertOverride,
+} from "./repository";
 
 /**
  * The single source of truth both `requirePermission` (backend
@@ -66,4 +70,56 @@ export async function getEffectivePermissions(
   );
 
   return { permissions, permissionEffects };
+}
+
+/** The 3 resource_actions the matrix defaults to "approval" for
+ * role=member (see matrix.ts's own comment) — the single bundled
+ * toggle exposed to owners/admins in this checkpoint. */
+const MEMBER_APPROVAL_ACTIONS: ResourceAction[] = [
+  "reservations.reschedule",
+  "reservations.cancel",
+  "reservations.financial_update",
+];
+
+/**
+ * true = approval is required (either the matrix default with no
+ * override, or an explicit 'approval' override); false = an owner has
+ * overridden all three to 'allow', restoring pre-Phase-7 free-editing
+ * behavior for Members. Reports true unless EVERY one of the 3
+ * actions is explicitly overridden to 'allow' — a partial override
+ * (e.g. only reschedule turned off) is surfaced as "still requires
+ * approval" rather than a misleading fully-off toggle state.
+ */
+export async function getMemberApprovalSetting(
+  organizationId: string
+): Promise<boolean> {
+  const overrides = await findOverridesByOrganization(organizationId);
+  const overrideMap = new Map(
+    overrides.filter((o) => o.role === "member").map((o) => [o.resource_action, o.effect])
+  );
+
+  return !MEMBER_APPROVAL_ACTIONS.every(
+    (action) => overrideMap.get(action) === "allow"
+  );
+}
+
+export async function setMemberApprovalSetting(
+  organizationId: string,
+  requireApproval: boolean
+): Promise<void> {
+  if (requireApproval) {
+    // Remove any 'allow' overrides so the matrix default ('approval')
+    // takes effect again.
+    await Promise.all(
+      MEMBER_APPROVAL_ACTIONS.map((action) =>
+        deleteOverride(organizationId, "member", action)
+      )
+    );
+  } else {
+    await Promise.all(
+      MEMBER_APPROVAL_ACTIONS.map((action) =>
+        upsertOverride(organizationId, "member", action, "allow")
+      )
+    );
+  }
 }

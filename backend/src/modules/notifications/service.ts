@@ -80,12 +80,19 @@ export async function removeNotification(
  * ------------------------------------------------------------------ */
 
 /**
- * Recipients for an event: every owner/company_admin in the
+ * Recipients for an event: every owner/company_admin/manager in the
  * organization, plus (if supplied and it actually belongs to the
  * organization) a specific assignee. Reuses the existing
  * organization/team roster lookup rather than adding a new query —
  * one fetch answers both "who are the admins" and "is this uuid a
  * real member" without a second round trip.
+ *
+ * Phase 7.3 — "manager" added alongside owner/company_admin: Manager
+ * now holds approvals.review (can approve/reject pending requests),
+ * so it's consistent for them to receive the same org-wide operational
+ * notifications the other reviewer-tier roles already get. A
+ * deliberate, low-risk default change — noted explicitly in the
+ * checkpoint report.
  */
 async function resolveRecipients(
   organizationId: string,
@@ -95,7 +102,11 @@ async function resolveRecipients(
   const recipients = new Set<string>();
 
   for (const member of members) {
-    if (member.role === "owner" || member.role === "company_admin") {
+    if (
+      member.role === "owner" ||
+      member.role === "company_admin" ||
+      member.role === "manager"
+    ) {
       recipients.add(member.user_id);
     }
   }
@@ -503,6 +514,84 @@ export async function notifyIntegrationSyncConflict(
     );
   } catch (error) {
     console.error("Failed to create integration_sync_conflict notification:", error);
+  }
+}
+
+function humanizeResourceAction(resourceAction: string): string {
+  return resourceAction
+    .split(",")
+    .map((a) => a.split(".")[1]?.replace(/_/g, " ") ?? a)
+    .join(", ");
+}
+
+interface ApprovalRequestedEventData {
+  requesterLabel: string;
+  entityType: string;
+  resourceAction: string;
+}
+
+/** Recipients = reviewers (owner/company_admin/manager), via the same
+ * resolveRecipients() every other org-wide event uses — a new
+ * approval request needs the reviewers' attention, not the
+ * requester's own. */
+export async function notifyApprovalRequested(
+  organizationId: string,
+  data: ApprovalRequestedEventData
+): Promise<void> {
+  try {
+    const recipients = await resolveRecipients(organizationId);
+
+    await dispatch(
+      organizationId,
+      recipients,
+      "Approval requested",
+      `${data.requesterLabel} requested approval to change ${humanizeResourceAction(data.resourceAction)} on a ${data.entityType}.`,
+      "approval_requested"
+    );
+  } catch (error) {
+    console.error("Failed to create approval_requested notification:", error);
+  }
+}
+
+interface ApprovalDecisionEventData {
+  requestedBy: string;
+  entityType: string;
+  resourceAction: string;
+}
+
+/** Recipient = the original requester specifically, not the reviewer
+ * group — "did MY change get approved" is personal, not org-wide. */
+export async function notifyApprovalApproved(
+  organizationId: string,
+  data: ApprovalDecisionEventData
+): Promise<void> {
+  try {
+    await dispatch(
+      organizationId,
+      new Set([data.requestedBy]),
+      "Your change was approved",
+      `Your requested change to ${humanizeResourceAction(data.resourceAction)} on a ${data.entityType} was approved and applied.`,
+      "approval_approved"
+    );
+  } catch (error) {
+    console.error("Failed to create approval_approved notification:", error);
+  }
+}
+
+export async function notifyApprovalRejected(
+  organizationId: string,
+  data: ApprovalDecisionEventData
+): Promise<void> {
+  try {
+    await dispatch(
+      organizationId,
+      new Set([data.requestedBy]),
+      "Your change was rejected",
+      `Your requested change to ${humanizeResourceAction(data.resourceAction)} on a ${data.entityType} was rejected.`,
+      "approval_rejected"
+    );
+  } catch (error) {
+    console.error("Failed to create approval_rejected notification:", error);
   }
 }
 
