@@ -325,7 +325,7 @@ export default function TeamPage() {
         {canManageTeam && (
           <button
             onClick={() => setShowInviteModal(true)}
-            className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-4 text-white shadow-lg shadow-indigo-950/20 hover:opacity-90"
+            className="rounded-xl bg-gradient-to-r from-primary to-accent px-6 py-4 text-white shadow-lg shadow-black/20 hover:opacity-90"
           >
             + Add Team Member
           </button>
@@ -617,7 +617,7 @@ export default function TeamPage() {
                 <button
                   type="submit"
                   disabled={inviting}
-                  className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg bg-gradient-to-r from-primary to-accent px-5 py-2.5 text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {inviting ? "Adding..." : "Add Member"}
                 </button>

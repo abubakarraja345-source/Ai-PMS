@@ -147,7 +147,7 @@ export default function SetPasswordPage() {
           </p>
           <button
             onClick={() => router.push("/auth/login")}
-            className="mt-6 w-full rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-white hover:opacity-90"
+            className="mt-6 w-full rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-3 text-white hover:opacity-90"
           >
             Go to login
           </button>
@@ -179,7 +179,7 @@ export default function SetPasswordPage() {
             <button
               onClick={keepCurrentPassword}
               disabled={submitting}
-              className="w-full rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-3 text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? "Continuing..." : "Keep my current password"}
             </button>
@@ -257,7 +257,7 @@ export default function SetPasswordPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-3 text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Saving..." : "Set password"}
           </button>

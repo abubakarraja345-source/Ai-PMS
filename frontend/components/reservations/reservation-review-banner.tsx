@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
-import { createClient } from "@/lib/supabase/client";
+import { usePermission } from "@/lib/permission-context";
 
 export default function ReservationReviewBanner({
   reservationId,
@@ -14,36 +14,22 @@ export default function ReservationReviewBanner({
 }) {
   const router = useRouter();
 
+  // Was previously a separate, hardcoded owner/company_admin check via
+  // its own GET /api/organization/members call — stale from before
+  // Phase 7's 6-role permission engine existed, so a Manager (who the
+  // backend's matrix already grants reservations.review to — see
+  // permissions/matrix.ts) saw the "Review Required" flag with no way
+  // to act on it at all. usePermission() reads the same effective-
+  // permissions data the backend itself enforces, so this can't drift
+  // out of sync again.
+  const { can } = usePermission();
+  const canManage = can("reservations.review");
+
   const [needsReview, setNeedsReview] = useState(initialNeedsReview);
-  const [canManage, setCanManage] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState("");
   const [justCleared, setJustCleared] = useState(false);
-
-  useEffect(() => {
-    async function loadRole() {
-      try {
-        const supabase = createClient();
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        const response = await apiFetch("/api/organization/members");
-        const self = (response.data ?? []).find(
-          (member: { userId: string }) => member.userId === session?.user?.id
-        );
-
-        setCanManage(
-          self?.role === "owner" || self?.role === "company_admin"
-        );
-      } catch {
-        setCanManage(false);
-      }
-    }
-
-    loadRole();
-  }, []);
 
   async function handleClear() {
     try {
@@ -99,6 +85,13 @@ export default function ReservationReviewBanner({
 
       {error && (
         <p className="mt-3 text-sm text-red-700">{error}</p>
+      )}
+
+      {!canManage && (
+        <p className="mt-4 text-sm text-amber-800">
+          You don&apos;t have permission to clear this flag — ask an owner,
+          admin, or manager to review it.
+        </p>
       )}
 
       {canManage && (

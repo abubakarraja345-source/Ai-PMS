@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   return (
     <main className="min-h-screen bg-background p-8">
       <div>
-        <h1 className="bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-3xl font-bold text-transparent">
+        <h1 className="bg-gradient-to-r from-primary to-accent bg-clip-text text-3xl font-bold text-transparent">
           Welcome to Hostly PMS Pro
         </h1>
 

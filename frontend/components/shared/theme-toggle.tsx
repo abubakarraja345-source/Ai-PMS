@@ -11,12 +11,24 @@ const OPTIONS = [
 ] as const;
 
 /**
- * Light/Dark/System toggle for the sidebar. Renders a stable
- * placeholder until mounted — `next-themes`' resolved value isn't
- * known on the server, so rendering the real state before hydration
- * would mismatch.
+ * Light/Dark/System toggle. Renders a stable placeholder until
+ * mounted — `next-themes`' resolved value isn't known on the server,
+ * so rendering the real state before hydration would mismatch.
+ *
+ * `variant` picks colors for the surface this is placed ON — "light"/
+ * "dark" both assume the app's own dark sidebar (both were designed
+ * before the "surface" variant existed, when the toggle only ever
+ * lived there); "surface" is for a plain light card background, e.g.
+ * the Settings page — which still uses this app's original hardcoded
+ * slate palette rather than the design-token system, so this variant
+ * intentionally matches that instead of the token-based sidebar
+ * colors.
  */
-export default function ThemeToggle({ variant = "light" }: { variant?: "light" | "dark" }) {
+export default function ThemeToggle({
+  variant = "light",
+}: {
+  variant?: "light" | "dark" | "surface";
+}) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -25,9 +37,19 @@ export default function ThemeToggle({ variant = "light" }: { variant?: "light" |
   }, []);
 
   const trackClasses =
-    variant === "dark"
+    variant === "surface"
+      ? "border-slate-200 bg-slate-50"
+      : variant === "dark"
       ? "border-white/10 bg-white/5"
       : "border-sidebar-border bg-white/5";
+
+  const activeClasses =
+    variant === "surface" ? "bg-slate-900 text-white" : "bg-sidebar-primary text-white";
+
+  const inactiveClasses =
+    variant === "surface"
+      ? "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+      : "text-slate-400 hover:bg-white/10 hover:text-white";
 
   if (!mounted) {
     return <div className={`h-9 w-full animate-pulse rounded-lg border ${trackClasses}`} />;
@@ -53,9 +75,7 @@ export default function ThemeToggle({ variant = "light" }: { variant?: "light" |
             title={option.label}
             onClick={() => setTheme(option.value)}
             className={`flex flex-1 items-center justify-center rounded-md py-1.5 transition ${
-              active
-                ? "bg-sidebar-primary text-white"
-                : "text-slate-400 hover:bg-white/10 hover:text-white"
+              active ? activeClasses : inactiveClasses
             }`}
           >
             <Icon size={14} />

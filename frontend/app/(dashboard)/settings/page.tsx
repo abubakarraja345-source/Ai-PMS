@@ -7,11 +7,11 @@ import { createClient } from "@/lib/supabase/client";
 import { getCurrencyMeta } from "@/lib/currency";
 import CurrencyPickerModal from "@/components/shared/currency-picker-modal";
 import CurrencyDisplayCard from "@/components/shared/currency-display-card";
-import CurrencySelect from "@/components/shared/currency-select";
 import ConfirmDialog from "@/components/shared/confirm-dialog";
 import { useToast } from "@/components/shared/toast";
-import ExchangeRatesTable from "@/components/settings/exchange-rates-table";
 import ApprovalSettingsSection from "@/components/settings/approval-settings-section";
+import ThemeToggle from "@/components/shared/theme-toggle";
+import ColorThemeToggle from "@/components/shared/color-theme-toggle";
 
 interface OrganizationSettings {
   name: string;
@@ -21,9 +21,6 @@ interface OrganizationSettings {
   checkInTime: string | null;
   checkOutTime: string | null;
   guestMessageTemplate: string | null;
-  baseCurrency: string;
-  displayCurrency: string;
-  exchangeRateMode: "auto" | "manual";
   updatedAt: string | null;
 }
 
@@ -35,9 +32,6 @@ type FormState = {
   checkInTime: string;
   checkOutTime: string;
   guestMessageTemplate: string;
-  baseCurrency: string;
-  displayCurrency: string;
-  exchangeRateMode: "auto" | "manual";
 };
 
 function toForm(settings: OrganizationSettings): FormState {
@@ -49,9 +43,6 @@ function toForm(settings: OrganizationSettings): FormState {
     checkInTime: settings.checkInTime ?? "",
     checkOutTime: settings.checkOutTime ?? "",
     guestMessageTemplate: settings.guestMessageTemplate ?? "",
-    baseCurrency: settings.baseCurrency,
-    displayCurrency: settings.displayCurrency,
-    exchangeRateMode: settings.exchangeRateMode,
   };
 }
 
@@ -173,12 +164,6 @@ export default function SettingsPage() {
       if (form.guestMessageTemplate !== original.guestMessageTemplate)
         payload.guest_message_template =
           form.guestMessageTemplate || null;
-      if (form.baseCurrency !== original.baseCurrency)
-        payload.base_currency = form.baseCurrency;
-      if (form.displayCurrency !== original.displayCurrency)
-        payload.display_currency = form.displayCurrency;
-      if (form.exchangeRateMode !== original.exchangeRateMode)
-        payload.exchange_rate_mode = form.exchangeRateMode;
 
       const response = await apiFetch("/api/organization/settings", {
         method: "PATCH",
@@ -301,6 +286,32 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Appearance — personal, not saved to the organization (each
+            teammate can pick their own); persisted client-side via
+            next-themes, same as the sidebar's Light/Dark/System
+            toggle this duplicates for discoverability. */}
+        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-900">Appearance</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Personal preference — only affects how the app looks for you.
+          </p>
+
+          <div className="mt-5">
+            <p className="mb-2 text-sm font-medium text-slate-700">Mode</p>
+            <div className="max-w-xs">
+              <ThemeToggle variant="surface" />
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <p className="mb-2 text-sm font-medium text-slate-700">Color theme</p>
+            <p className="mb-3 text-xs text-slate-400">
+              Applies in light mode — dark mode always looks the same regardless.
+            </p>
+            <ColorThemeToggle />
+          </div>
+        </section>
+
         {/* Organization */}
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">
@@ -419,88 +430,6 @@ export default function SettingsPage() {
           onChange={(code) => updateField("currency", code)}
           onClose={() => setShowCurrencyPicker(false)}
         />
-
-        {/* Multi-Currency Conversion */}
-        <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 p-6">
-            <h2 className="text-xl font-semibold text-slate-900">
-              Multi-Currency Conversion
-            </h2>
-            <p className="mt-1 max-w-lg text-sm text-slate-500">
-              Reservations booked in other currencies are converted into
-              your base currency for consolidated reporting — original
-              amounts and currencies are always kept too, never overwritten.
-            </p>
-          </div>
-
-          <div className="grid gap-6 p-6 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Base Currency
-              </label>
-              <CurrencySelect
-                value={form.baseCurrency}
-                disabled={!canEdit}
-                onChange={(code) => updateField("baseCurrency", code)}
-              />
-              <p className="mt-2 text-xs text-slate-500">
-                Every reservation amount is converted into this currency
-                for reports.
-              </p>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Display Currency
-              </label>
-              <CurrencySelect
-                value={form.displayCurrency}
-                disabled={!canEdit}
-                onChange={(code) => updateField("displayCurrency", code)}
-              />
-              <p className="mt-2 text-xs text-slate-500">
-                A viewing preference only — never stored on any
-                reservation.
-              </p>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-100 px-6 py-5">
-            <p className="text-sm font-medium text-slate-700">
-              Exchange Rate Mode
-            </p>
-
-            <div className="mt-3 inline-flex rounded-xl border border-slate-200 p-1">
-              {(["auto", "manual"] as const).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  disabled={!canEdit}
-                  onClick={() => updateField("exchangeRateMode", option)}
-                  className={`rounded-lg px-4 py-2 text-sm font-medium capitalize transition disabled:cursor-not-allowed ${
-                    form.exchangeRateMode === option
-                      ? "bg-slate-900 text-white"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-
-            <p className="mt-2 text-xs text-slate-500">
-              {form.exchangeRateMode === "auto"
-                ? "Rates are fetched automatically from a public rate service and cached for a few hours."
-                : "Rates are only ever the values an owner or company admin enters below."}
-            </p>
-          </div>
-
-          <ExchangeRatesTable
-            baseCurrency={form.baseCurrency}
-            mode={form.exchangeRateMode}
-            canEdit={canEdit}
-          />
-        </section>
 
         {/* Guest Experience */}
         <section className="mt-6 mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

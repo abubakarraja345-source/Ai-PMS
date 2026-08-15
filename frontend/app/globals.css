@@ -53,44 +53,45 @@
 }
 
 /*
- * Phase 7.6 design tokens — indigo/violet primary, teal secondary,
- * amber accent, emerald/amber/rose status colors. Replaces the
- * previously-unused shadcn grayscale scaffold (nothing referenced
- * --color-primary/--color-accent/etc. before this checkpoint — every
- * existing page uses hardcoded Tailwind slate/blue/emerald classes
- * directly) so these tokens now carry real meaning for the surfaces
- * that consume them: sidebar, topbar, Dashboard, Team, and the Super
- * Admin section. Untouched pages keep their hardcoded classes and are
- * unaffected by this token change.
+ * Design tokens. Light-mode values below are the "Urban Slate" color
+ * theme (see the named-theme block further down) — the default was
+ * changed from the original indigo/violet scaffold to this calmer
+ * blue-slate/mauve palette per direct feedback. Status colors
+ * (destructive/success/warning) and the sidebar's fixed dark-navy
+ * tokens are deliberately NOT part of any color theme — they carry
+ * semantic meaning (or, for the sidebar, a fixed premium-dark
+ * identity) that shouldn't shift with aesthetic preference, so every
+ * theme below only overrides background/foreground/card/primary/
+ * secondary/accent/border/chart tokens.
  */
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f6f6f7;
+  --foreground: #26252a;
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #26252a;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #4f46e5;
+  --popover-foreground: #26252a;
+  --primary: #5b6b85;
   --primary-foreground: #ffffff;
-  --secondary: #0d9488;
+  --secondary: #8d7a6e;
   --secondary-foreground: #ffffff;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #f59e0b;
-  --accent-foreground: #1e293b;
+  --muted: #eeeef0;
+  --muted-foreground: #6b6a70;
+  --accent: #6b7c98;
+  --accent-foreground: #1f2430;
   --destructive: #e11d48;
   --success: #059669;
   --success-foreground: #ffffff;
   --warning: #d97706;
   --warning-foreground: #ffffff;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #6366f1;
-  --chart-1: #4f46e5;
-  --chart-2: #0d9488;
-  --chart-3: #f59e0b;
-  --chart-4: #e11d48;
-  --chart-5: #8b5cf6;
+  --border: #e3e2e5;
+  --input: #e3e2e5;
+  --ring: #5b6b85;
+  --chart-1: #5b6b85;
+  --chart-2: #ab978c;
+  --chart-3: #7b7f8a;
+  --chart-4: #bc7b6f;
+  --chart-5: #3a4a5e;
   --radius: 0.75rem;
   --sidebar: #0b1120;
   --sidebar-foreground: #e2e8f0;
@@ -100,6 +101,139 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: #6366f1;
+}
+
+/*
+ * Named color themes — light mode only (see the `:not(.dark)` guard
+ * on each block). Dark mode always uses the single indigo/violet-on-
+ * navy palette below (.dark), regardless of which of these is
+ * selected; see components/shared/color-theme-toggle.tsx for the
+ * picker and components/shared/color-theme-provider.tsx for how
+ * `data-color-theme` gets onto <html>.
+ */
+:root[data-color-theme="urban-slate"]:not(.dark) {
+  --background: #f6f6f7;
+  --foreground: #26252a;
+  --card: #ffffff;
+  --card-foreground: #26252a;
+  --popover: #ffffff;
+  --popover-foreground: #26252a;
+  --primary: #5b6b85;
+  --primary-foreground: #ffffff;
+  --secondary: #8d7a6e;
+  --secondary-foreground: #ffffff;
+  --muted: #eeeef0;
+  --muted-foreground: #6b6a70;
+  --accent: #6b7c98;
+  --accent-foreground: #1f2430;
+  --border: #e3e2e5;
+  --input: #e3e2e5;
+  --ring: #5b6b85;
+  --chart-1: #5b6b85;
+  --chart-2: #ab978c;
+  --chart-3: #7b7f8a;
+  --chart-4: #bc7b6f;
+  --chart-5: #3a4a5e;
+}
+
+:root[data-color-theme="ink-wash"]:not(.dark) {
+  --background: #fcfcfb;
+  --foreground: #252525;
+  --card: #ffffff;
+  --card-foreground: #252525;
+  --popover: #ffffff;
+  --popover-foreground: #252525;
+  --primary: #3a3a3a;
+  --primary-foreground: #ffffff;
+  --secondary: #7d7d7d;
+  --secondary-foreground: #ffffff;
+  --muted: #f1f1ef;
+  --muted-foreground: #6b6b6b;
+  --accent: #545454;
+  --accent-foreground: #ffffff;
+  --border: #e2e2e0;
+  --input: #e2e2e0;
+  --ring: #3a3a3a;
+  --chart-1: #3a3a3a;
+  --chart-2: #7d7d7d;
+  --chart-3: #545454;
+  --chart-4: #a8a8a6;
+  --chart-5: #cfcfcf;
+}
+
+:root[data-color-theme="neutral-elegance"]:not(.dark) {
+  --background: #fffaf4;
+  --foreground: #4a3323;
+  --card: #ffffff;
+  --card-foreground: #4a3323;
+  --popover: #ffffff;
+  --popover-foreground: #4a3323;
+  --primary: #8a6c53;
+  --primary-foreground: #ffffff;
+  --secondary: #ab9583;
+  --secondary-foreground: #ffffff;
+  --muted: #f7efe4;
+  --muted-foreground: #7a6a5a;
+  --accent: #e0b088;
+  --accent-foreground: #4a3323;
+  --border: #ecdfd0;
+  --input: #ecdfd0;
+  --ring: #8a6c53;
+  --chart-1: #8a6c53;
+  --chart-2: #ab978c;
+  --chart-3: #cba57e;
+  --chart-4: #664930;
+  --chart-5: #d9c2a8;
+}
+
+:root[data-color-theme="driftwood-pearl"]:not(.dark) {
+  --background: #faf7f5;
+  --foreground: #3a2a26;
+  --card: #ffffff;
+  --card-foreground: #3a2a26;
+  --popover: #ffffff;
+  --popover-foreground: #3a2a26;
+  --primary: #a06456;
+  --primary-foreground: #ffffff;
+  --secondary: #5c7688;
+  --secondary-foreground: #ffffff;
+  --muted: #f2ece9;
+  --muted-foreground: #7a6a64;
+  --accent: #e4a499;
+  --accent-foreground: #3a2a26;
+  --border: #e6ddd8;
+  --input: #e6ddd8;
+  --ring: #a06456;
+  --chart-1: #a06456;
+  --chart-2: #5c7688;
+  --chart-3: #5a322a;
+  --chart-4: #e4a499;
+  --chart-5: #718a9e;
+}
+
+:root[data-color-theme="amber-walnut"]:not(.dark) {
+  --background: #fdfaf7;
+  --foreground: #3a2f27;
+  --card: #ffffff;
+  --card-foreground: #3a2f27;
+  --popover: #ffffff;
+  --popover-foreground: #3a2f27;
+  --primary: #a85a30;
+  --primary-foreground: #ffffff;
+  --secondary: #a68a68;
+  --secondary-foreground: #ffffff;
+  --muted: #f6efe6;
+  --muted-foreground: #7a6a5a;
+  --accent: #c8906d;
+  --accent-foreground: #3a2f27;
+  --border: #ecdfd0;
+  --input: #ecdfd0;
+  --ring: #a85a30;
+  --chart-1: #a85a30;
+  --chart-2: #a68a68;
+  --chart-3: #4a413c;
+  --chart-4: #c8906d;
+  --chart-5: #ccb499;
 }
 
 .dark {

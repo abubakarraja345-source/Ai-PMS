@@ -20,6 +20,7 @@ import { ReservationListItem } from "../modules/reservations/types";
 import { computeConnectionHealth } from "../modules/integrations/health";
 import { ConnectionHealth } from "../modules/integrations/types";
 import { resolvePropertyScope } from "../modules/permissions/propertyScope";
+import { getOrganizationSettings } from "../modules/settings/service";
 
 const router = Router();
 
@@ -199,7 +200,10 @@ function buildEmptyDashboardSummary(today: string) {
         }
       | { type: "guest_created"; id: string; created_at: string; guest: string }
     >,
-    revenue: { byCurrency: [] as { currency: string; total: number; count: number }[] },
+    revenue: {
+      byCurrency: [] as { currency: string; total: number; count: number; totalBase: number }[],
+      baseCurrency: "USD",
+    },
     occupancy: { occupiedProperties: 0, activeProperties: 0, occupancyRate: 0 },
     cleaning: { total: 0, pending: 0, inProgress: 0 },
     maintenance: { total: 0, open: 0, inProgress: 0, urgent: 0 },
@@ -271,10 +275,28 @@ export async function getDashboardSummary(
 
       let revenueQuery = supabase
         .from("reservations")
-        .select("total_amount, currency")
+        .select("total_amount, currency, amount_base")
         .eq("organization_id", organizationId)
         .in("status", ["confirmed", "completed"]);
       if (scoped) revenueQuery = revenueQuery.in("property_id", scoped);
+
+      // Org's base currency — lets the revenue-by-currency cards show a
+      // "≈ converted" line using each reservation's own amount_base
+      // snapshot (computed once at booking time, see reservations/
+      // service.ts's addReservation) rather than re-converting live,
+      // which would drift from what was actually charged.
+      //
+      // Deliberately getOrganizationSettings() (the settings table's
+      // base_currency, falling back to its own currency column), NOT
+      // a direct `organizations.currency` lookup — caught live: those
+      // are two different, independent columns (see settings/
+      // service.ts's own comment on why they're kept separate).
+      // addReservation computes amount_base against
+      // getOrganizationSettings()'s baseCurrency specifically, so
+      // reading anything else here produces a baseCurrency that
+      // doesn't match what was actually converted — the exact bug
+      // that showed up as "≈ PKR 0.00" for a $356 reservation.
+      const organizationSettingsPromise = getOrganizationSettings(organizationId);
 
       let cleaningTasksQuery = supabase
         .from("cleaning_tasks")
@@ -301,6 +323,7 @@ export async function getDashboardSummary(
         reviewRequiredResult,
         activeAndUpcoming,
         revenueResult,
+        organizationSettings,
         recentReservations,
         recentGuestsResult,
         totalGuestsResult,
@@ -322,6 +345,7 @@ export async function getDashboardSummary(
         ),
 
         revenueQuery,
+        organizationSettingsPromise,
 
         findRecentReservations(organizationId, 5, scoped ?? undefined),
 
@@ -500,9 +524,11 @@ export async function getDashboardSummary(
             ) / 10
           : 0;
 
+      const baseCurrency = organizationSettings.baseCurrency;
+
       const revenueByCurrency = new Map<
         string,
-        { total: number; count: number }
+        { total: number; count: number; totalBase: number }
       >();
 
       for (const row of revenueResult.data ?? []) {
@@ -511,20 +537,31 @@ export async function getDashboardSummary(
         const currency = row.currency ?? "USD";
         const existing = revenueByCurrency.get(
           currency
-        ) ?? { total: 0, count: 0 };
+        ) ?? { total: 0, count: 0, totalBase: 0 };
 
         existing.total += row.total_amount;
         existing.count += 1;
+        // amount_base is only populated when a conversion actually
+        // happened (see addReservation) — when a reservation's own
+        // currency already IS the org's base currency, total_amount
+        // already IS the base-currency amount, so that's the fallback
+        // rather than treating a missing snapshot as 0.
+        existing.totalBase +=
+          row.amount_base ?? (currency === baseCurrency ? row.total_amount : 0);
 
         revenueByCurrency.set(currency, existing);
       }
 
       const revenue = Array.from(
         revenueByCurrency.entries()
-      ).map(([currency, { total, count }]) => ({
+      ).map(([currency, { total, count, totalBase }]) => ({
         currency,
         total: Math.round(total * 100) / 100,
         count,
+        // Only meaningful (and only ever shown by the frontend) when
+        // this currency differs from baseCurrency below — equal to
+        // `total` itself when it doesn't.
+        totalBase: Math.round(totalBase * 100) / 100,
       }));
 
       const recentActivity = [
@@ -582,6 +619,7 @@ export async function getDashboardSummary(
         recentActivity,
         revenue: {
           byCurrency: revenue,
+          baseCurrency,
         },
         occupancy: {
           occupiedProperties,

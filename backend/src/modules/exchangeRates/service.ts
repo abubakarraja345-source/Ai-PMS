@@ -157,6 +157,78 @@ async function fetchLiveRate(
   }
 }
 
+/**
+ * In-process cache for the general-purpose calculator (see
+ * convertLiveAmount below) — deliberately separate from the
+ * organization-scoped `exchange_rates` DB table above: that table's
+ * rows are an accounting-relevant "what rate applied to this booking"
+ * record with a source (auto/manual) an owner configures, while a
+ * calculator query isn't tied to any organization or reservation at
+ * all. Keyed by "FROM" currency alone (matching fetchLiveRate's own
+ * shape — one API call returns rates to every currency at once), same
+ * TTL as the org-scoped cache.
+ */
+const liveRateCache = new Map<string, { rates: Record<string, number> | null; fetchedAt: number }>();
+
+/**
+ * Converts an amount between any two supported currencies using a
+ * live rate — the backend for the floating currency calculator
+ * (frontend/components/shared/currency-calculator.tsx). Not tied to
+ * any organization's exchange_rate_mode/base currency; always live
+ * (short-TTL cached), for anyone signed in. Returns null if the rate
+ * can't be resolved (network/API failure) — callers must never
+ * fabricate a rate.
+ */
+export async function convertLiveAmount(
+  amount: number,
+  fromCurrency: string,
+  toCurrency: string
+): Promise<{ rate: number; converted: number } | null> {
+  if (fromCurrency === toCurrency) {
+    return { rate: 1, converted: Math.round(amount * 100) / 100 };
+  }
+
+  const cached = liveRateCache.get(fromCurrency);
+  const isFresh = cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS;
+
+  let rates = isFresh ? cached!.rates : null;
+
+  if (!rates) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(
+        `https://open.er-api.com/v6/latest/${fromCurrency}`,
+        { signal: controller.signal }
+      );
+
+      if (response.ok) {
+        const data = (await response.json()) as {
+          result?: string;
+          rates?: Record<string, number>;
+        };
+
+        rates = data.result === "success" ? data.rates ?? null : null;
+      }
+    } catch {
+      rates = null;
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    liveRateCache.set(fromCurrency, { rates, fetchedAt: Date.now() });
+  }
+
+  const rate = rates?.[toCurrency];
+
+  if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) {
+    return null;
+  }
+
+  return { rate, converted: Math.round(amount * rate * 100) / 100 };
+}
+
 export async function setManualRate(
   organizationId: string,
   orgBaseCurrency: string,

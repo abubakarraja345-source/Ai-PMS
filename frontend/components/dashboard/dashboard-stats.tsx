@@ -91,7 +91,9 @@ interface DashboardSummary {
       currency: string;
       total: number;
       count: number;
+      totalBase: number;
     }[];
+    baseCurrency: string;
   };
   occupancy: {
     occupiedProperties: number;
@@ -474,41 +476,54 @@ export default function DashboardStats() {
             </div>
           ) : (
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {revenue.byCurrency.map((entry, index) => (
-                <div
-                  key={entry.currency}
-                  className={`relative overflow-hidden rounded-xl border pl-6 pr-5 py-5 transition hover:shadow-sm ${
-                    index === 0
-                      ? "border-primary/20 bg-primary/5"
-                      : "border-border bg-muted/40"
-                  }`}
-                >
-                  <span
-                    className={`absolute inset-y-0 left-0 w-1 ${
-                      index === 0 ? "bg-primary" : "bg-border"
-                    }`}
-                  />
+              {revenue.byCurrency.map((entry, index) => {
+                const isForeign = entry.currency !== revenue.baseCurrency;
 
-                  <div className="flex items-center justify-between">
-                    <CurrencyBadge
-                      code={entry.currency}
-                      variant={index === 0 ? "financial" : "compact"}
+                return (
+                  <div
+                    key={entry.currency}
+                    className={`relative overflow-hidden rounded-xl border pl-6 pr-5 py-5 transition hover:shadow-sm ${
+                      index === 0
+                        ? "border-primary/20 bg-primary/5"
+                        : "border-border bg-muted/40"
+                    }`}
+                  >
+                    <span
+                      className={`absolute inset-y-0 left-0 w-1 ${
+                        index === 0 ? "bg-primary" : "bg-border"
+                      }`}
                     />
 
-                    <span className="text-xs text-muted-foreground/80">
-                      {entry.count} reservation
-                      {entry.count === 1 ? "" : "s"}
-                    </span>
-                  </div>
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                      <div className="min-w-0">
+                        <CurrencyBadge code={entry.currency} variant="compact" />
+                      </div>
 
-                  <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">
-                    {formatMoney(
-                      entry.total,
-                      entry.currency
+                      <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground/80">
+                        {entry.count} reservation
+                        {entry.count === 1 ? "" : "s"}
+                      </span>
+                    </div>
+
+                    <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">
+                      {formatMoney(entry.total, entry.currency)}
+                    </p>
+
+                    {/* Never re-converted live — this is the sum of
+                        each reservation's own amount_base snapshot
+                        (computed once at booking time), so it reflects
+                        what was actually converted then, not today's
+                        rate. Only shown for a currency that isn't
+                        already the org's base currency — otherwise
+                        it's a redundant "≈ same number" line. */}
+                    {isForeign && (
+                      <p className="mt-1 text-xs text-muted-foreground/80">
+                        ≈ {formatMoney(entry.totalBase, revenue.baseCurrency)}
+                      </p>
                     )}
-                  </p>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
 

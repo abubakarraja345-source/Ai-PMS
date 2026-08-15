@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { OrganizationRequest } from "../../middleware/organization.middleware";
 import { getOrganizationSettings } from "../settings/service";
-import { listOrganizationRates, setManualRate } from "./service";
+import { listOrganizationRates, setManualRate, convertLiveAmount } from "./service";
 import { isSupportedCurrency, SUPPORTED_CURRENCY_CODES } from "../../constants/currency";
 
 function isKnownError(error: unknown): error is Error {
@@ -140,6 +140,63 @@ export async function setExchangeRateController(
     return res.status(500).json({
       success: false,
       error: "Unable to set exchange rate",
+    });
+  }
+}
+
+/**
+ * GET /api/organization/exchange-rates/convert?amount=&from=&to= — the
+ * floating calculator's endpoint. Any authenticated org member; not
+ * tied to the organization's own base-currency/exchange-rate-mode
+ * settings at all — this is a general-purpose live conversion, always
+ * "auto", between any two currencies this app supports.
+ */
+export async function convertLiveController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  try {
+    if (!req.organization) {
+      return res.status(403).json({
+        success: false,
+        error: "Organization context is required",
+      });
+    }
+
+    const amount = Number(req.query.amount);
+    const from = String(req.query.from ?? "").trim().toUpperCase();
+    const to = String(req.query.to ?? "").trim().toUpperCase();
+
+    if (!Number.isFinite(amount) || amount < 0) {
+      return res.status(400).json({ success: false, error: "amount must be a non-negative number" });
+    }
+
+    if (!isSupportedCurrency(from) || !isSupportedCurrency(to)) {
+      return res.status(400).json({
+        success: false,
+        error: `from/to must be one of: ${SUPPORTED_CURRENCY_CODES.join(", ")}`,
+      });
+    }
+
+    const result = await convertLiveAmount(amount, from, to);
+
+    if (!result) {
+      return res.status(502).json({
+        success: false,
+        error: "Live exchange rate is temporarily unavailable — please try again shortly",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: { amount, from, to, rate: result.rate, converted: result.converted },
+    });
+  } catch (error) {
+    console.error("Live currency conversion error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Unable to convert currency",
     });
   }
 }
