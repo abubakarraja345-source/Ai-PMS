@@ -49,7 +49,7 @@ export async function buildIcsFeedForToken(
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Hostly PMS//Calendar Export//EN",
+    "PRODID:-//Hostly PMS Pro//Calendar Export//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
   ];

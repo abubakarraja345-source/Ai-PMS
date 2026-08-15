@@ -9,6 +9,9 @@ import {
   enterOrganization,
   exitOrganization,
   listPlatformAdminAuditLog,
+  getPlatformCalendar,
+  getPlatformReports,
+  getPlatformInsights,
   PlatformAdminSessionSigningNotConfiguredError,
 } from "./service";
 
@@ -204,5 +207,54 @@ export async function listPlatformAuditLogController(req: PlatformAdminRequest, 
   } catch (error) {
     console.error("Platform audit log error:", error);
     return res.status(500).json({ success: false, error: "Unable to load platform audit log" });
+  }
+}
+
+/**
+ * GET /api/platform-admin/calendar?start=...&end=...
+ * Both required — same "no default range" posture as the org-level
+ * calendar endpoint, since silently defaulting a cross-org query
+ * risks an unexpectedly huge response.
+ */
+export async function getPlatformCalendarController(req: PlatformAdminRequest, res: Response) {
+  try {
+    if (!requirePlatformAdminContext(req, res)) return;
+
+    const start = typeof req.query.start === "string" ? req.query.start : "";
+    const end = typeof req.query.end === "string" ? req.query.end : "";
+
+    if (!start || !end) {
+      return res.status(400).json({ success: false, error: "start and end are required" });
+    }
+
+    const data = await getPlatformCalendar(start, end);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Platform calendar error:", error);
+    return res.status(500).json({ success: false, error: "Unable to load platform calendar" });
+  }
+}
+
+export async function getPlatformReportsController(req: PlatformAdminRequest, res: Response) {
+  try {
+    if (!requirePlatformAdminContext(req, res)) return;
+
+    const data = await getPlatformReports();
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Platform reports error:", error);
+    return res.status(500).json({ success: false, error: "Unable to load platform reports" });
+  }
+}
+
+export async function getPlatformInsightsController(req: PlatformAdminRequest, res: Response) {
+  try {
+    if (!requirePlatformAdminContext(req, res)) return;
+
+    const data = await getPlatformInsights();
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Platform insights error:", error);
+    return res.status(500).json({ success: false, error: "Unable to load platform insights" });
   }
 }

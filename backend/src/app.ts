@@ -78,7 +78,7 @@ app.use(apiRateLimiter);
 app.get("/health", (req, res) => {
   res.json({
     status: "OK",
-    server: "Hostly Backend",
+    server: "Hostly PMS Pro Backend",
     version: "1.0.0",
   });
 });

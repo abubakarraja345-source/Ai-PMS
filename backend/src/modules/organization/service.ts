@@ -1,3 +1,7 @@
+import crypto from "crypto";
+import { createClient } from "@supabase/supabase-js";
+
+import { env } from "../../config/env";
 import {
   findMembersByOrganization,
   findMemberById,
@@ -11,7 +15,12 @@ import {
 } from "./repository";
 
 import { OrganizationMember } from "./types";
-import { CreateOrganizationInput, validateCreateOrganization } from "./validation";
+import {
+  CreateOrganizationInput,
+  RegisterOrganizationInput,
+  validateCreateOrganization,
+  validateRegisterOrganization,
+} from "./validation";
 import { supabase } from "../../config/supabase";
 import { isOrganizationRole } from "../../middleware/organization.middleware";
 
@@ -155,6 +164,231 @@ export async function createOrganization(
   }
 
   return organization;
+}
+
+/**
+ * Looks up an existing Supabase auth user by email. supabase-js's
+ * admin API has no direct "get user by email" call, so this pages
+ * through admin.listUsers() — the same "good enough at this
+ * product's scale" tradeoff already made by resolveEmail/listMembers
+ * below (which do an N-lookup per organization's member list rather
+ * than maintaining a denormalized email column). Used by both
+ * registration (reject a duplicate email with a friendly message
+ * instead of a raw Supabase error) and team-member provisioning
+ * (reuse an existing account instead of trying to create a second
+ * one with the same email, which Supabase would reject anyway).
+ */
+export async function findAuthUserByEmail(
+  email: string
+): Promise<{ id: string; email: string | null } | null> {
+  const normalized = email.trim().toLowerCase();
+  const perPage = 1000;
+
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    const match = data.users.find(
+      (u) => u.email?.toLowerCase() === normalized
+    );
+
+    if (match) {
+      return { id: match.id, email: match.email ?? null };
+    }
+
+    if (data.users.length < perPage) {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * A random, human-typeable temporary password for newly-provisioned
+ * team-member accounts — crypto.randomBytes (never Math.random), a
+ * charset with ambiguous characters (0/O, 1/l/I) removed since this
+ * is emailed as plain text and may need to be typed by hand, and long
+ * enough (16 chars from a 57-character set) to be a strong password
+ * on its own even though the recipient is always forced to change it
+ * before doing anything else (see the invited account's
+ * must_change_password user_metadata flag).
+ */
+export function generateTempPassword(): string {
+  const charset =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+  const bytes = crypto.randomBytes(16);
+  let password = "";
+
+  for (const byte of bytes) {
+    password += charset[byte % charset.length];
+  }
+
+  return password;
+}
+
+/**
+ * Self-service registration: creates the owner's password-based auth
+ * account and their organization together, atomically from the
+ * caller's point of view. Public (no session exists yet) — unlike
+ * createOrganization above (onboarding, requires an existing
+ * session), this is the very first step for a brand-new user.
+ *
+ * Ordering matters for the rollback story: the auth account is
+ * created first since it's the thing every later step depends on: if
+ * organization creation fails, the just-created auth account is
+ * deleted so the email is immediately retryable (no orphaned account
+ * silently blocking `findAuthUserByEmail` on a later attempt). If the
+ * membership insert fails after the organization was created, both
+ * the organization AND the auth account are rolled back — mirroring
+ * createOrganization's existing org-only rollback, extended one level
+ * further since this flow owns the account too.
+ */
+export async function registerOrganization(rawInput: unknown) {
+  const input: RegisterOrganizationInput =
+    validateRegisterOrganization(rawInput);
+
+  const existing = await findAuthUserByEmail(input.email);
+
+  if (existing) {
+    throw new Error(
+      "An account with this email already exists — please log in instead"
+    );
+  }
+
+  const { data: created, error: createUserError } =
+    await supabase.auth.admin.createUser({
+      email: input.email,
+      password: input.password,
+      email_confirm: true,
+      user_metadata: { full_name: input.fullName },
+    });
+
+  if (createUserError || !created?.user) {
+    throw new Error(
+      createUserError?.message || "Unable to create your account"
+    );
+  }
+
+  const userId = created.user.id;
+
+  try {
+    const slug = await generateUniqueSlug(input.organizationName);
+
+    const organization = await insertOrganization({
+      name: input.organizationName,
+      slug,
+      country: input.country,
+      timezone: null,
+      email: input.email,
+      phone: input.phone,
+      numberOfListings: input.numberOfListings,
+      propertyTypes: input.propertyTypes,
+      referralSource: input.referralSource,
+    });
+
+    try {
+      await insertMembership(organization.id, userId, "owner");
+    } catch (membershipError) {
+      await deleteOrganizationById(organization.id).catch((cleanupError) => {
+        console.error(
+          "Failed to roll back organization after a failed registration membership insert:",
+          cleanupError
+        );
+      });
+
+      throw membershipError;
+    }
+
+    void logAudit({
+      organizationId: organization.id,
+      actorUserId: userId,
+      actorLabel: input.email,
+      action: "organization.registered",
+      entityType: "organization",
+      entityId: organization.id,
+      metadata: {
+        country: input.country,
+        numberOfListings: input.numberOfListings,
+        propertyTypes: input.propertyTypes,
+        referralSource: input.referralSource,
+      },
+    });
+
+    return { id: organization.id, name: organization.name };
+  } catch (error) {
+    await supabase.auth.admin.deleteUser(userId).catch((cleanupError) => {
+      console.error(
+        "Failed to roll back auth account after a failed registration:",
+        cleanupError
+      );
+    });
+
+    throw error;
+  }
+}
+
+/**
+ * Password login, proxied through our backend rather than called
+ * directly from the frontend against Supabase — the entire point is
+ * giving loginRateLimiter (rateLimiter.ts) a choke point to sit in
+ * front of, which a direct client-side supabase-js call would bypass
+ * entirely. Returns the raw session Supabase issues; the frontend
+ * hydrates its own browser client from it via supabase.auth.setSession,
+ * exactly as if it had signed in directly.
+ *
+ * Deliberately returns the same generic message for "no such email"
+ * and "wrong password" — distinguishing them would let an attacker
+ * enumerate registered emails.
+ *
+ * Critical: this must NOT call signInWithPassword on the shared
+ * `supabase` singleton (config/supabase.ts) — doing so was tried
+ * first and caught live, the hard way. supabase-js wires a client's
+ * `auth` state into every `.from()`/`.rpc()` call made through that
+ * SAME client instance: the moment signInWithPassword succeeds, the
+ * shared client silently starts sending every subsequent request
+ * (from every other module in this process — requireOrganization,
+ * every repository, everything) as that logged-in USER's JWT instead
+ * of the service-role key, which has none of the table grants
+ * `authenticated` has (see "no RLS anywhere; service_role is the only
+ * DB role with any grants" — the architectural invariant this whole
+ * backend depends on). One successful login would have silently
+ * broken every other request in the running process until restart.
+ * A throwaway client, used once and discarded, keeps the shared
+ * singleton's session untouched no matter how many people log in.
+ */
+export async function loginWithPassword(email: string, password: string) {
+  if (typeof email !== "string" || !email.trim()) {
+    throw new Error("Email is required");
+  }
+
+  if (typeof password !== "string" || !password) {
+    throw new Error("Password is required");
+  }
+
+  const scopedClient = createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data, error } = await scopedClient.auth.signInWithPassword({
+    email: email.trim(),
+    password,
+  });
+
+  if (error || !data.session) {
+    throw new Error("Invalid email or password");
+  }
+
+  return {
+    session: data.session,
+    user: data.user,
+  };
 }
 
 /**

@@ -45,6 +45,11 @@ export async function insertOrganization(input: {
   slug: string;
   country: string | null;
   timezone: string | null;
+  email?: string | null;
+  phone?: string | null;
+  numberOfListings?: number | null;
+  propertyTypes?: string[];
+  referralSource?: string | null;
 }) {
   const insertData: Record<string, unknown> = {
     name: input.name,
@@ -53,6 +58,15 @@ export async function insertOrganization(input: {
 
   if (input.country) insertData.country = input.country;
   if (input.timezone) insertData.timezone = input.timezone;
+  if (input.email) insertData.email = input.email;
+  if (input.phone) insertData.phone = input.phone;
+  if (input.numberOfListings !== undefined && input.numberOfListings !== null) {
+    insertData.number_of_listings = input.numberOfListings;
+  }
+  if (input.propertyTypes && input.propertyTypes.length > 0) {
+    insertData.property_types = input.propertyTypes;
+  }
+  if (input.referralSource) insertData.referral_source = input.referralSource;
 
   const { data, error } = await supabase
     .from("organizations")

@@ -16,6 +16,7 @@ export interface AuditLogRow {
  * not an exhaustive wrap of every mutation in the app.
  */
 export const AUDIT_ACTIONS = [
+  "organization.registered",
   "reservation.created",
   "reservation.cancelled",
   "reservation.review_cleared",

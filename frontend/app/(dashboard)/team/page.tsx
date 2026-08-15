@@ -15,7 +15,6 @@ type OrganizationRole =
   | "member"
   | "spectator";
 type InvitableRole = Exclude<OrganizationRole, "owner">;
-type InvitationStatus = "pending" | "accepted" | "revoked" | "expired";
 
 interface Member {
   id: string;
@@ -23,18 +22,6 @@ interface Member {
   email: string | null;
   role: OrganizationRole;
   createdAt: string;
-}
-
-interface Invitation {
-  id: string;
-  email: string;
-  fullName: string | null;
-  role: InvitableRole;
-  status: InvitationStatus;
-  expiresAt: string;
-  invitedBy: string;
-  createdAt: string;
-  acceptedAt: string | null;
 }
 
 interface RoleEffectivePermissions {
@@ -57,19 +44,6 @@ const INVITABLE_ROLES: InvitableRole[] = [
   "spectator",
   "company_admin",
 ];
-
-function getInvitationStatusClasses(status: InvitationStatus) {
-  switch (status) {
-    case "pending":
-      return "bg-warning/10 text-warning border-warning/30";
-    case "accepted":
-      return "bg-success/10 text-success border-success/30";
-    case "revoked":
-      return "bg-destructive/10 text-destructive border-destructive/30";
-    default:
-      return "bg-muted text-muted-foreground border-border";
-  }
-}
 
 function getRoleClasses(role: OrganizationRole) {
   switch (role) {
@@ -121,8 +95,6 @@ export default function TeamPage() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [success, setSuccess] = useState("");
 
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
-
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteFullName, setInviteFullName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
@@ -130,9 +102,6 @@ export default function TeamPage() {
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
 
-  const [resendingId, setResendingId] = useState<string | null>(null);
-  const [revokingId, setRevokingId] = useState<string | null>(null);
-  const [revokeTarget, setRevokeTarget] = useState<Invitation | null>(null);
   const [removeTarget, setRemoveTarget] = useState<Member | null>(null);
 
   // Phase 7.5
@@ -172,18 +141,6 @@ export default function TeamPage() {
       );
     } finally {
       setLoading(false);
-    }
-  }, []);
-
-  const loadInvitations = useCallback(async () => {
-    try {
-      const response = await apiFetch("/api/organization/invitations");
-      setInvitations(response.data ?? []);
-    } catch {
-      // Expected (403) for roles without team.invite — the section
-      // simply doesn't render for them (see canManageTeam below), so
-      // this is not a page-level error.
-      setInvitations([]);
     }
   }, []);
 
@@ -227,11 +184,10 @@ export default function TeamPage() {
 
   useEffect(() => {
     loadMembers();
-    loadInvitations();
     loadRoleMatrix();
     loadAssignments();
     loadPendingApprovals();
-  }, [loadMembers, loadInvitations, loadRoleMatrix, loadAssignments, loadPendingApprovals]);
+  }, [loadMembers, loadRoleMatrix, loadAssignments, loadPendingApprovals]);
 
   async function sendInvitation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -245,7 +201,7 @@ export default function TeamPage() {
       setInviting(true);
       setInviteError("");
 
-      await apiFetch("/api/organization/invitations", {
+      const response = await apiFetch("/api/organization/invitations", {
         method: "POST",
         body: JSON.stringify({
           email: inviteEmail.trim(),
@@ -258,58 +214,22 @@ export default function TeamPage() {
       setInviteFullName("");
       setInviteEmail("");
       setInviteRole("member");
-      setSuccess(`Invitation sent to ${inviteEmail.trim()}.`);
-      await loadInvitations();
+
+      const addedEmail = inviteEmail.trim();
+      setSuccess(
+        response.data?.accountProvisioned
+          ? `${addedEmail} was added and emailed their login details.`
+          : `${addedEmail} was added to the team.`
+      );
+
+      await loadMembers();
+      await loadAssignments();
     } catch (err) {
       setInviteError(
-        err instanceof Error ? err.message : "Failed to send invitation."
+        err instanceof Error ? err.message : "Failed to add team member."
       );
     } finally {
       setInviting(false);
-    }
-  }
-
-  async function resendInvitation(invitationId: string, email: string) {
-    try {
-      setResendingId(invitationId);
-      setError("");
-
-      await apiFetch(`/api/organization/invitations/${invitationId}/resend`, {
-        method: "POST",
-      });
-
-      setSuccess(`Invitation resent to ${email}.`);
-      await loadInvitations();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to resend invitation."
-      );
-    } finally {
-      setResendingId(null);
-    }
-  }
-
-  async function handleRevokeConfirmed() {
-    if (!revokeTarget) return;
-
-    try {
-      setRevokingId(revokeTarget.id);
-      setError("");
-
-      await apiFetch(`/api/organization/invitations/${revokeTarget.id}/revoke`, {
-        method: "POST",
-      });
-
-      setSuccess(`Invitation to ${revokeTarget.email} revoked.`);
-      setRevokeTarget(null);
-      await loadInvitations();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to revoke invitation."
-      );
-      setRevokeTarget(null);
-    } finally {
-      setRevokingId(null);
     }
   }
 
@@ -407,7 +327,7 @@ export default function TeamPage() {
             onClick={() => setShowInviteModal(true)}
             className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-4 text-white shadow-lg shadow-indigo-950/20 hover:opacity-90"
           >
-            + Invite Member
+            + Add Team Member
           </button>
         )}
       </div>
@@ -601,124 +521,17 @@ export default function TeamPage() {
         </div>
       )}
 
-      {canManageTeam && invitations.length > 0 && (
-        <div className="mt-12">
-          <h2 className="text-2xl font-semibold text-foreground">
-            Pending Invitations
-          </h2>
-
-          <div className="mt-5 overflow-x-auto rounded-2xl solid-panel shadow-sm">
-            <table className="w-full min-w-[800px] text-left text-sm">
-              <thead className="border-b border-border bg-muted/50">
-                <tr>
-                  <th className="px-6 py-4 font-medium text-muted-foreground">
-                    Email
-                  </th>
-                  <th className="px-6 py-4 font-medium text-muted-foreground">
-                    Name
-                  </th>
-                  <th className="px-6 py-4 font-medium text-muted-foreground">
-                    Role
-                  </th>
-                  <th className="px-6 py-4 font-medium text-muted-foreground">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 font-medium text-muted-foreground">
-                    Expires
-                  </th>
-                  <th className="px-6 py-4 font-medium text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {invitations.map((invitation) => {
-                  const busy =
-                    resendingId === invitation.id ||
-                    revokingId === invitation.id;
-                  const isPending = invitation.status === "pending";
-
-                  return (
-                    <tr
-                      key={invitation.id}
-                      className="border-b border-border last:border-0"
-                    >
-                      <td className="max-w-[220px] truncate px-6 py-4 font-medium text-foreground">
-                        {invitation.email}
-                      </td>
-
-                      <td className="px-6 py-4 text-foreground/80">
-                        {invitation.fullName ?? "—"}
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span
-                          className={`rounded-full border px-3 py-1 text-xs font-medium ${getRoleClasses(
-                            invitation.role
-                          )}`}
-                        >
-                          {formatRole(invitation.role)}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span
-                          className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${getInvitationStatusClasses(
-                            invitation.status
-                          )}`}
-                        >
-                          {invitation.status}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {formatDate(invitation.expiresAt)}
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() =>
-                              resendInvitation(
-                                invitation.id,
-                                invitation.email
-                              )
-                            }
-                            disabled={!isPending || busy}
-                            className="rounded-lg border border-border px-3 py-2 text-sm text-foreground/80 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {resendingId === invitation.id
-                              ? "Resending..."
-                              : "Resend"}
-                          </button>
-
-                          <button
-                            onClick={() => setRevokeTarget(invitation)}
-                            disabled={!isPending || busy}
-                            className="rounded-lg border border-destructive/30 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {revokingId === invitation.id
-                              ? "Revoking..."
-                              : "Revoke"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
       {showInviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <h2 className="text-xl font-semibold text-foreground">
-              Invite Member
+              Add Team Member
             </h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              They&apos;ll get immediate access — if this is a new email, we
+              generate a password and email it to them.
+            </p>
 
             <form onSubmit={sendInvitation} className="mt-5 space-y-4">
               <div>
@@ -806,7 +619,7 @@ export default function TeamPage() {
                   disabled={inviting}
                   className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {inviting ? "Sending..." : "Send Invitation"}
+                  {inviting ? "Adding..." : "Add Member"}
                 </button>
               </div>
             </form>
@@ -828,21 +641,6 @@ export default function TeamPage() {
         }
         onConfirm={handleRemoveConfirmed}
         onCancel={() => setRemoveTarget(null)}
-      />
-
-      <ConfirmDialog
-        open={!!revokeTarget}
-        title="Revoke invitation?"
-        tone="warning"
-        confirmLabel={revokingId ? "Revoking..." : "Revoke"}
-        description={
-          <>
-            Revoke the invitation to <strong>{revokeTarget?.email}</strong>?
-            The invitation link will stop working.
-          </>
-        }
-        onConfirm={handleRevokeConfirmed}
-        onCancel={() => setRevokeTarget(null)}
       />
 
       {/* Phase 7.5 — Change Role preview: shows exactly what's gained/

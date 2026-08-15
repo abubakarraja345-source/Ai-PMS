@@ -29,6 +29,12 @@ interface PermissionContextValue {
   permissions: string[];
   permissionEffects: Record<string, PermissionEffect>;
   isPlatformAdminViewing: boolean;
+  /** Whether this user holds platform-admin access at all (see
+   * /admin) — distinct from isPlatformAdminViewing, which is only
+   * true while actively "inside" an Enter-Organization read-only
+   * session. Used to show a link into /admin, which otherwise has no
+   * discoverable entry point from the regular dashboard. */
+  isPlatformAdmin: boolean;
   /** true only for "allow" — the common case ("can I show/enable this
    * button"). Backend still enforces everything independently; this
    * is UX only. */
@@ -63,6 +69,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
     permissions: string[];
     permissionEffects: Record<string, PermissionEffect>;
     isPlatformAdminViewing: boolean;
+    isPlatformAdmin: boolean;
   }>({
     organizationId: null,
     organizationName: null,
@@ -71,6 +78,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
     permissions: [],
     permissionEffects: {},
     isPlatformAdminViewing: false,
+    isPlatformAdmin: false,
   });
 
   const load = useCallback(async () => {
@@ -85,6 +93,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
         permissions: response.data?.permissions ?? [],
         permissionEffects: response.data?.permissionEffects ?? {},
         isPlatformAdminViewing: response.data?.isPlatformAdminViewing === true,
+        isPlatformAdmin: response.data?.isPlatformAdmin === true,
       });
 
       setReady(true);

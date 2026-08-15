@@ -15,12 +15,6 @@ function isPublicPath(pathname: string): boolean {
     pathname === "/" ||
     pathname === "/login" ||
     pathname.startsWith("/auth") ||
-    // Public so the page itself can render "please log in" (with the
-    // token preserved) instead of the proxy silently redirecting an
-    // unauthenticated visitor away before they ever see what
-    // invitation they were sent — see
-    // app/invitations/accept/page.tsx.
-    pathname === "/invitations/accept" ||
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico"
   );
@@ -68,6 +62,24 @@ export async function proxy(request: NextRequest) {
 
   if (!isPublicPath(pathname) && !user) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
+  }
+
+  /*
+   * Single choke point for "must set a new password before doing
+   * anything else" — a team member's account is created with this
+   * metadata flag set (see organization/invitations.service.ts), and
+   * the login page's own post-sign-in redirect only covers the
+   * sign-in moment itself. Enforcing it here too means the rule holds
+   * even if they already had a session, typed a URL directly, or
+   * reloaded mid-flow — the same reasoning applied to the platform
+   * admin read-only enforcement (organization.middleware.ts).
+   */
+  if (
+    user?.user_metadata?.must_change_password === true &&
+    pathname !== "/auth/set-password" &&
+    !isPublicPath(pathname)
+  ) {
+    return NextResponse.redirect(new URL("/auth/set-password", request.url));
   }
 
   /*

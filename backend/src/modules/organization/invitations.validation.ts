@@ -88,22 +88,3 @@ export function validateCreateInvitation(
   };
 }
 
-export interface AcceptInvitationInput {
-  token: string;
-}
-
-export function validateAcceptInvitation(
-  input: unknown
-): AcceptInvitationInput {
-  if (!input || typeof input !== "object") {
-    throw new Error("Invalid request body");
-  }
-
-  const data = input as Record<string, unknown>;
-
-  if (typeof data.token !== "string" || !data.token.trim()) {
-    throw new Error("token is required");
-  }
-
-  return { token: data.token.trim() };
-}

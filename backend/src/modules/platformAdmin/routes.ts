@@ -11,6 +11,9 @@ import {
   enterOrganizationController,
   exitOrganizationController,
   listPlatformAuditLogController,
+  getPlatformCalendarController,
+  getPlatformReportsController,
+  getPlatformInsightsController,
 } from "./controller";
 
 const router = Router();
@@ -29,5 +32,8 @@ router.post("/organizations/:orgId/reactivate", reactivateOrganizationController
 router.post("/organizations/:orgId/enter", enterOrganizationController);
 router.post("/organizations/:orgId/exit", exitOrganizationController);
 router.get("/audit-log", listPlatformAuditLogController);
+router.get("/calendar", getPlatformCalendarController);
+router.get("/reports", getPlatformReportsController);
+router.get("/insights", getPlatformInsightsController);
 
 export default router;

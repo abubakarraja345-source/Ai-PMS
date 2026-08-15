@@ -3,7 +3,7 @@ import { Router } from "express";
 import { requireAuth } from "../../middleware/auth.middleware";
 import { requireOrganization } from "../../middleware/organization.middleware";
 import { requirePermission } from "../../middleware/permission.middleware";
-import { invitationRateLimiter } from "../../middleware/rateLimiter";
+import { invitationRateLimiter, registerRateLimiter, loginRateLimiter } from "../../middleware/rateLimiter";
 
 import {
   listMembersController,
@@ -11,15 +11,13 @@ import {
   removeMemberController,
   getMyOrganizationController,
   createOrganizationController,
+  registerOrganizationController,
+  loginController,
 } from "./controller";
 
 import {
   listInvitationsController,
   createInvitationController,
-  resendInvitationController,
-  revokeInvitationController,
-  acceptInvitationController,
-  previewInvitationController,
 } from "./invitations.controller";
 
 import {
@@ -74,19 +72,10 @@ router.get(
  */
 const manageInvitations = requirePermission("team.invite");
 
-// POST /api/organization/invitations/accept
-// Authenticated only, deliberately NOT requireOrganization — the
-// caller may not have an organization yet, which is the whole point.
-// Registered before the /invitations collection routes purely for
-// readability; Express matches this literal path independently of
-// the /invitations/:id/* routes below (no collision either way).
-router.post(
-  "/invitations/accept",
-  requireAuth,
-  acceptInvitationController
-);
-
 // GET /api/organization/invitations
+// A history of team members added via invite (account + membership
+// are both created synchronously by POST below — there is no
+// pending/accept step anymore, so this is a log, not a queue).
 router.get(
   "/invitations",
   requireAuth,
@@ -95,15 +84,9 @@ router.get(
   listInvitationsController
 );
 
-// GET /api/organization/invitations/:token
-// Deliberately public — see previewInvitationController's own comment
-// for why. Registered after the exact-literal "/invitations" list
-// route above so Express never has to disambiguate between them (a
-// bare "/invitations" request always matches the list route; anything
-// with a second path segment falls through to this one).
-router.get("/invitations/:token", previewInvitationController);
-
 // POST /api/organization/invitations
+// Creates (or reuses) the invitee's auth account and their
+// organization membership immediately — see invitations.service.ts.
 router.post(
   "/invitations",
   requireAuth,
@@ -113,31 +96,30 @@ router.post(
   createInvitationController
 );
 
-// POST /api/organization/invitations/:id/resend
-router.post(
-  "/invitations/:id/resend",
-  requireAuth,
-  requireOrganization,
-  manageInvitations,
-  invitationRateLimiter,
-  resendInvitationController
-);
-
-// POST /api/organization/invitations/:id/revoke
-router.post(
-  "/invitations/:id/revoke",
-  requireAuth,
-  requireOrganization,
-  manageInvitations,
-  revokeInvitationController
-);
-
 // POST /api/organization
 // Onboarding only — deliberately gated by requireAuth alone, not
 // requireOrganization, since the whole point is the caller doesn't
 // have one yet. createOrganization (service.ts) itself rejects a
 // caller who already belongs to an organization.
 router.post("/", requireAuth, createOrganizationController);
+
+// POST /api/organization/register
+// Public self-service registration — no session exists yet at all,
+// so this deliberately has no requireAuth. Creates the owner's
+// password-based account and organization together; the frontend
+// signs in with the same credentials immediately after this
+// succeeds. Registered before the catch-all "/" POST route is
+// irrelevant here since Express matches the literal "/register"
+// segment independently, but kept adjacent to it for readability.
+router.post(
+  "/register",
+  registerRateLimiter,
+  registerOrganizationController
+);
+
+// POST /api/organization/login — public. See loginController's own
+// comment for why login is proxied through the backend at all.
+router.post("/login", loginRateLimiter, loginController);
 
 // GET /api/organization/me
 // Resolves the authenticated user's organization context (or the

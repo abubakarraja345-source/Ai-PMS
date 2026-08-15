@@ -18,7 +18,7 @@ export default async function DashboardPage() {
     <main className="min-h-screen bg-background p-8">
       <div>
         <h1 className="bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-3xl font-bold text-transparent">
-          Welcome to AI PMS
+          Welcome to Hostly PMS Pro
         </h1>
 
         <p className="mt-2 text-muted-foreground">

@@ -1,62 +1,33 @@
-import crypto from "crypto";
-
 import { env } from "../../config/env";
+import { supabase } from "../../config/supabase";
 import { EmailService } from "../../services/email.service";
 
 import {
   findInvitationsByOrganization,
-  findInvitationById,
-  findPendingInvitationByEmail,
   insertInvitation,
-  findInvitationByTokenHash,
-  updateInvitationToken,
-  updateInvitationStatus,
-  markInvitationAccepted,
-  findOrganizationById,
 } from "./invitations.repository";
 
 import {
   findMembersByOrganization,
-  findMembershipByUserId,
   insertMembership,
 } from "./repository";
-import { isUniqueViolation, resolveEmail } from "./service";
+import {
+  findAuthUserByEmail,
+  generateTempPassword,
+  isUniqueViolation,
+  resolveEmail,
+} from "./service";
 
 import {
   CreateInvitationInput,
-  validateAcceptInvitation,
   validateCreateInvitation,
 } from "./invitations.validation";
 import { InvitationRowSafe } from "./invitations.types";
 import { logAudit } from "../auditLog/service";
 
-const DEFAULT_EXPIRY_DAYS = 7;
-
-function invitationExpiryDays(): number {
-  const raw = Number(process.env.INVITATION_EXPIRY_DAYS);
-  return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_EXPIRY_DAYS;
-}
-
-/** crypto.randomBytes, never Math.random/user id/email — a predictable
- * token would let an attacker guess or brute-force their way into an
- * organization they weren't invited to. */
-function generateToken(): string {
-  return crypto.randomBytes(32).toString("hex");
-}
-
-function hashToken(token: string): string {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
-
-function expiresAtFromNow(): string {
-  return new Date(
-    Date.now() + invitationExpiryDays() * 24 * 60 * 60 * 1000
-  ).toISOString();
-}
-
-function buildAcceptUrl(token: string): string {
+function loginUrl(): string {
   const base = env.frontendUrl || "http://localhost:3000";
-  return `${base}/invitations/accept?token=${token}`;
+  return `${base}/auth/login`;
 }
 
 function toSummary(row: InvitationRowSafe) {
@@ -66,36 +37,10 @@ function toSummary(row: InvitationRowSafe) {
     fullName: row.full_name,
     role: row.role,
     status: row.status,
-    expiresAt: row.expires_at,
+    accountProvisioned: row.account_provisioned,
     invitedBy: row.invited_by,
     createdAt: row.created_at,
     acceptedAt: row.accepted_at,
-  };
-}
-
-/**
- * Attaches non-production-only diagnostics to an invitation response:
- * whether the email actually sent, and (outside production only) the
- * raw accept URL so a developer without Brevo configured can still
- * exercise the full flow. Never included in production responses —
- * this is the one deliberate place the raw token is allowed to leave
- * the backend process at all, and only into a response the calling
- * owner/company_admin themselves requested.
- */
-function withDeliveryInfo<T extends Record<string, unknown>>(
-  summary: T,
-  emailResult: { sent: boolean; reason?: string },
-  rawToken: string
-) {
-  return {
-    ...summary,
-    emailSent: emailResult.sent,
-    emailStatus: emailResult.sent
-      ? "sent"
-      : emailResult.reason ?? "not sent",
-    ...(env.nodeEnv !== "production"
-      ? { dev: { acceptUrl: buildAcceptUrl(rawToken) } }
-      : {}),
   };
 }
 
@@ -126,40 +71,31 @@ export async function listInvitations(organizationId: string) {
 }
 
 /**
- * Public, unauthenticated preview by raw token — lets the frontend
- * show "you've been invited to X as Y" before the visitor logs in, so
- * they know what they're accepting before going through the magic-link
- * flow. Safe to leave unauthenticated: possessing the 256-bit random
- * token is already the credential (same principle as a password-reset
- * link), and this reveals nothing beyond what the invitation email
- * itself already told its recipient. Never returns token_hash — the
- * repository row is destructured field-by-field, never spread.
+ * Adding a team member. There is no pending/accept step anymore — the
+ * account and organization membership are both created synchronously
+ * in this one call:
+ *
+ * - If no auth account exists for this email yet, one is created with
+ *   a freshly generated temporary password (must_change_password
+ *   metadata forces a change on first login — enforced client-side by
+ *   app/auth/set-password, since Supabase has no native "force
+ *   password reset" flag), and that password is emailed to them.
+ * - If an account already exists for this email (e.g. they registered
+ *   themselves previously but never created/joined an organization),
+ *   it's reused as-is — no new password is generated or emailed, and
+ *   they're simply notified they've been added. Because
+ *   organization_members.user_id is globally unique (see
+ *   organization_members_user_id_key), an existing account that
+ *   *already* belongs to some organization can never reach this
+ *   path successfully — insertMembership below will hit that
+ *   constraint and this throws a friendly "already belongs to an
+ *   organization" error, exactly like onboarding's own duplicate-org
+ *   check.
+ *
+ * Any auth account created here is rolled back (deleted) if the
+ * membership insert that follows it fails, so a failed invite never
+ * leaves an orphaned, org-less account blocking a future retry.
  */
-export async function previewInvitation(rawToken: string) {
-  const tokenHash = hashToken(rawToken);
-  const invitation = await findInvitationByTokenHash(tokenHash);
-
-  if (!invitation) {
-    throw new Error("Invitation not found or invalid");
-  }
-
-  const organization = await findOrganizationById(invitation.organization_id);
-
-  const isExpired = new Date(invitation.expires_at).getTime() <= Date.now();
-  const effectiveStatus =
-    invitation.status === "pending" && isExpired
-      ? "expired"
-      : invitation.status;
-
-  return {
-    organizationName: organization?.name ?? "Unknown organization",
-    email: invitation.email,
-    role: invitation.role,
-    expiresAt: invitation.expires_at,
-    status: effectiveStatus,
-  };
-}
-
 export async function createInvitation(
   organizationId: string,
   organizationName: string,
@@ -179,20 +115,57 @@ export async function createInvitation(
     );
   }
 
-  const existingPending = await findPendingInvitationByEmail(
-    organizationId,
-    input.email
-  );
+  const existingUser = await findAuthUserByEmail(input.email);
 
-  if (existingPending) {
-    throw new Error(
-      "An invitation is already pending for this email — resend it instead of creating a new one"
-    );
+  let userId: string;
+  let tempPassword: string | null = null;
+  const isNewAccount = !existingUser;
+
+  if (existingUser) {
+    userId = existingUser.id;
+  } else {
+    tempPassword = generateTempPassword();
+
+    const { data: created, error: createUserError } =
+      await supabase.auth.admin.createUser({
+        email: input.email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: input.fullName,
+          must_change_password: true,
+        },
+      });
+
+    if (createUserError || !created?.user) {
+      throw new Error(
+        createUserError?.message || "Unable to create this team member's account"
+      );
+    }
+
+    userId = created.user.id;
   }
 
-  const token = generateToken();
-  const tokenHash = hashToken(token);
-  const expiresAt = expiresAtFromNow();
+  try {
+    await insertMembership(organizationId, userId, input.role);
+  } catch (membershipError) {
+    if (isNewAccount) {
+      await supabase.auth.admin.deleteUser(userId).catch((cleanupError) => {
+        console.error(
+          "Failed to roll back auth account after a failed invite membership insert:",
+          cleanupError
+        );
+      });
+    }
+
+    if (isUniqueViolation(membershipError)) {
+      throw new Error(
+        "This email already belongs to another organization and cannot be added here"
+      );
+    }
+
+    throw membershipError;
+  }
 
   const invitation = await insertInvitation({
     organization_id: organizationId,
@@ -200,19 +173,27 @@ export async function createInvitation(
     full_name: input.fullName,
     role: input.role,
     invited_by: inviterId,
-    token_hash: tokenHash,
-    expires_at: expiresAt,
+    account_provisioned: isNewAccount,
   });
 
   const inviterEmail = await resolveEmail(inviterId);
 
-  const emailResult = await EmailService.sendInvitation({
-    to: input.email,
-    organizationName,
-    inviterEmail,
-    role: input.role,
-    acceptUrl: buildAcceptUrl(token),
-  });
+  const emailResult = tempPassword
+    ? await EmailService.sendTeamMemberCredentials({
+        to: input.email,
+        organizationName,
+        inviterEmail,
+        role: input.role,
+        tempPassword,
+        loginUrl: loginUrl(),
+      })
+    : await EmailService.sendAddedToOrganization({
+        to: input.email,
+        organizationName,
+        inviterEmail,
+        role: input.role,
+        loginUrl: loginUrl(),
+      });
 
   void logAudit({
     organizationId,
@@ -221,187 +202,12 @@ export async function createInvitation(
     action: "invitation.created",
     entityType: "invitation",
     entityId: invitation.id,
-    metadata: { email: input.email, role: input.role },
+    metadata: { email: input.email, role: input.role, accountProvisioned: isNewAccount },
   });
 
-  return withDeliveryInfo(toSummary(invitation), emailResult, token);
-}
-
-export async function resendInvitation(
-  organizationId: string,
-  organizationName: string,
-  invitationId: string,
-  callerUserId?: string,
-  callerEmail?: string
-) {
-  const invitation = await findInvitationById(organizationId, invitationId);
-
-  if (!invitation) {
-    return null;
-  }
-
-  if (invitation.status !== "pending") {
-    throw new Error("Only pending invitations can be resent");
-  }
-
-  const token = generateToken();
-  const tokenHash = hashToken(token);
-  const expiresAt = expiresAtFromNow();
-
-  const updated = await updateInvitationToken(
-    invitation.id,
-    tokenHash,
-    expiresAt
-  );
-
-  const inviterEmail = await resolveEmail(invitation.invited_by);
-
-  const emailResult = await EmailService.sendInvitation({
-    to: invitation.email,
-    organizationName,
-    inviterEmail,
-    role: invitation.role,
-    acceptUrl: buildAcceptUrl(token),
-  });
-
-  void logAudit({
-    organizationId,
-    actorUserId: callerUserId ?? null,
-    actorLabel: callerEmail ?? callerUserId ?? null,
-    action: "invitation.resent",
-    entityType: "invitation",
-    entityId: invitation.id,
-    metadata: { email: invitation.email },
-  });
-
-  return withDeliveryInfo(
-    toSummary(updated ?? invitation),
-    emailResult,
-    token
-  );
-}
-
-export async function revokeInvitation(
-  organizationId: string,
-  invitationId: string,
-  callerUserId?: string,
-  callerEmail?: string
-) {
-  const invitation = await findInvitationById(organizationId, invitationId);
-
-  if (!invitation) {
-    return null;
-  }
-
-  if (invitation.status !== "pending") {
-    throw new Error("Only pending invitations can be revoked");
-  }
-
-  const updated = await updateInvitationStatus(invitation.id, "revoked");
-
-  if (updated) {
-    void logAudit({
-      organizationId,
-      actorUserId: callerUserId ?? null,
-      actorLabel: callerEmail ?? callerUserId ?? null,
-      action: "invitation.revoked",
-      entityType: "invitation",
-      entityId: invitation.id,
-      metadata: { email: invitation.email },
-    });
-  }
-
-  return updated ? toSummary(updated) : null;
-}
-
-/**
- * Accepting an invitation. Concurrency-critical — see
- * markInvitationAccepted (invitations.repository.ts) for how a
- * double-accept of the SAME invitation is closed (atomic conditional
- * UPDATE), and organization_members_user_id_key (migration
- * 20260812000000) for how a user racing to accept TWO DIFFERENT
- * invitations at once is closed (database unique constraint). Both are
- * the actual source of truth; the checks below are the friendly
- * fast-path, not the security boundary.
- */
-export async function acceptInvitation(
-  userId: string,
-  userEmail: string,
-  rawInput: unknown
-) {
-  const { token } = validateAcceptInvitation(rawInput);
-  const tokenHash = hashToken(token);
-
-  const invitation = await findInvitationByTokenHash(tokenHash);
-
-  if (!invitation) {
-    throw new Error("Invitation not found or invalid");
-  }
-
-  if (invitation.status === "accepted") {
-    throw new Error("This invitation has already been accepted");
-  }
-
-  if (invitation.status === "revoked") {
-    throw new Error("This invitation is no longer valid");
-  }
-
-  const isExpired = new Date(invitation.expires_at).getTime() <= Date.now();
-
-  if (invitation.status === "expired" || isExpired) {
-    if (invitation.status === "pending") {
-      await updateInvitationStatus(invitation.id, "expired").catch(
-        () => {}
-      );
-    }
-
-    throw new Error("This invitation has expired");
-  }
-
-  if (invitation.email !== userEmail.trim().toLowerCase()) {
-    throw new Error("This invitation was sent to a different email address");
-  }
-
-  const existingMembership = await findMembershipByUserId(userId);
-
-  if (existingMembership) {
-    throw new Error(
-      "You already belong to an organization and cannot accept this invitation."
-    );
-  }
-
-  const organization = await findOrganizationById(invitation.organization_id);
-
-  if (!organization) {
-    throw new Error("The organization for this invitation no longer exists");
-  }
-
-  // Claim the invitation FIRST — this is the atomic step that actually
-  // prevents a double-accept race (see markInvitationAccepted).
-  const claimed = await markInvitationAccepted(invitation.id);
-
-  if (!claimed) {
-    throw new Error("This invitation has already been used");
-  }
-
-  try {
-    await insertMembership(invitation.organization_id, userId, invitation.role);
-  } catch (membershipError) {
-    // The membership insert failed — most likely this same user won a
-    // concurrent race by accepting a *different* invitation first (the
-    // organization_members_user_id_key constraint rejected this one).
-    // Un-claim the invitation so it isn't permanently burned for
-    // nothing; the user gets a clean, correct error either way.
-    await updateInvitationStatus(invitation.id, "pending").catch(() => {});
-
-    if (isUniqueViolation(membershipError)) {
-      throw new Error(
-        "You already belong to an organization and cannot accept this invitation."
-      );
-    }
-
-    throw membershipError;
-  }
-
-  return { id: organization.id, name: organization.name, role: invitation.role };
+  return {
+    ...toSummary(invitation),
+    emailSent: emailResult.sent,
+    emailStatus: emailResult.sent ? "sent" : emailResult.reason ?? "not sent",
+  };
 }

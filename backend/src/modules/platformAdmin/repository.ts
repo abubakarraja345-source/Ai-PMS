@@ -294,3 +294,118 @@ export async function findLastActivityAt(organizationId: string): Promise<string
 
   return data?.created_at ?? null;
 }
+
+export interface PlatformCalendarReservationRow {
+  id: string;
+  organization_id: string;
+  property_id: string;
+  booking_reference: string | null;
+  status: string;
+  check_in: string;
+  check_out: string;
+  property: { id: string; title: string } | null;
+  organization: { id: string; name: string } | null;
+}
+
+/**
+ * Cross-org calendar feed — the same shape/exclusions as the
+ * org-scoped findReservationsByOrganizationInRange
+ * (reservations/repository.ts) minus the organization_id filter,
+ * plus an organization join so each event can be labeled with which
+ * org it belongs to. This is deliberately its own query rather than
+ * a shared helper with the org-scoped version — the join list
+ * differs (guest details are irrelevant and would be an unnecessary
+ * cross-org PII exposure here).
+ */
+export async function findAllReservationsInRange(
+  start: string,
+  end: string
+): Promise<PlatformCalendarReservationRow[]> {
+  const { data, error } = await supabase
+    .from("reservations")
+    .select(
+      `
+      id,
+      organization_id,
+      property_id,
+      booking_reference,
+      status,
+      check_in,
+      check_out,
+      property:properties(id, title),
+      organization:organizations(id, name)
+    `
+    )
+    .neq("status", "cancelled")
+    .lt("check_in", end)
+    .gt("check_out", start)
+    .order("check_in", { ascending: true });
+
+  if (error) throw error;
+
+  return (data ?? []) as unknown as PlatformCalendarReservationRow[];
+}
+
+export interface PlatformReportReservationRow {
+  id: string;
+  organization_id: string;
+  property_id: string;
+  guest_id: string;
+  source: string;
+  status: string;
+  check_in: string;
+  check_out: string;
+  nights: number | null;
+  total_amount: number | null;
+  currency: string | null;
+  created_at: string;
+}
+
+/**
+ * Cross-org reservations created since `startTimestamp` — feeds the
+ * platform Reports page. Reuses the exact same row shape
+ * reports/repository.ts's findReservationsCreatedInRange returns
+ * (plus organization_id, needed here to group by org for the
+ * leaderboard) specifically so the existing, already-approved
+ * calculation functions in reports/calculations.ts (revenueTrend,
+ * revenueByCurrency, bucketCounts, etc. — including the "never blend
+ * currencies" rule) can be reused as-is instead of re-implemented.
+ *
+ * Deliberately open-ended (no upper bound) rather than `.lt("created_at",
+ * <app-server's "now">)` — caught live: the app server's clock and
+ * Postgres' own `now()` (what created_at actually defaults to) are two
+ * different clocks that are never perfectly in sync. A tight exclusive
+ * upper bound computed a few milliseconds before the query runs can
+ * silently exclude a reservation created microseconds earlier if
+ * Postgres' clock is even slightly ahead — intermittently dropping the
+ * most recent bookings from the report for no visible reason. There's
+ * no legitimate case for excluding "too-recent" data from a trailing-
+ * window report anyway, so the simplest fix is the correct one: only
+ * bound the start.
+ */
+export async function findAllReservationsCreatedSince(
+  startTimestamp: string
+): Promise<PlatformReportReservationRow[]> {
+  const { data, error } = await supabase
+    .from("reservations")
+    .select(
+      "id, organization_id, property_id, guest_id, source, status, check_in, check_out, nights, total_amount, currency, created_at"
+    )
+    .gte("created_at", startTimestamp);
+
+  if (error) throw error;
+
+  return data ?? [];
+}
+
+/** organization_id only — used to compute a per-org property count
+ * for the leaderboard without an N+1 query per organization. */
+export async function findAllPropertyOrganizationIds(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("properties")
+    .select("organization_id");
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => row.organization_id as string);
+}

@@ -53,8 +53,8 @@ export default function HomePage() {
       <header className="landing-nav">
         <div className="landing-container nav-inner">
           <Link href="/" className="brand">
-            <span className="brand-mark">AI</span>
-            <span>AI-PMS</span>
+            <span className="brand-mark">H</span>
+            <span>Hostly PMS Pro</span>
           </Link>
 
           <nav className="desktop-nav">
@@ -93,7 +93,7 @@ export default function HomePage() {
             </h1>
 
             <p className="hero-description">
-              AI-PMS brings property management, reservations, guests,
+              Hostly PMS Pro brings property management, reservations, guests,
               cleaning, maintenance, inventory and reporting together in one
               powerful workspace.
             </p>
@@ -132,7 +132,7 @@ export default function HomePage() {
 
               <div className="preview-body">
                 <aside className="preview-sidebar">
-                  <div className="mini-logo">AI</div>
+                  <div className="mini-logo">H</div>
 
                   <div className="mini-menu active">
                     <span>▦</span>
@@ -245,7 +245,7 @@ export default function HomePage() {
             </h2>
 
             <p>
-              AI-PMS is designed to simplify the day-to-day work behind
+              Hostly PMS Pro is designed to simplify the day-to-day work behind
               successful property operations. Instead of switching between
               spreadsheets, booking tools, task lists and separate systems,
               your team can manage everything from one connected platform.
@@ -306,12 +306,12 @@ export default function HomePage() {
 
               <p>
                 From the moment a reservation arrives to the final operational
-                task, AI-PMS keeps your team connected and your information in
+                task, Hostly PMS Pro keeps your team connected and your information in
                 one place.
               </p>
 
               <Link href="/auth/register" className="primary-button">
-                Enter AI-PMS
+                Enter Hostly PMS Pro
                 <span>→</span>
               </Link>
             </div>
@@ -341,7 +341,7 @@ export default function HomePage() {
             </h2>
 
             <p>
-              Sign in to your AI-PMS workspace and manage your operations from
+              Sign in to your Hostly PMS Pro workspace and manage your operations from
               one place.
             </p>
 
@@ -357,15 +357,15 @@ export default function HomePage() {
       <footer className="landing-footer">
         <div className="landing-container footer-inner">
           <Link href="/" className="brand">
-            <span className="brand-mark">AI</span>
-            <span>AI-PMS</span>
+            <span className="brand-mark">H</span>
+            <span>Hostly PMS Pro</span>
           </Link>
 
           <p>
             Intelligent property management for modern operations.
           </p>
 
-          <span>© {new Date().getFullYear()} AI-PMS</span>
+          <span>© {new Date().getFullYear()} Hostly PMS Pro</span>
         </div>
       </footer>
     </main>

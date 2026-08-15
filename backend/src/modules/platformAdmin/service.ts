@@ -1,7 +1,14 @@
 import jwt from "jsonwebtoken";
 import { env } from "../../config/env";
+import { supabase } from "../../config/supabase";
 import { resolveEmail } from "../organization/service";
 import { PlatformAdminSessionPayload } from "../../middleware/organization.middleware";
+import {
+  getBucketGranularity,
+  bucketCounts,
+  revenueTrend,
+  revenueByCurrency,
+} from "../reports/calculations";
 
 import {
   countAllIntegrationsByStatus,
@@ -13,6 +20,9 @@ import {
   countPropertiesForOrganization,
   countReservationsForOrganization,
   findAllOrganizations,
+  findAllPropertyOrganizationIds,
+  findAllReservationsCreatedSince,
+  findAllReservationsInRange,
   findIntegrationsForOrganization,
   findLastActivityAt,
   findMembersForOrganization,
@@ -23,7 +33,15 @@ import {
   updateOrganizationSubscriptionStatus,
 } from "./repository";
 
-import { OrganizationDetail, OrganizationHealthRow, PlatformStats } from "./types";
+import {
+  OrganizationDetail,
+  OrganizationHealthRow,
+  PlatformCalendarEvent,
+  PlatformInsight,
+  PlatformLeaderboardEntry,
+  PlatformReports,
+  PlatformStats,
+} from "./types";
 
 export interface PlatformAdminActor {
   platformAdminId: string;
@@ -278,4 +296,201 @@ export async function listPlatformAdminAuditLog(
     page: safePage,
     totalPages: Math.max(Math.ceil(total / PAGE_SIZE), 1),
   };
+}
+
+/**
+ * Cross-org calendar — every organization's reservations in one
+ * range, labeled with which org and property each belongs to. No
+ * guest data is included (see repository.ts's own comment on why
+ * this is a separate query from the org-scoped one).
+ */
+export async function getPlatformCalendar(
+  start: string,
+  end: string
+): Promise<PlatformCalendarEvent[]> {
+  const rows = await findAllReservationsInRange(start, end);
+
+  return rows.map((row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    organizationName: row.organization?.name ?? "Unknown organization",
+    propertyTitle: row.property?.title ?? "Unknown property",
+    bookingReference: row.booking_reference,
+    status: row.status,
+    checkIn: row.check_in,
+    checkOut: row.check_out,
+  }));
+}
+
+/** Every signed-up auth user's created_at — used only to bucket
+ * signups over time for the growth chart, no other field is read.
+ * Same "fetch all, aggregate in JS" tradeoff as resolveEmail/
+ * listMembers elsewhere in this codebase, appropriate at this
+ * product's scale. */
+async function findAllUserCreatedTimestamps(): Promise<string[]> {
+  const timestamps: string[] = [];
+  const perPage = 1000;
+
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+
+    timestamps.push(...data.users.map((u) => u.created_at));
+
+    if (data.users.length < perPage) break;
+  }
+
+  return timestamps;
+}
+
+/**
+ * Platform-wide reports: revenue/booking trend (never blending
+ * currencies — reuses reports/calculations.ts's revenueTrend, the
+ * same approved rule the org-level Reports page already follows),
+ * a per-organization leaderboard, and organization/user signup
+ * growth over the trailing 90 days.
+ */
+export async function getPlatformReports(): Promise<PlatformReports> {
+  const end = new Date();
+  const start = new Date(end.getTime() - 90 * 24 * 60 * 60 * 1000);
+  const startIso = start.toISOString();
+  const endIso = end.toISOString();
+  const startDate = startIso.slice(0, 10);
+  const endDate = endIso.slice(0, 10);
+
+  const granularity = getBucketGranularity(startDate, endDate);
+
+  const [reservations, organizations, propertyOrgIds, userTimestamps] =
+    await Promise.all([
+      findAllReservationsCreatedSince(startIso),
+      findAllOrganizations(),
+      findAllPropertyOrganizationIds(),
+      findAllUserCreatedTimestamps(),
+    ]);
+
+  const propertyCountByOrg = new Map<string, number>();
+  for (const orgId of propertyOrgIds) {
+    propertyCountByOrg.set(orgId, (propertyCountByOrg.get(orgId) ?? 0) + 1);
+  }
+
+  const reservationsByOrg = new Map<string, typeof reservations>();
+  for (const r of reservations) {
+    const list = reservationsByOrg.get(r.organization_id) ?? [];
+    list.push(r);
+    reservationsByOrg.set(r.organization_id, list);
+  }
+
+  const leaderboard: PlatformLeaderboardEntry[] = organizations
+    .map((org) => {
+      const orgReservations = reservationsByOrg.get(org.id) ?? [];
+
+      return {
+        organizationId: org.id,
+        name: org.name,
+        bookingCount: orgReservations.length,
+        revenue: revenueByCurrency(orgReservations),
+        propertyCount: propertyCountByOrg.get(org.id) ?? 0,
+      };
+    })
+    .sort((a, b) => b.bookingCount - a.bookingCount);
+
+  return {
+    period: { start: startDate, end: endDate, granularity },
+    revenueTrend: revenueTrend(reservations, granularity),
+    bookingTrend: bucketCounts(reservations, (r) => r.created_at, granularity),
+    leaderboard,
+    growth: {
+      organizations: bucketCounts(organizations, (o) => o.created_at, granularity),
+      users: bucketCounts(
+        userTimestamps.map((created_at) => ({ created_at })),
+        (u) => u.created_at,
+        granularity
+      ),
+    },
+  };
+}
+
+/**
+ * Deterministic, non-AI platform insights — same posture as
+ * ai/service.ts's org-level getInsights (see that module's own
+ * route comment: "deterministic, non-AI dashboard insights"). No LLM
+ * call: cheap, fast, and exactly as trustworthy as the numbers it's
+ * built from.
+ */
+export async function getPlatformInsights(): Promise<PlatformInsight[]> {
+  const [stats, reports] = await Promise.all([
+    getPlatformStats(),
+    getPlatformReports(),
+  ]);
+
+  const insights: PlatformInsight[] = [];
+
+  if (stats.failedIntegrations > 0) {
+    const n = stats.failedIntegrations;
+    insights.push({
+      type: "integrations_failing",
+      severity: "warning",
+      message: `${n} integration${n === 1 ? "" : "s"} reporting sync errors across the platform.`,
+    });
+  }
+
+  if (stats.suspendedOrganizations > 0) {
+    const n = stats.suspendedOrganizations;
+    insights.push({
+      type: "organizations_suspended",
+      severity: "info",
+      message: `${n} organization${n === 1 ? "" : "s"} currently suspended.`,
+    });
+  }
+
+  if (stats.reviewRequired > 0) {
+    const n = stats.reviewRequired;
+    insights.push({
+      type: "review_required",
+      severity: stats.reviewRequired > 10 ? "warning" : "info",
+      message: `${n} reservation${n === 1 ? "" : "s"} flagged for review across the platform.`,
+    });
+  }
+
+  const zeroPropertyOrgs = reports.leaderboard.filter((o) => o.propertyCount === 0).length;
+  if (zeroPropertyOrgs > 0) {
+    insights.push({
+      type: "organizations_no_properties",
+      severity: "info",
+      message: `${zeroPropertyOrgs} organization${zeroPropertyOrgs === 1 ? "" : "s"} ${zeroPropertyOrgs === 1 ? "has" : "have"} signed up but added no properties yet.`,
+    });
+  }
+
+  const topOrg = reports.leaderboard[0];
+  if (topOrg && topOrg.bookingCount > 0) {
+    insights.push({
+      type: "top_organization",
+      severity: "info",
+      message: `${topOrg.name} leads the platform with ${topOrg.bookingCount} booking${topOrg.bookingCount === 1 ? "" : "s"} in the last 90 days.`,
+    });
+  }
+
+  const orgGrowth = reports.growth.organizations;
+  if (orgGrowth.length >= 2) {
+    const latest = orgGrowth[orgGrowth.length - 1];
+    const previous = orgGrowth[orgGrowth.length - 2];
+
+    if (latest && previous && latest.count > previous.count && previous.count > 0) {
+      insights.push({
+        type: "organization_growth_up",
+        severity: "info",
+        message: `New organization signups are up this period (${latest.count} vs ${previous.count}).`,
+      });
+    }
+  }
+
+  if (stats.totalOrganizations === 0) {
+    insights.push({
+      type: "no_organizations",
+      severity: "info",
+      message: "No organizations have signed up yet.",
+    });
+  }
+
+  return insights;
 }

@@ -9,6 +9,8 @@ import { apiFetch } from "@/lib/api";
 const navItems = [
   { name: "Platform Overview", href: "/admin" },
   { name: "Organizations", href: "/admin/organizations" },
+  { name: "Calendar", href: "/admin/calendar" },
+  { name: "Reports", href: "/admin/reports" },
   { name: "Platform Audit Log", href: "/admin/audit-log" },
 ];
 
@@ -69,7 +71,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <aside className="glass-sidebar fixed inset-y-0 left-0 z-30 hidden h-screen w-64 flex-col border-r border-sidebar-border lg:flex">
         <div className="flex h-16 shrink-0 items-center border-b border-white/10 px-6">
           <Link href="/admin" className="text-xl font-bold tracking-tight text-white">
-            Hostly <span className="text-violet-400">Platform</span>
+            Hostly PMS Pro <span className="text-violet-400">Platform</span>
           </Link>
         </div>
 

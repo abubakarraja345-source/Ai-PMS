@@ -55,3 +55,39 @@ export const invitationRateLimiter = rateLimit({
     "Too many invitation requests — please wait a few minutes and try again."
   ),
 });
+
+/**
+ * Applied to public registration — creates a real Supabase auth
+ * account per request, unauthenticated, so this is the abuse surface
+ * for account-creation spam / email enumeration. Tighter than the
+ * invitation limiter since a single visitor has no legitimate reason
+ * to register many times in a row.
+ */
+export const registerRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: rateLimitResponse(
+    "Too many registration attempts — please wait a few minutes and try again."
+  ),
+});
+
+/**
+ * Applied to login — the classic brute-force target. Password login
+ * is proxied through our own backend specifically so this limiter can
+ * sit in front of it (see organization/routes.ts's POST /login);
+ * Supabase's own project-level auth rate limits still apply
+ * independently underneath this as a second layer. Generous enough
+ * that a user who mistypes their password a few times in a row never
+ * gets blocked, tight enough to slow down credential stuffing.
+ */
+export const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: rateLimitResponse(
+    "Too many login attempts — please wait a few minutes and try again."
+  ),
+});

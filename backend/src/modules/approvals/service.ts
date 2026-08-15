@@ -109,9 +109,9 @@ export async function approveRequest(
     throw new Error(`No handler registered for entity type "${request.entity_type}"`);
   }
 
-  // Claim the request FIRST — same atomic-conditional-update pattern
-  // as invitations' markInvitationAccepted, so two reviewers racing to
-  // approve the same request can't both succeed.
+  // Claim the request FIRST — an atomic conditional UPDATE (see
+  // updateApprovalRequestStatus), so two reviewers racing to approve
+  // the same request can't both succeed.
   const claimed = await updateApprovalRequestStatus(
     requestId,
     "approved",

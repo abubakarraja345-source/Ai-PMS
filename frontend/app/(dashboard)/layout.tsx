@@ -66,7 +66,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [platformAdminSession, setPlatformAdminSession] =
     useState<PlatformAdminSession | null>(null);
-  const { ready } = usePermission();
+  const { ready, isPlatformAdmin } = usePermission();
 
   useEffect(() => {
     setPlatformAdminSession(readPlatformAdminSession());
@@ -167,6 +167,21 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
       >
         Settings
       </Link>
+
+      {/* Only shown for accounts holding platform-admin access (see
+          usePermission's isPlatformAdmin) — /admin has no other
+          discoverable entry point from this shell, which was
+          confusing enough in practice to fix. */}
+      {isPlatformAdmin && (
+        <Link
+          href="/admin"
+          onClick={onNavigate}
+          className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-violet-300 transition hover:bg-white/10 hover:text-violet-200"
+        >
+          <ShieldAlert size={16} className="shrink-0" />
+          Platform Admin
+        </Link>
+      )}
     </>
   );
 
@@ -187,7 +202,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             href="/dashboard"
             className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-xl font-bold tracking-tight text-transparent"
           >
-            AI PMS
+            Hostly PMS Pro
           </Link>
         </div>
 
@@ -221,7 +236,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
                 className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-xl font-bold tracking-tight text-transparent"
                 onClick={() => setMobileNavOpen(false)}
               >
-                AI PMS
+                Hostly PMS Pro
               </Link>
 
               <button
@@ -259,7 +274,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             </button>
 
             <div>
-              <p className="text-sm font-semibold text-foreground">AI PMS</p>
+              <p className="text-sm font-semibold text-foreground">Hostly PMS Pro</p>
               <p className="hidden text-xs text-muted-foreground sm:block">
                 Property Management System
               </p>

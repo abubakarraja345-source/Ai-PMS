@@ -37,6 +37,46 @@ export interface OrganizationHealthRow {
   createdAt: string;
 }
 
+export interface PlatformCalendarEvent {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  propertyTitle: string;
+  bookingReference: string | null;
+  status: string;
+  checkIn: string;
+  checkOut: string;
+}
+
+export interface PlatformLeaderboardEntry {
+  organizationId: string;
+  name: string;
+  bookingCount: number;
+  /** Never blended across currencies — same rule reports/calculations.ts
+   * already enforces at the org level (see revenueByCurrency). */
+  revenue: { currency: string; total: number; count: number }[];
+  propertyCount: number;
+}
+
+export interface PlatformReports {
+  period: { start: string; end: string; granularity: "day" | "week" | "month" };
+  revenueTrend: { bucket: string; currency: string; total: number; count: number }[];
+  bookingTrend: { bucket: string; count: number }[];
+  leaderboard: PlatformLeaderboardEntry[];
+  growth: {
+    organizations: { bucket: string; count: number }[];
+    users: { bucket: string; count: number }[];
+  };
+}
+
+export type PlatformInsightSeverity = "info" | "warning" | "critical";
+
+export interface PlatformInsight {
+  type: string;
+  severity: PlatformInsightSeverity;
+  message: string;
+}
+
 export interface OrganizationDetail {
   id: string;
   name: string;

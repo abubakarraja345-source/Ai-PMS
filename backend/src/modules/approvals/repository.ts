@@ -73,11 +73,9 @@ export async function findApprovalRequestsByOrganization(
 
 /**
  * Atomically claims a pending request for review — the WHERE
- * status='pending' guard mirrors invitations.repository.ts's
- * markInvitationAccepted, closing the same class of race (two
- * reviewers approving/rejecting the same request at once can't both
- * succeed; the loser's UPDATE matches zero rows and this returns
- * null).
+ * status='pending' guard closes a race (two reviewers approving/
+ * rejecting the same request at once can't both succeed; the loser's
+ * UPDATE matches zero rows and this returns null).
  */
 export async function updateApprovalRequestStatus(
   id: string,

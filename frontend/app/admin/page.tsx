@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import PlatformAiInsights from "@/components/admin/platform-ai-insights";
 
 interface PlatformStats {
   totalOrganizations: number;
@@ -73,6 +74,10 @@ export default function PlatformOverviewPage() {
           </div>
         )
       )}
+
+      <div className="mt-6">
+        <PlatformAiInsights />
+      </div>
 
       <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6 backdrop-blur-xl">
         <p className="text-sm text-muted-foreground">

@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { OrganizationRequest } from "../../middleware/organization.middleware";
 import { AuthenticatedRequest } from "../../middleware/auth.middleware";
 
@@ -7,11 +7,14 @@ import {
   changeMemberRole,
   removeMember,
   createOrganization,
+  registerOrganization,
+  loginWithPassword,
 } from "./service";
 
 import { validateChangeRole } from "./validation";
 import { ROLE_LABELS } from "../permissions/roles";
 import { getEffectivePermissions } from "../permissions/service";
+import { findPlatformAdminByUserId } from "../platformAdmin/repository";
 
 /**
  * Our own validation/business-rule checks throw plain `Error`s
@@ -179,10 +182,11 @@ export async function getMyOrganizationController(
   }
 
   try {
-    const { permissions, permissionEffects } = await getEffectivePermissions(
-      req.organization.id,
-      req.organization.role
-    );
+    const [{ permissions, permissionEffects }, platformAdminRow] =
+      await Promise.all([
+        getEffectivePermissions(req.organization.id, req.organization.role),
+        req.user ? findPlatformAdminByUserId(req.user.id) : null,
+      ]);
 
     return res.status(200).json({
       success: true,
@@ -192,6 +196,12 @@ export async function getMyOrganizationController(
         permissions,
         permissionEffects,
         isPlatformAdminViewing: req.isPlatformAdminOverride === true,
+        // Whether this user holds platform-admin access at all (see
+        // /admin) — distinct from isPlatformAdminViewing, which is
+        // only true while actively inside an "Enter Organization"
+        // read-only session. Lets the sidebar show a link to /admin
+        // for platform admins without them having to know the URL.
+        isPlatformAdmin: platformAdminRow !== null,
       },
     });
   } catch (error) {
@@ -212,6 +222,7 @@ export async function getMyOrganizationController(
         permissions: [],
         permissionEffects: {},
         isPlatformAdminViewing: req.isPlatformAdminOverride === true,
+        isPlatformAdmin: false,
       },
     });
   }
@@ -259,6 +270,86 @@ export async function createOrganizationController(
     return res.status(500).json({
       success: false,
       error: "Unable to create organization",
+    });
+  }
+}
+
+/**
+ * POST /api/organization/register — public, no session exists yet.
+ * Creates the owner's password-based account and their organization
+ * in one step (see registerOrganization in service.ts). The frontend
+ * signs the user in with the same credentials immediately after this
+ * succeeds — this endpoint intentionally returns no session/token
+ * itself, keeping session issuance solely Supabase's own
+ * signInWithPassword call rather than a second, parallel mechanism.
+ */
+export async function registerOrganizationController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const organization = await registerOrganization(req.body);
+
+    return res.status(201).json({
+      success: true,
+      data: organization,
+    });
+  } catch (error) {
+    console.error("Register organization error:", error);
+
+    if (isKnownError(error)) {
+      const status = error.message.includes("already exists") ? 409 : 400;
+
+      return res.status(status).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: "Unable to complete registration",
+    });
+  }
+}
+
+/**
+ * POST /api/organization/login — public. Proxies Supabase password
+ * login through our backend purely so loginRateLimiter can gate it
+ * (see routes.ts) — a direct client-side supabase-js call bypasses
+ * our rate limiting entirely, only Supabase's own project-level
+ * limits would apply. Always 401s on any failure, deliberately not
+ * distinguishing "no such account" from "wrong password".
+ */
+export async function loginController(req: Request, res: Response) {
+  try {
+    const { email, password } = (req.body ?? {}) as {
+      email?: string;
+      password?: string;
+    };
+
+    const { session, user } = await loginWithPassword(
+      email ?? "",
+      password ?? ""
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: { session, user },
+    });
+  } catch (error) {
+    if (isKnownError(error)) {
+      return res.status(401).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    console.error("Login error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Unable to log in",
     });
   }
 }
