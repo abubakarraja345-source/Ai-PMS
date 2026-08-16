@@ -163,13 +163,13 @@ export default function InventoryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6 lg:p-10">
+    <main className="min-h-screen bg-background p-6 lg:p-10">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-4xl font-semibold text-slate-950">
+          <h1 className="text-4xl font-semibold text-foreground">
             Inventory
           </h1>
-          <p className="mt-2 text-lg text-slate-500">
+          <p className="mt-2 text-lg text-muted-foreground">
             Track supplies and stock levels across your properties.
           </p>
         </div>
@@ -177,7 +177,7 @@ export default function InventoryPage() {
         {canManage && (
           <button
             onClick={() => setModal({ mode: "add" })}
-            className="rounded-xl bg-[#10172a] px-6 py-3 text-white hover:bg-[#18213a]"
+            className="rounded-xl bg-gradient-to-r from-primary to-accent px-6 py-3 text-white hover:opacity-90"
           >
             + Add Item
           </button>
@@ -210,11 +210,11 @@ export default function InventoryPage() {
       </div>
 
       {/* Filters */}
-      <div className="mt-8 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mt-8 flex flex-wrap gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
         <select
           value={propertyFilter}
           onChange={(event) => setPropertyFilter(event.target.value)}
-          className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="rounded-xl border border-border px-3 py-2 text-sm"
         >
           <option value="">All Properties</option>
           {properties.map((property) => (
@@ -227,7 +227,7 @@ export default function InventoryPage() {
         <select
           value={categoryFilter}
           onChange={(event) => setCategoryFilter(event.target.value)}
-          className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="rounded-xl border border-border px-3 py-2 text-sm"
         >
           <option value="">All Categories</option>
           {(summary?.categories ?? []).map((category) => (
@@ -242,10 +242,10 @@ export default function InventoryPage() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search items..."
-          className="flex-1 min-w-[180px] rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="flex-1 min-w-[180px] rounded-xl border border-border px-3 py-2 text-sm"
         />
 
-        <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600">
+        <label className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground/70">
           <input
             type="checkbox"
             checked={lowStockOnly}
@@ -257,46 +257,46 @@ export default function InventoryPage() {
 
       {/* List */}
       {loading ? (
-        <div className="mt-10 text-slate-500">Loading inventory...</div>
+        <div className="mt-10 text-muted-foreground">Loading inventory...</div>
       ) : items.length === 0 ? (
-        <div className="mt-10 rounded-2xl border bg-white p-10 text-center">
-          <h2 className="text-2xl font-semibold text-slate-900">
+        <div className="mt-10 rounded-2xl border bg-card p-10 text-center">
+          <h2 className="text-2xl font-semibold text-foreground">
             No inventory items found
           </h2>
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-muted-foreground">
             {!summary || summary.totalItems === 0
               ? "Add your first inventory item to start tracking stock."
               : "Try adjusting your filters."}
           </p>
         </div>
       ) : (
-        <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50">
+              <thead className="border-b border-border bg-muted">
                 <tr>
-                  <th className="px-5 py-3 font-medium text-slate-500">Item</th>
-                  <th className="px-5 py-3 font-medium text-slate-500">Property</th>
-                  <th className="px-5 py-3 font-medium text-slate-500">Category</th>
-                  <th className="px-5 py-3 font-medium text-slate-500">Quantity</th>
-                  <th className="px-5 py-3 font-medium text-slate-500">Minimum</th>
-                  <th className="px-5 py-3 font-medium text-slate-500">Status</th>
+                  <th className="px-5 py-3 font-medium text-muted-foreground">Item</th>
+                  <th className="px-5 py-3 font-medium text-muted-foreground">Property</th>
+                  <th className="px-5 py-3 font-medium text-muted-foreground">Category</th>
+                  <th className="px-5 py-3 font-medium text-muted-foreground">Quantity</th>
+                  <th className="px-5 py-3 font-medium text-muted-foreground">Minimum</th>
+                  <th className="px-5 py-3 font-medium text-muted-foreground">Status</th>
                   {canManage && (
-                    <th className="px-5 py-3 font-medium text-slate-500">Actions</th>
+                    <th className="px-5 py-3 font-medium text-muted-foreground">Actions</th>
                   )}
                 </tr>
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item.id} className="border-b border-slate-100 last:border-0">
-                    <td className="px-5 py-4 font-medium text-slate-900">{item.name}</td>
-                    <td className="px-5 py-4 text-slate-600">{item.propertyTitle}</td>
-                    <td className="px-5 py-4 text-slate-600">{item.category ?? "—"}</td>
-                    <td className="px-5 py-4 text-slate-600">
+                  <tr key={item.id} className="border-b border-border last:border-0">
+                    <td className="px-5 py-4 font-medium text-foreground">{item.name}</td>
+                    <td className="px-5 py-4 text-foreground/70">{item.propertyTitle}</td>
+                    <td className="px-5 py-4 text-foreground/70">{item.category ?? "—"}</td>
+                    <td className="px-5 py-4 text-foreground/70">
                       {item.quantity}
                       {item.unit ? ` ${item.unit}` : ""}
                     </td>
-                    <td className="px-5 py-4 text-slate-600">
+                    <td className="px-5 py-4 text-foreground/70">
                       {item.minimumQuantity}
                       {item.unit ? ` ${item.unit}` : ""}
                     </td>
@@ -316,19 +316,19 @@ export default function InventoryPage() {
                         <div className="flex flex-wrap gap-2">
                           <button
                             onClick={() => setModal({ mode: "adjust", item })}
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-muted"
                           >
                             Adjust
                           </button>
                           <button
                             onClick={() => setModal({ mode: "history", item })}
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-muted"
                           >
                             History
                           </button>
                           <button
                             onClick={() => setModal({ mode: "edit", item })}
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-muted"
                           >
                             Edit
                           </button>
@@ -406,13 +406,13 @@ function SummaryCard({
   tone?: "default" | "warning";
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-sm text-slate-500">{label}</p>
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <p className="text-sm text-muted-foreground">{label}</p>
       <p
         className={`mt-2 text-3xl font-semibold ${
           tone === "warning" && Number(value) > 0
             ? "text-red-600"
-            : "text-slate-900"
+            : "text-foreground"
         }`}
       >
         {value}
@@ -432,12 +432,12 @@ function ModalShell({
 }) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700"
+            className="text-muted-foreground/80 hover:text-foreground/80"
           >
             ×
           </button>
@@ -513,7 +513,7 @@ function AddItemModal({
         <select
           value={propertyId}
           onChange={(event) => setPropertyId(event.target.value)}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-border px-3 py-2 text-sm"
         >
           <option value="">Select a property</option>
           {properties.map((property) => (
@@ -528,7 +528,7 @@ function AddItemModal({
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="Item name (e.g. Towels)"
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-border px-3 py-2 text-sm"
         />
 
         <input
@@ -536,7 +536,7 @@ function AddItemModal({
           value={category}
           onChange={(event) => setCategory(event.target.value)}
           placeholder="Category (optional)"
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-border px-3 py-2 text-sm"
         />
 
         <input
@@ -544,30 +544,30 @@ function AddItemModal({
           value={unit}
           onChange={(event) => setUnit(event.target.value)}
           placeholder="Unit (e.g. pcs, bottles)"
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-border px-3 py-2 text-sm"
         />
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="add-initial-quantity" className="text-xs text-slate-500">Starting Quantity</label>
+            <label htmlFor="add-initial-quantity" className="text-xs text-muted-foreground">Starting Quantity</label>
             <input
               id="add-initial-quantity"
               type="number"
               min={0}
               value={initialQuantity}
               onChange={(event) => setInitialQuantity(event.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label htmlFor="add-minimum-quantity" className="text-xs text-slate-500">Minimum Threshold</label>
+            <label htmlFor="add-minimum-quantity" className="text-xs text-muted-foreground">Minimum Threshold</label>
             <input
               id="add-minimum-quantity"
               type="number"
               min={0}
               value={minimumQuantity}
               onChange={(event) => setMinimumQuantity(event.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2 text-sm"
             />
           </div>
         </div>
@@ -575,7 +575,7 @@ function AddItemModal({
         <button
           onClick={handleSubmit}
           disabled={saving}
-          className="w-full rounded-xl bg-[#10172a] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#18213a] disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           {saving ? "Adding..." : "Add Item"}
         </button>
@@ -646,7 +646,7 @@ function EditItemModal({
           type="text"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-border px-3 py-2 text-sm"
         />
 
         <input
@@ -654,7 +654,7 @@ function EditItemModal({
           value={category}
           onChange={(event) => setCategory(event.target.value)}
           placeholder="Category"
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-border px-3 py-2 text-sm"
         />
 
         <input
@@ -662,25 +662,25 @@ function EditItemModal({
           value={unit}
           onChange={(event) => setUnit(event.target.value)}
           placeholder="Unit"
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-border px-3 py-2 text-sm"
         />
 
         <div>
-          <label htmlFor="edit-minimum-quantity" className="text-xs text-slate-500">Minimum Threshold</label>
+          <label htmlFor="edit-minimum-quantity" className="text-xs text-muted-foreground">Minimum Threshold</label>
           <input
             id="edit-minimum-quantity"
             type="number"
             min={0}
             value={minimumQuantity}
             onChange={(event) => setMinimumQuantity(event.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-xl border border-border px-3 py-2 text-sm"
           />
         </div>
 
         <button
           onClick={handleSubmit}
           disabled={saving}
-          className="w-full rounded-xl bg-[#10172a] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#18213a] disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save Changes"}
         </button>
@@ -744,7 +744,7 @@ function AdjustStockModal({
   return (
     <ModalShell title={`Adjust Stock — ${item.name}`} onClose={onClose}>
       <div className="space-y-3">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted-foreground">
           Current: {item.quantity}
           {item.unit ? ` ${item.unit}` : ""} (minimum {item.minimumQuantity}
           {item.unit ? ` ${item.unit}` : ""})
@@ -762,7 +762,7 @@ function AdjustStockModal({
             className={`flex-1 rounded-xl border px-3 py-2 text-sm font-medium ${
               direction === "add"
                 ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                : "border-slate-200 text-slate-600"
+                : "border-border text-foreground/70"
             }`}
           >
             + Add Stock
@@ -772,7 +772,7 @@ function AdjustStockModal({
             className={`flex-1 rounded-xl border px-3 py-2 text-sm font-medium ${
               direction === "remove"
                 ? "border-red-300 bg-red-50 text-red-700"
-                : "border-slate-200 text-slate-600"
+                : "border-border text-foreground/70"
             }`}
           >
             − Remove Stock
@@ -784,7 +784,7 @@ function AdjustStockModal({
           min={1}
           value={amount}
           onChange={(event) => setAmount(event.target.value)}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-border px-3 py-2 text-sm"
         />
 
         <input
@@ -792,7 +792,7 @@ function AdjustStockModal({
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           placeholder="Reason (e.g. restock, usage)"
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-border px-3 py-2 text-sm"
         />
 
         <textarea
@@ -800,13 +800,13 @@ function AdjustStockModal({
           onChange={(event) => setNotes(event.target.value)}
           placeholder="Notes (optional)"
           rows={2}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-border px-3 py-2 text-sm"
         />
 
         <button
           onClick={handleSubmit}
           disabled={saving}
-          className="w-full rounded-xl bg-[#10172a] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#18213a] disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           {saving ? "Saving..." : "Confirm Adjustment"}
         </button>
@@ -852,17 +852,17 @@ function HistoryModal({
   return (
     <ModalShell title={`History — ${item.name}`} onClose={onClose}>
       {loading ? (
-        <p className="text-sm text-slate-500">Loading history...</p>
+        <p className="text-sm text-muted-foreground">Loading history...</p>
       ) : error ? (
         <p className="text-sm text-red-600">{error}</p>
       ) : transactions.length === 0 ? (
-        <p className="text-sm text-slate-400">No transactions yet.</p>
+        <p className="text-sm text-muted-foreground/80">No transactions yet.</p>
       ) : (
         <ul className="max-h-80 space-y-2 overflow-y-auto">
           {transactions.map((tx) => (
             <li
               key={tx.id}
-              className="rounded-xl bg-slate-50 p-3 text-sm"
+              className="rounded-xl bg-muted p-3 text-sm"
             >
               <div className="flex items-center justify-between">
                 <span
@@ -873,17 +873,17 @@ function HistoryModal({
                   {tx.quantityChange >= 0 ? "+" : ""}
                   {tx.quantityChange}
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-muted-foreground/80">
                   {formatDate(tx.createdAt)}
                 </span>
               </div>
               {tx.transactionType && (
-                <p className="mt-1 text-xs text-slate-500 capitalize">
+                <p className="mt-1 text-xs text-muted-foreground capitalize">
                   {tx.transactionType.replace(/_/g, " ")}
                 </p>
               )}
               {tx.notes && (
-                <p className="mt-1 text-xs text-slate-500">{tx.notes}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{tx.notes}</p>
               )}
             </li>
           ))}

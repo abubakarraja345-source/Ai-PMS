@@ -102,7 +102,7 @@ function getStatusBadgeClasses(status: string | null) {
     case "completed":
       return "bg-blue-50 text-blue-700 border-blue-200";
     default:
-      return "bg-slate-50 text-slate-700 border-slate-200";
+      return "bg-muted text-foreground/80 border-border";
   }
 }
 
@@ -175,9 +175,9 @@ function getEventClassNames(status: string | null): string[] {
     default:
       return [
         ...EVENT_BASE_CLASSES,
-        "bg-slate-50!",
-        "border-slate-400!",
-        "text-slate-800!",
+        "bg-muted!",
+        "border-primary!",
+        "text-foreground/90!",
       ];
   }
 }
@@ -344,25 +344,25 @@ export default function CalendarPage() {
   });
 
   return (
-    <main className="min-h-screen bg-slate-50 p-4 md:p-10">
+    <main className="min-h-screen bg-background p-4 md:p-10">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-3xl font-semibold text-slate-950 md:text-5xl">
+          <h1 className="text-3xl font-semibold text-foreground md:text-5xl">
             Calendar
           </h1>
 
-          <p className="mt-2 text-slate-500 md:mt-3 md:text-lg">
+          <p className="mt-2 text-muted-foreground md:mt-3 md:text-lg">
             Property availability and reservations at a glance.
           </p>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+      <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => calendarRef.current?.today()}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-muted"
           >
             Today
           </button>
@@ -371,7 +371,7 @@ export default function CalendarPage() {
             <button
               onClick={() => calendarRef.current?.prev()}
               aria-label="Previous"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-border px-3 py-2 text-sm text-foreground/80 hover:bg-muted"
             >
               ‹
             </button>
@@ -379,25 +379,25 @@ export default function CalendarPage() {
             <button
               onClick={() => calendarRef.current?.next()}
               aria-label="Next"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-border px-3 py-2 text-sm text-foreground/80 hover:bg-muted"
             >
               ›
             </button>
           </div>
 
-          <span className="ml-1 text-sm font-medium text-slate-900 md:text-base">
+          <span className="ml-1 text-sm font-medium text-foreground md:text-base">
             {rangeTitle}
           </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex overflow-hidden rounded-lg border border-slate-200">
+          <div className="flex overflow-hidden rounded-lg border border-border">
             <button
               onClick={() => setView("dayGridMonth")}
               className={`px-3 py-2 text-sm font-medium transition ${
                 view === "dayGridMonth"
-                  ? "bg-slate-900 text-white"
-                  : "bg-white text-slate-700 hover:bg-slate-50"
+                  ? "bg-primary text-white"
+                  : "bg-card text-foreground/80 hover:bg-muted"
               }`}
             >
               Month
@@ -405,10 +405,10 @@ export default function CalendarPage() {
 
             <button
               onClick={() => setView("timeGridWeek")}
-              className={`border-l border-slate-200 px-3 py-2 text-sm font-medium transition ${
+              className={`border-l border-border px-3 py-2 text-sm font-medium transition ${
                 view === "timeGridWeek"
-                  ? "bg-slate-900 text-white"
-                  : "bg-white text-slate-700 hover:bg-slate-50"
+                  ? "bg-primary text-white"
+                  : "bg-card text-foreground/80 hover:bg-muted"
               }`}
             >
               Week
@@ -418,7 +418,7 @@ export default function CalendarPage() {
           <select
             value={propertyId}
             onChange={(e) => setPropertyId(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-slate-400"
+            className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground/80 outline-none focus:border-primary"
           >
             <option value="all">All properties</option>
 
@@ -431,7 +431,7 @@ export default function CalendarPage() {
 
           <button
             onClick={refresh}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-muted"
           >
             Refresh
           </button>
@@ -450,13 +450,13 @@ export default function CalendarPage() {
           dotClassName="bg-red-500"
           label="Cancelled (hidden)"
         />
-        <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground/70">
           <span>⇄</span> Imported (iCal)
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground/70">
           <span>🔖</span> Needs review
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground/70">
           <span>⚠</span> Overlapping dates
         </span>
       </div>
@@ -468,10 +468,10 @@ export default function CalendarPage() {
       )}
 
       {/* Calendar */}
-      <div className="relative mt-4 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm md:p-4">
+      <div className="relative mt-4 overflow-x-auto rounded-2xl border border-border bg-card p-2 shadow-sm md:p-4">
         {loading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/70">
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-muted-foreground">
               Loading calendar...
             </span>
           </div>
@@ -490,7 +490,7 @@ export default function CalendarPage() {
         {!loading &&
           reservations.length === 0 &&
           !error && (
-            <p className="mt-3 text-center text-sm text-slate-400">
+            <p className="mt-3 text-center text-sm text-muted-foreground/80">
               No reservations in this range.
             </p>
           )}
@@ -503,17 +503,17 @@ export default function CalendarPage() {
           onClick={() => setSelectedReservation(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-lg"
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-slate-950">
+                <h2 className="text-lg font-semibold text-foreground">
                   {getGuestName(selectedReservation.guest)}
                 </h2>
 
                 {selectedReservation.booking_reference && (
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {selectedReservation.booking_reference}
                   </p>
                 )}
@@ -550,8 +550,8 @@ export default function CalendarPage() {
               </div>
             </div>
 
-            <div className="mt-5 rounded-xl bg-slate-900 px-5 py-4 text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div className="mt-5 rounded-xl bg-primary px-5 py-4 text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
                 Total Amount
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-white">
@@ -597,7 +597,7 @@ export default function CalendarPage() {
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setSelectedReservation(null)}
-                className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted"
               >
                 Close
               </button>
@@ -608,7 +608,7 @@ export default function CalendarPage() {
                     `/reservations/${selectedReservation.id}`
                   )
                 }
-                className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white hover:opacity-90"
               >
                 View Full Reservation
               </button>
@@ -628,7 +628,7 @@ function LegendChip({
   label: string;
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground/70">
       <span className={`h-2 w-2 rounded-full ${dotClassName}`} />
       {label}
     </span>
@@ -643,9 +643,9 @@ function QuickRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-900">
+    <div className="flex items-center justify-between border-b border-border pb-2">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-foreground">
         {value}
       </span>
     </div>

@@ -236,42 +236,53 @@
   --chart-5: #ccb499;
 }
 
+/*
+ * Dark mode's entire neutral/brand palette is deliberately restricted
+ * to exactly four colors: #0F0E47, #272757, #505081, #8686AC — no
+ * fifth hue anywhere below (borders/muted-foreground/chart variety
+ * come from opacity variants of these four, never a new color).
+ * destructive/success/warning are the one deliberate exception —
+ * those carry universal red/green/amber meaning (error/success/
+ * warning) that this indigo palette can't substitute for without
+ * becoming unreadable as status signals, so they're unchanged from
+ * their usual semantic colors.
+ */
 .dark {
-  --background: #0b1120;
-  --foreground: #e2e8f0;
-  --card: #111827;
-  --card-foreground: #f1f5f9;
-  --popover: #111827;
-  --popover-foreground: #f1f5f9;
-  --primary: #818cf8;
-  --primary-foreground: #0b1120;
-  --secondary: #2dd4bf;
-  --secondary-foreground: #0b1120;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #fbbf24;
-  --accent-foreground: #0b1120;
+  --background: #0f0e47;
+  --foreground: #8686ac;
+  --card: #272757;
+  --card-foreground: #8686ac;
+  --popover: #272757;
+  --popover-foreground: #8686ac;
+  --primary: #505081;
+  --primary-foreground: #8686ac;
+  --secondary: #272757;
+  --secondary-foreground: #8686ac;
+  --muted: #272757;
+  --muted-foreground: rgba(134, 134, 172, 0.6);
+  --accent: #505081;
+  --accent-foreground: #8686ac;
   --destructive: #fb7185;
   --success: #34d399;
   --success-foreground: #04150f;
   --warning: #fbbf24;
   --warning-foreground: #1c1300;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: #818cf8;
-  --chart-1: #818cf8;
-  --chart-2: #2dd4bf;
-  --chart-3: #fbbf24;
-  --chart-4: #fb7185;
-  --chart-5: #a78bfa;
-  --sidebar: #05070d;
-  --sidebar-foreground: #cbd5e1;
-  --sidebar-primary: #818cf8;
-  --sidebar-primary-foreground: #05070d;
-  --sidebar-accent: rgba(255, 255, 255, 0.06);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-ring: #818cf8;
+  --border: rgba(134, 134, 172, 0.18);
+  --input: rgba(134, 134, 172, 0.2);
+  --ring: #505081;
+  --chart-1: #505081;
+  --chart-2: #8686ac;
+  --chart-3: rgba(80, 80, 129, 0.6);
+  --chart-4: rgba(134, 134, 172, 0.5);
+  --chart-5: #272757;
+  --sidebar: #0f0e47;
+  --sidebar-foreground: #8686ac;
+  --sidebar-primary: #505081;
+  --sidebar-primary-foreground: #8686ac;
+  --sidebar-accent: rgba(134, 134, 172, 0.1);
+  --sidebar-accent-foreground: #8686ac;
+  --sidebar-border: rgba(134, 134, 172, 0.1);
+  --sidebar-ring: #505081;
 }
 
 @layer base {
@@ -324,6 +335,23 @@
 .solid-panel {
   background: var(--card);
   border: 1px solid var(--border);
+}
+
+/* Idle animation for the floating AI bot widget — a small periodic
+   tilt so it reads as "alive" without being distracting. */
+@keyframes wiggle {
+  0%, 92%, 100% {
+    transform: rotate(0deg);
+  }
+  94% {
+    transform: rotate(-8deg);
+  }
+  96% {
+    transform: rotate(8deg);
+  }
+  98% {
+    transform: rotate(-4deg);
+  }
 }
 
 /* Thin, subtle scrollbar for the dashboard sidebar's nav list. */

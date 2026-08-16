@@ -98,9 +98,9 @@ export default function PropertyAmenitiesSection({
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-slate-900">Amenities</h2>
-      <p className="mt-1 text-sm text-slate-500">
+    <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-xl font-semibold text-foreground">Amenities</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
         What this property offers guests.
       </p>
 
@@ -111,11 +111,11 @@ export default function PropertyAmenitiesSection({
       )}
 
       {loading ? (
-        <div className="mt-5 text-sm text-slate-500">
+        <div className="mt-5 text-sm text-muted-foreground">
           Loading amenities...
         </div>
       ) : amenities.length === 0 ? (
-        <p className="mt-5 text-sm text-slate-400">
+        <p className="mt-5 text-sm text-muted-foreground/80">
           No amenities added yet.
         </p>
       ) : (
@@ -123,11 +123,11 @@ export default function PropertyAmenitiesSection({
           {amenities.map((amenity) => (
             <span
               key={amenity.id}
-              className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-700"
+              className="inline-flex items-center gap-2 rounded-full bg-muted px-4 py-2 text-sm text-foreground/80"
             >
               {amenity.name}
               {amenity.category && (
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-muted-foreground/80">
                   · {amenity.category}
                 </span>
               )}
@@ -136,7 +136,7 @@ export default function PropertyAmenitiesSection({
                 <button
                   onClick={() => handleDelete(amenity.id)}
                   disabled={deletingId === amenity.id}
-                  className="ml-1 text-slate-400 hover:text-red-600 disabled:opacity-50"
+                  className="ml-1 text-muted-foreground/80 hover:text-red-600 disabled:opacity-50"
                   aria-label={`Remove ${amenity.name}`}
                 >
                   ×
@@ -154,7 +154,7 @@ export default function PropertyAmenitiesSection({
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="Amenity name (e.g. Pool)"
-            className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+            className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm"
           />
 
           <input
@@ -162,13 +162,13 @@ export default function PropertyAmenitiesSection({
             value={category}
             onChange={(event) => setCategory(event.target.value)}
             placeholder="Category (optional)"
-            className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+            className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm"
           />
 
           <button
             onClick={handleAdd}
             disabled={saving || !name.trim()}
-            className="rounded-xl bg-[#10172a] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#18213a] disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-gradient-to-r from-primary to-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? "Adding..." : "Add"}
           </button>

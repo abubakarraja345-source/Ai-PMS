@@ -132,17 +132,17 @@ export default function CurrencySelect({
         onKeyDown={handleTriggerKeyDown}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm outline-none transition hover:border-slate-300 focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-card px-4 py-3 text-left text-sm outline-none transition hover:border-border focus:border-primary focus:ring-4 focus:ring-slate-900/5 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
       >
         <span className="flex min-w-0 items-center gap-2">
-          <span className="text-slate-400">{selected.symbol}</span>
-          <span className="font-medium text-slate-900">{selected.code}</span>
-          <span className="truncate text-slate-500">— {selected.name}</span>
+          <span className="text-muted-foreground/80">{selected.symbol}</span>
+          <span className="font-medium text-foreground">{selected.code}</span>
+          <span className="truncate text-muted-foreground">— {selected.name}</span>
         </span>
 
         <ChevronDown
           size={16}
-          className={`shrink-0 text-slate-400 transition-transform duration-150 ${
+          className={`shrink-0 text-muted-foreground/80 transition-transform duration-150 ${
             open ? "rotate-180" : ""
           }`}
         />
@@ -151,10 +151,10 @@ export default function CurrencySelect({
       {open && (
         <div
           role="listbox"
-          className="absolute z-20 mt-2 w-full min-w-[340px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg animate-in fade-in zoom-in-95 duration-150"
+          className="absolute z-20 mt-2 w-full min-w-[340px] overflow-hidden rounded-xl border border-border bg-card shadow-lg animate-in fade-in zoom-in-95 duration-150"
         >
-          <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2.5">
-            <Search size={15} className="shrink-0 text-slate-400" />
+          <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+            <Search size={15} className="shrink-0 text-muted-foreground/80" />
             <input
               ref={searchRef}
               value={query}
@@ -164,13 +164,13 @@ export default function CurrencySelect({
               }}
               onKeyDown={handleListKeyDown}
               placeholder="Search currency..."
-              className="w-full text-sm outline-none placeholder:text-slate-400"
+              className="w-full text-sm outline-none placeholder:text-muted-foreground/80"
             />
           </div>
 
           <div className="max-h-64 overflow-y-auto py-1">
             {filtered.length === 0 ? (
-              <p className="px-3 py-4 text-center text-sm text-slate-400">
+              <p className="px-3 py-4 text-center text-sm text-muted-foreground/80">
                 No currency matches &ldquo;{query}&rdquo;
               </p>
             ) : (
@@ -185,22 +185,22 @@ export default function CurrencySelect({
                     onMouseEnter={() => setHighlighted(index)}
                     onClick={() => handleSelect(meta.code)}
                     className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition ${
-                      index === highlighted ? "bg-slate-50" : ""
+                      index === highlighted ? "bg-muted" : ""
                     }`}
                   >
                     <span className="flex h-4 w-4 shrink-0 items-center justify-center text-blue-600">
                       {isSelected && <Check size={14} />}
                     </span>
-                    <span className="w-6 shrink-0 text-center text-slate-400">
+                    <span className="w-6 shrink-0 text-center text-muted-foreground/80">
                       {meta.symbol}
                     </span>
-                    <span className="w-11 shrink-0 font-medium text-slate-900">
+                    <span className="w-11 shrink-0 font-medium text-foreground">
                       {meta.code}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-slate-500">
+                    <span className="min-w-0 flex-1 truncate text-muted-foreground">
                       {meta.name}
                     </span>
-                    <span className="shrink-0 tabular-nums text-slate-400">
+                    <span className="shrink-0 tabular-nums text-muted-foreground/80">
                       {formatMoney(1250, meta.code)}
                     </span>
                   </button>

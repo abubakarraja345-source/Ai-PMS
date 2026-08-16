@@ -43,7 +43,7 @@ function reservationStatusClasses(status: string | null) {
     case "cancelled":
       return "bg-red-50 text-red-700 border-red-200";
     default:
-      return "bg-slate-50 text-slate-700 border-slate-200";
+      return "bg-muted text-foreground/80 border-border";
   }
 }
 
@@ -111,9 +111,9 @@ export default function GuestDetailsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-10">
+      <main className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-6xl">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8">
+          <div className="rounded-2xl border border-border bg-card p-8">
             Loading guest...
           </div>
         </div>
@@ -123,7 +123,7 @@ export default function GuestDetailsPage() {
 
   if (error || !guest) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-10">
+      <main className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-6xl">
           <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
             {error || "Guest not found."}
@@ -131,7 +131,7 @@ export default function GuestDetailsPage() {
 
           <button
             onClick={() => router.push("/guests")}
-            className="mt-5 rounded-xl bg-slate-900 px-5 py-3 text-white"
+            className="mt-5 rounded-xl bg-primary px-5 py-3 text-white"
           >
             Back to Guests
           </button>
@@ -141,7 +141,7 @@ export default function GuestDetailsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10">
+    <main className="min-h-screen bg-background px-6 py-10">
       <div className="mx-auto max-w-6xl">
 
         {/* Header */}
@@ -149,13 +149,13 @@ export default function GuestDetailsPage() {
           <div>
             <button
               onClick={() => router.push("/guests")}
-              className="mb-4 text-sm text-slate-500 hover:text-slate-900"
+              className="mb-4 text-sm text-muted-foreground hover:text-foreground"
             >
               ← Back to Guests
             </button>
 
             <div className="flex items-center gap-4">
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-900">
+              <h1 className="text-4xl font-semibold tracking-tight text-foreground">
                 {guest.first_name} {guest.last_name || ""}
               </h1>
 
@@ -166,7 +166,7 @@ export default function GuestDetailsPage() {
               )}
             </div>
 
-            <p className="mt-2 text-slate-500">
+            <p className="mt-2 text-muted-foreground">
               {guest.email || "No email on file"}
             </p>
           </div>
@@ -177,7 +177,7 @@ export default function GuestDetailsPage() {
                 onClick={() =>
                   router.push(`/messages?guestId=${guest.id}`)
                 }
-                className="rounded-xl border border-slate-200 bg-white px-6 py-3 font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border border-border bg-card px-6 py-3 font-medium text-foreground/80 hover:bg-muted"
               >
                 Message on WhatsApp
               </button>
@@ -187,7 +187,7 @@ export default function GuestDetailsPage() {
               onClick={() =>
                 router.push(`/guests/${guest.id}/edit`)
               }
-              className="rounded-xl bg-slate-900 px-6 py-3 font-medium text-white hover:bg-slate-800"
+              className="rounded-xl bg-primary px-6 py-3 font-medium text-white hover:opacity-90"
             >
               Edit Guest
             </button>
@@ -195,8 +195,8 @@ export default function GuestDetailsPage() {
         </div>
 
         {/* Contact Information */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Contact Information
           </h2>
 
@@ -212,24 +212,24 @@ export default function GuestDetailsPage() {
         </section>
 
         {/* Reservation History */}
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Reservation History
           </h2>
 
           {reservationsLoading ? (
-            <p className="mt-4 text-sm text-slate-500">
+            <p className="mt-4 text-sm text-muted-foreground">
               Loading reservations...
             </p>
           ) : reservations.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-400">
+            <p className="mt-4 text-sm text-muted-foreground/80">
               No reservations for this guest yet.
             </p>
           ) : (
             <div className="mt-5 overflow-x-auto">
               <table className="w-full min-w-[560px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
+                  <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground/80">
                     <th className="pb-3 pr-4 font-medium">Property</th>
                     <th className="pb-3 pr-4 font-medium">Check-in</th>
                     <th className="pb-3 pr-4 font-medium">Check-out</th>
@@ -241,21 +241,21 @@ export default function GuestDetailsPage() {
                   {reservations.map((reservation) => (
                     <tr
                       key={reservation.id}
-                      className="cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50"
+                      className="cursor-pointer border-b border-border/60 last:border-0 hover:bg-muted"
                       onClick={() =>
                         (window.location.href = `/reservations/${reservation.id}`)
                       }
                     >
-                      <td className="py-3 pr-4 font-medium text-slate-900">
+                      <td className="py-3 pr-4 font-medium text-foreground">
                         {reservation.property?.title ?? "Unknown property"}
                       </td>
-                      <td className="py-3 pr-4 text-slate-700">
+                      <td className="py-3 pr-4 text-foreground/80">
                         {reservation.check_in}
                       </td>
-                      <td className="py-3 pr-4 text-slate-700">
+                      <td className="py-3 pr-4 text-foreground/80">
                         {reservation.check_out}
                       </td>
-                      <td className="py-3 pr-4 capitalize text-slate-700">
+                      <td className="py-3 pr-4 capitalize text-foreground/80">
                         {reservation.source}
                       </td>
                       <td className="py-3">
@@ -275,8 +275,8 @@ export default function GuestDetailsPage() {
 
         {/* Documents + Notes */}
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Travel Document
             </h2>
 
@@ -288,20 +288,20 @@ export default function GuestDetailsPage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Notes
             </h2>
 
-            <p className="mt-4 leading-7 text-slate-600">
+            <p className="mt-4 leading-7 text-foreground/70">
               {guest.notes || "No notes provided."}
             </p>
           </section>
         </div>
 
         {/* Metadata */}
-        <section className="mt-6 mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 mb-10 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Record Information
           </h2>
 
@@ -332,11 +332,11 @@ function DetailRow({
 }) {
   return (
     <div>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted-foreground">
         {label}
       </p>
 
-      <p className="mt-1 break-words text-sm font-medium text-slate-900">
+      <p className="mt-1 break-words text-sm font-medium text-foreground">
         {value || "Not provided"}
       </p>
     </div>

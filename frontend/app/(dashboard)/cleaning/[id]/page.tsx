@@ -42,7 +42,7 @@ function getStatusClasses(status: string) {
     case "cancelled":
       return "bg-red-50 text-red-700 border-red-200";
     default:
-      return "bg-slate-50 text-slate-700 border-slate-200";
+      return "bg-muted text-foreground/80 border-border";
   }
 }
 
@@ -113,9 +113,9 @@ export default function CleaningTaskDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-10">
+      <main className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-4xl">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8">
+          <div className="rounded-2xl border border-border bg-card p-8">
             Loading cleaning task...
           </div>
         </div>
@@ -125,7 +125,7 @@ export default function CleaningTaskDetailPage() {
 
   if (error && !task) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-10">
+      <main className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-4xl">
           <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
             {error}
@@ -133,7 +133,7 @@ export default function CleaningTaskDetailPage() {
 
           <button
             onClick={() => router.push("/cleaning")}
-            className="mt-5 rounded-xl bg-slate-900 px-5 py-3 text-white"
+            className="mt-5 rounded-xl bg-primary px-5 py-3 text-white"
           >
             Back to Cleaning
           </button>
@@ -151,19 +151,19 @@ export default function CleaningTaskDetailPage() {
     : null;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10">
+    <main className="min-h-screen bg-background px-6 py-10">
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-start">
           <div>
             <button
               onClick={() => router.push("/cleaning")}
-              className="mb-4 text-sm text-slate-500 hover:text-slate-900"
+              className="mb-4 text-sm text-muted-foreground hover:text-foreground"
             >
               ← Back to Cleaning
             </button>
 
             <div className="flex items-center gap-4">
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-900">
+              <h1 className="text-4xl font-semibold tracking-tight text-foreground">
                 {task.property?.title ??
                   "Unknown property"}
               </h1>
@@ -177,7 +177,7 @@ export default function CleaningTaskDetailPage() {
               </span>
             </div>
 
-            <p className="mt-2 capitalize text-slate-500">
+            <p className="mt-2 capitalize text-muted-foreground">
               {task.priority} priority
               {task.scheduled_date
                 ? ` · Scheduled ${task.scheduled_date}`
@@ -189,7 +189,7 @@ export default function CleaningTaskDetailPage() {
             onClick={() =>
               router.push(`/cleaning/${task.id}/edit`)
             }
-            className="rounded-xl bg-slate-900 px-6 py-3 font-medium text-white hover:bg-slate-800"
+            className="rounded-xl bg-primary px-6 py-3 font-medium text-white hover:opacity-90"
           >
             Edit Task
           </button>
@@ -202,8 +202,8 @@ export default function CleaningTaskDetailPage() {
         )}
 
         {/* Actions */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Actions
           </h2>
 
@@ -252,14 +252,14 @@ export default function CleaningTaskDetailPage() {
               <button
                 disabled={saving}
                 onClick={() => changeStatus("in_progress")}
-                className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
               >
                 Reopen Task
               </button>
             )}
 
             {task.status === "cancelled" && (
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-muted-foreground/80">
                 This task has been cancelled and has no
                 further actions.
               </p>
@@ -268,8 +268,8 @@ export default function CleaningTaskDetailPage() {
         </section>
 
         {/* Details */}
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Task Details
           </h2>
 
@@ -296,8 +296,8 @@ export default function CleaningTaskDetailPage() {
         </section>
 
         {/* Reservation */}
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Linked Reservation
           </h2>
 
@@ -318,26 +318,26 @@ export default function CleaningTaskDetailPage() {
               />
             </div>
           ) : (
-            <p className="mt-4 text-sm text-slate-400">
+            <p className="mt-4 text-sm text-muted-foreground/80">
               Not linked to a reservation.
             </p>
           )}
         </section>
 
         {/* Notes */}
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Notes
           </h2>
 
-          <p className="mt-4 leading-7 text-slate-600">
+          <p className="mt-4 leading-7 text-foreground/70">
             {task.notes || "No notes provided."}
           </p>
         </section>
 
         {/* Timeline */}
-        <section className="mt-6 mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 mb-10 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Timeline
           </h2>
 
@@ -374,8 +374,8 @@ function DetailRow({
 }) {
   return (
     <div>
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 break-words text-sm font-medium capitalize text-slate-900">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-1 break-words text-sm font-medium capitalize text-foreground">
         {value || "Not provided"}
       </p>
     </div>

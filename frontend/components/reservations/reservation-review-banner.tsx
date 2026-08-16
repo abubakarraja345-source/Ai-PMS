@@ -99,16 +99,16 @@ export default function ReservationReviewBanner({
           {!confirming ? (
             <button
               onClick={() => setConfirming(true)}
-              className="mt-4 rounded-lg bg-[#10172a] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#18213a]"
+              className="mt-4 rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
             >
               Review Reservation
             </button>
           ) : (
-            <div className="mt-4 rounded-xl border border-amber-300 bg-white p-4">
-              <p className="font-medium text-slate-900">
+            <div className="mt-4 rounded-xl border border-amber-300 bg-card p-4">
+              <p className="font-medium text-foreground">
                 Mark as Reviewed?
               </p>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Confirm that you have reviewed this reservation and want
                 to remove the review flag.
               </p>
@@ -117,7 +117,7 @@ export default function ReservationReviewBanner({
                 <button
                   onClick={() => setConfirming(false)}
                   disabled={clearing}
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -125,7 +125,7 @@ export default function ReservationReviewBanner({
                 <button
                   onClick={handleClear}
                   disabled={clearing}
-                  className="rounded-lg bg-[#10172a] px-4 py-2 text-sm font-medium text-white hover:bg-[#18213a] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {clearing ? "Marking..." : "Mark as Reviewed"}
                 </button>

@@ -464,6 +464,15 @@ export default function DashboardStats() {
             </div>
           </div>
 
+          {revenue.byCurrency.length > 1 && (
+            <p className="mt-3 rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+              Each card below is an <strong>independent total</strong> — a
+              PKR total and a USD total are never added together. Only the
+              small &ldquo;≈&rdquo; line under a card is an actual currency
+              conversion.
+            </p>
+          )}
+
           {revenue.byCurrency.length === 0 ? (
             <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-10 text-center">
               <p className="text-sm font-medium text-foreground/70">
@@ -655,7 +664,7 @@ export default function DashboardStats() {
             </Link>
 
             <Link
-              href="/reservations/review"
+              href="/reservations?needs_review=true"
               className="flex items-center justify-between rounded-xl bg-muted/60 px-4 py-3 hover:bg-muted"
             >
               <span className="text-sm text-foreground/80">

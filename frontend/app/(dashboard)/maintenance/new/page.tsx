@@ -157,22 +157,22 @@ export default function NewMaintenanceTicketPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10">
+    <main className="min-h-screen bg-background px-6 py-10">
       <div className="mx-auto max-w-3xl">
         <div className="mb-8">
           <button
             type="button"
             onClick={() => router.push("/maintenance")}
-            className="mb-4 text-sm text-slate-500 hover:text-slate-900"
+            className="mb-4 text-sm text-muted-foreground hover:text-foreground"
           >
             ← Back to Maintenance
           </button>
 
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-4xl font-semibold tracking-tight text-foreground">
             New Maintenance Ticket
           </h1>
 
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-muted-foreground">
             Report a property maintenance issue.
           </p>
         </div>
@@ -190,14 +190,14 @@ export default function NewMaintenanceTicketPage() {
         )}
 
         <form onSubmit={createTicket} className="space-y-6">
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Ticket Details
             </h2>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div className="md:col-span-2">
-                <label htmlFor="title" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="title" className="mb-2 block text-sm font-medium text-foreground/80">
                   Title *
                 </label>
 
@@ -210,12 +210,12 @@ export default function NewMaintenanceTicketPage() {
                     updateField("title", e.target.value)
                   }
                   placeholder="e.g. Leaking faucet in master bath"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="property_id" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="property_id" className="mb-2 block text-sm font-medium text-foreground/80">
                   Property *
                 </label>
 
@@ -229,7 +229,7 @@ export default function NewMaintenanceTicketPage() {
                       e.target.value
                     )
                   }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 outline-none focus:border-primary"
                 >
                   <option value="">Select property</option>
                   {properties.map((property) => (
@@ -244,7 +244,7 @@ export default function NewMaintenanceTicketPage() {
               </div>
 
               <div>
-                <label htmlFor="reservation_id" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="reservation_id" className="mb-2 block text-sm font-medium text-foreground/80">
                   Reservation
                 </label>
 
@@ -258,7 +258,7 @@ export default function NewMaintenanceTicketPage() {
                     )
                   }
                   disabled={!form.property_id}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 outline-none focus:border-primary disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground/80"
                 >
                   <option value="">
                     {form.property_id
@@ -289,7 +289,7 @@ export default function NewMaintenanceTicketPage() {
               </div>
 
               <div>
-                <label htmlFor="category" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="category" className="mb-2 block text-sm font-medium text-foreground/80">
                   Category
                 </label>
 
@@ -301,12 +301,12 @@ export default function NewMaintenanceTicketPage() {
                     updateField("category", e.target.value)
                   }
                   placeholder="e.g. plumbing, electrical, HVAC"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="priority" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="priority" className="mb-2 block text-sm font-medium text-foreground/80">
                   Priority
                 </label>
 
@@ -316,7 +316,7 @@ export default function NewMaintenanceTicketPage() {
                   onChange={(e) =>
                     updateField("priority", e.target.value)
                   }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 outline-none focus:border-primary"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -326,7 +326,7 @@ export default function NewMaintenanceTicketPage() {
               </div>
 
               <div>
-                <label htmlFor="assigned_to" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="assigned_to" className="mb-2 block text-sm font-medium text-foreground/80">
                   Assigned To
                 </label>
 
@@ -341,12 +341,12 @@ export default function NewMaintenanceTicketPage() {
                     )
                   }
                   placeholder="Staff member ID or name"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="estimated_cost" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="estimated_cost" className="mb-2 block text-sm font-medium text-foreground/80">
                   Estimated Cost
                 </label>
 
@@ -363,12 +363,12 @@ export default function NewMaintenanceTicketPage() {
                     )
                   }
                   placeholder="0.00"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="description" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="description" className="mb-2 block text-sm font-medium text-foreground/80">
                   Description
                 </label>
 
@@ -383,7 +383,7 @@ export default function NewMaintenanceTicketPage() {
                   }
                   placeholder="Describe the issue..."
                   rows={4}
-                  className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full resize-none rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -394,7 +394,7 @@ export default function NewMaintenanceTicketPage() {
               type="button"
               onClick={() => router.push("/maintenance")}
               disabled={loading}
-              className="rounded-xl border border-slate-200 bg-white px-6 py-3 font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-xl border border-border bg-card px-6 py-3 font-medium text-foreground/80 transition hover:bg-muted disabled:opacity-50"
             >
               Cancel
             </button>
@@ -402,7 +402,7 @@ export default function NewMaintenanceTicketPage() {
             <button
               type="submit"
               disabled={loading}
-              className="rounded-xl bg-slate-900 px-7 py-3 font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-primary px-7 py-3 font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading
                 ? "Creating Ticket..."

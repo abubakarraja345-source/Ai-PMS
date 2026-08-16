@@ -65,16 +65,16 @@ export function useToast() {
         const { border, icon: Icon, iconColor } = TONE_STYLES[toast.tone];
         return (
           <div
-            className={`flex items-start gap-3 rounded-xl border bg-white p-4 shadow-lg ${border}`}
+            className={`flex items-start gap-3 rounded-xl border bg-card p-4 shadow-lg ${border}`}
           >
             <Icon size={18} className={`mt-0.5 shrink-0 ${iconColor}`} />
 
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-slate-900">
+              <p className="text-sm font-medium text-foreground">
                 {toast.title}
               </p>
               {toast.description && (
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {toast.description}
                 </p>
               )}
@@ -83,7 +83,7 @@ export function useToast() {
             <button
               type="button"
               onClick={() => setToast(null)}
-              className="shrink-0 text-slate-400 hover:text-slate-600"
+              className="shrink-0 text-muted-foreground/80 hover:text-foreground/70"
               aria-label="Dismiss notification"
             >
               ✕

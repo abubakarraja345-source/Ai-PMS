@@ -426,6 +426,27 @@ export async function notifyIntegrationConnected(
   }
 }
 
+/**
+ * Some internal errors (e.g. airbnbApi/adapter.ts's
+ * AirbnbApiNotConfiguredError, written for whoever is setting up the
+ * backend's .env file) are never meant for an end user — reusing them
+ * verbatim in a notification leaked raw environment variable names
+ * like AIRBNB_CLIENT_ID straight into someone's inbox. Detected by a
+ * simple heuristic (multiple SCREAMING_SNAKE_CASE tokens, the
+ * unmistakable shape of env var names) rather than special-casing
+ * every specific message, so this stays safe for whatever new
+ * integration/error is added later too.
+ */
+function humanizeSyncErrorMessage(message: string): string {
+  const screamingSnakeTokens = message.match(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/g) ?? [];
+
+  if (screamingSnakeTokens.length >= 2) {
+    return "This integration isn't fully set up yet on our end — our team has been notified.";
+  }
+
+  return message;
+}
+
 export async function notifyIntegrationSyncFailed(
   organizationId: string,
   data: IntegrationEventData & { errorMessage: string }
@@ -437,7 +458,7 @@ export async function notifyIntegrationSyncFailed(
       organizationId,
       recipients,
       "Integration sync failed",
-      `${integrationLabel(data)} failed: ${data.errorMessage}`,
+      `${integrationLabel(data)} failed: ${humanizeSyncErrorMessage(data.errorMessage)}`,
       "integration_sync_failed"
     );
   } catch (error) {

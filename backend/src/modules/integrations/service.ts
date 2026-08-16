@@ -14,7 +14,8 @@ import { Integration, IntegrationRow } from "./types";
 import { CreateIntegrationInput, UpdateIntegrationInput } from "./validation";
 import { getProviderAdapter } from "./providers/registry";
 import { isSupportedProvider, ProviderId } from "./providers/types";
-import { icalAdapter } from "./providers/ical.adapter";
+import { icalAdapter, fetchIcalFeedWithName } from "./providers/ical.adapter";
+import { addProperty } from "../properties/service";
 import {
   notifyIntegrationConnected,
   notifyIntegrationSyncFailed,
@@ -322,6 +323,39 @@ export async function testIcalFeedUrl(
     })),
     dateRange,
   };
+}
+
+/**
+ * "Create a property from this calendar" — the connect-calendar
+ * wizard's alternative to requiring a property to already exist.
+ * Fetches the feed once (fetchIcalFeedWithName, same SSRF-guarded
+ * path as every other feed read in this module) and creates a new
+ * property named after the feed's X-WR-CALNAME.
+ *
+ * Deliberately does NOT attempt to fill in price, bedrooms, property
+ * type, or address — standard OTA iCal exports (Airbnb, Booking.com,
+ * VRBO) don't contain that data at all, only blocked-date ranges and
+ * a calendar name. Filling those in with fabricated values would be
+ * worse than leaving them for the owner to set once on the new
+ * property's edit page. property_type defaults to "apartment" (the
+ * same default the manual "Add Property" form starts with) since it's
+ * a required field with no better guess available from the feed.
+ */
+export async function createPropertyFromIcalFeed(
+  organizationId: string,
+  userId: string,
+  feedUrl: string
+): Promise<{ id: string; title: string }> {
+  const { calendarName } = await fetchIcalFeedWithName(feedUrl);
+
+  const title = calendarName || `Imported Calendar Property`;
+
+  const property = await addProperty(organizationId, userId, {
+    title,
+    property_type: "apartment",
+  });
+
+  return { id: property.id, title: property.title };
 }
 
 /**

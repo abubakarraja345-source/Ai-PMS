@@ -82,23 +82,23 @@ export default function NewGuestPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10">
+    <main className="min-h-screen bg-background px-6 py-10">
       <div className="mx-auto max-w-5xl">
         {/* Header */}
         <div className="mb-8">
           <button
             type="button"
             onClick={() => router.push("/guests")}
-            className="mb-4 text-sm text-slate-500 hover:text-slate-900"
+            className="mb-4 text-sm text-muted-foreground hover:text-foreground"
           >
             ← Back to Guests
           </button>
 
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-4xl font-semibold tracking-tight text-foreground">
             Add Guest
           </h1>
 
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-muted-foreground">
             Add a new guest profile to your PMS.
           </p>
         </div>
@@ -119,18 +119,18 @@ export default function NewGuestPage() {
 
         <form onSubmit={createGuest} className="space-y-6">
           {/* Basic Information */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Basic Information
             </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               The guest&apos;s name and contact details.
             </p>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label htmlFor="first_name" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="first_name" className="mb-2 block text-sm font-medium text-foreground/80">
                   First Name *
                 </label>
 
@@ -142,13 +142,13 @@ export default function NewGuestPage() {
                     updateField("first_name", e.target.value)
                   }
                   placeholder="e.g. Sarah"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none transition focus:border-primary"
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor="last_name" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="last_name" className="mb-2 block text-sm font-medium text-foreground/80">
                   Last Name
                 </label>
 
@@ -160,12 +160,12 @@ export default function NewGuestPage() {
                     updateField("last_name", e.target.value)
                   }
                   placeholder="e.g. Khan"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground/80">
                   Email
                 </label>
 
@@ -177,12 +177,12 @@ export default function NewGuestPage() {
                     updateField("email", e.target.value)
                   }
                   placeholder="guest@example.com"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="phone" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="phone" className="mb-2 block text-sm font-medium text-foreground/80">
                   Phone
                 </label>
 
@@ -194,21 +194,21 @@ export default function NewGuestPage() {
                     updateField("phone", e.target.value)
                   }
                   placeholder="+92 300 1234567"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
             </div>
           </section>
 
           {/* Additional Details */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Additional Details
             </h2>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label htmlFor="country" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="country" className="mb-2 block text-sm font-medium text-foreground/80">
                   Country
                 </label>
 
@@ -220,12 +220,12 @@ export default function NewGuestPage() {
                     updateField("country", e.target.value)
                   }
                   placeholder="Pakistan"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="language" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="language" className="mb-2 block text-sm font-medium text-foreground/80">
                   Preferred Language
                 </label>
 
@@ -237,12 +237,12 @@ export default function NewGuestPage() {
                     updateField("language", e.target.value)
                   }
                   placeholder="English"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="passport_number" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="passport_number" className="mb-2 block text-sm font-medium text-foreground/80">
                   Passport Number
                 </label>
 
@@ -256,12 +256,12 @@ export default function NewGuestPage() {
                       e.target.value
                     )
                   }
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="notes" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="notes" className="mb-2 block text-sm font-medium text-foreground/80">
                   Notes
                 </label>
 
@@ -273,7 +273,7 @@ export default function NewGuestPage() {
                   }
                   placeholder="Internal notes about this guest..."
                   rows={4}
-                  className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full resize-none rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
@@ -285,12 +285,12 @@ export default function NewGuestPage() {
                   onChange={(e) =>
                     updateField("vip", e.target.checked)
                   }
-                  className="h-5 w-5 rounded border-slate-300"
+                  className="h-5 w-5 rounded border-border"
                 />
 
                 <label
                   htmlFor="vip"
-                  className="text-sm font-medium text-slate-700"
+                  className="text-sm font-medium text-foreground/80"
                 >
                   Mark as VIP guest
                 </label>
@@ -304,7 +304,7 @@ export default function NewGuestPage() {
               type="button"
               onClick={() => router.push("/guests")}
               disabled={loading}
-              className="rounded-xl border border-slate-200 bg-white px-6 py-3 font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-xl border border-border bg-card px-6 py-3 font-medium text-foreground/80 transition hover:bg-muted disabled:opacity-50"
             >
               Cancel
             </button>
@@ -312,7 +312,7 @@ export default function NewGuestPage() {
             <button
               type="submit"
               disabled={loading}
-              className="rounded-xl bg-slate-900 px-7 py-3 font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-primary px-7 py-3 font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Creating Guest..." : "Create Guest"}
             </button>

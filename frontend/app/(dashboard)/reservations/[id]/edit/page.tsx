@@ -306,8 +306,8 @@ export default function EditReservationPage() {
   if (loading) {
     return (
       <div className="mx-auto max-w-5xl">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <p className="text-sm text-slate-500">
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
+          <p className="text-sm text-muted-foreground">
             Loading reservation...
           </p>
         </div>
@@ -329,7 +329,7 @@ export default function EditReservationPage() {
 
           <Link
             href="/reservations"
-            className="mt-4 inline-block rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white"
+            className="mt-4 inline-block rounded-lg bg-background px-4 py-2 text-sm font-medium text-white"
           >
             Back to Reservations
           </Link>
@@ -344,22 +344,22 @@ export default function EditReservationPage() {
 
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="mb-2 text-sm font-medium text-slate-500">
+          <p className="mb-2 text-sm font-medium text-muted-foreground">
             Reservations
           </p>
 
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Edit Reservation
           </h1>
 
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             Update booking information and guest details.
           </p>
         </div>
 
         <Link
           href={`/reservations/${id}`}
-          className="w-fit rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="w-fit rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted"
         >
           Cancel
         </Link>
@@ -382,26 +382,26 @@ export default function EditReservationPage() {
         {/* Property (read-only context — property cannot be changed
             from this form) */}
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
             Property
           </p>
 
-          <p className="mt-1 text-lg font-semibold text-slate-900">
+          <p className="mt-1 text-lg font-semibold text-foreground">
             {reservation.property?.title || "Property"}
           </p>
         </section>
 
         {/* Booking */}
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">
             Booking Information
           </h2>
 
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
             <div>
-              <label htmlFor="booking_reference" className="text-sm font-medium text-slate-700">
+              <label htmlFor="booking_reference" className="text-sm font-medium text-foreground/80">
                 Booking Reference
               </label>
 
@@ -414,13 +414,13 @@ export default function EditReservationPage() {
                     e.target.value
                   )
                 }
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+                className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-border/600"
                 placeholder="TEST-001"
               />
             </div>
 
             <div>
-              <label htmlFor="source" className="text-sm font-medium text-slate-700">
+              <label htmlFor="source" className="text-sm font-medium text-foreground/80">
                 Source
               </label>
 
@@ -433,7 +433,7 @@ export default function EditReservationPage() {
                     e.target.value
                   )
                 }
-                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+                className="mt-2 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-border/600"
               >
                 <option value="direct">
                   Direct
@@ -458,7 +458,7 @@ export default function EditReservationPage() {
             </div>
 
             <div>
-              <label htmlFor="status" className="text-sm font-medium text-slate-700">
+              <label htmlFor="status" className="text-sm font-medium text-foreground/80">
                 Status
               </label>
 
@@ -471,7 +471,7 @@ export default function EditReservationPage() {
                     e.target.value
                   )
                 }
-                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+                className="mt-2 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-border/600"
               >
                 <option value="confirmed">
                   Confirmed
@@ -495,14 +495,14 @@ export default function EditReservationPage() {
 
         {/* Dates */}
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">
             Stay Dates
           </h2>
 
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
             <div>
-              <label htmlFor="check_in" className="text-sm font-medium text-slate-700">
+              <label htmlFor="check_in" className="text-sm font-medium text-foreground/80">
                 Check-in
               </label>
 
@@ -517,12 +517,12 @@ export default function EditReservationPage() {
                   )
                 }
                 required
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+                className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-border/600"
               />
             </div>
 
             <div>
-              <label htmlFor="check_out" className="text-sm font-medium text-slate-700">
+              <label htmlFor="check_out" className="text-sm font-medium text-foreground/80">
                 Check-out
               </label>
 
@@ -537,7 +537,7 @@ export default function EditReservationPage() {
                   )
                 }
                 required
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+                className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-border/600"
               />
             </div>
           </div>
@@ -555,8 +555,8 @@ export default function EditReservationPage() {
 
         {/* Guests */}
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">
             Guests
           </h2>
 
@@ -568,7 +568,7 @@ export default function EditReservationPage() {
               ["pets", "Pets"],
             ].map(([field, label]) => (
               <div key={field}>
-                <label htmlFor={field} className="text-sm font-medium text-slate-700">
+                <label htmlFor={field} className="text-sm font-medium text-foreground/80">
                   {label}
                 </label>
 
@@ -587,7 +587,7 @@ export default function EditReservationPage() {
                       Number(e.target.value)
                     )
                   }
-                  className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+                  className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-border/600"
                 />
               </div>
             ))}
@@ -596,25 +596,25 @@ export default function EditReservationPage() {
 
         {/* Payment */}
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">
             Financial Details
           </h2>
 
           <div className="mt-4 flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-sm font-semibold text-amber-700 shadow-sm">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-card text-sm font-semibold text-amber-700 shadow-sm">
               {getCurrencyMeta(form.currency).symbol}
             </div>
 
             <div className="min-w-0">
-              <p className="text-sm font-medium text-slate-900">
+              <p className="text-sm font-medium text-foreground">
                 Currency{" "}
                 <span className="font-semibold text-amber-700">
                   {getCurrencyMeta(form.currency).code} ·{" "}
                   {getCurrencyMeta(form.currency).name}
                 </span>
               </p>
-              <p className="mt-0.5 text-xs text-slate-500">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 Fixed for this reservation — set automatically at creation
                 and cannot be changed here.
               </p>
@@ -623,7 +623,7 @@ export default function EditReservationPage() {
 
           <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <label htmlFor="total_amount" className="text-sm font-medium text-slate-700">
+              <label htmlFor="total_amount" className="text-sm font-medium text-foreground/80">
                 Total Amount
               </label>
 
@@ -643,7 +643,7 @@ export default function EditReservationPage() {
             </div>
 
             <div>
-              <label htmlFor="cleaning_fee" className="text-sm font-medium text-slate-700">
+              <label htmlFor="cleaning_fee" className="text-sm font-medium text-foreground/80">
                 Cleaning Fee
               </label>
 
@@ -663,7 +663,7 @@ export default function EditReservationPage() {
             </div>
 
             <div>
-              <label htmlFor="taxes" className="text-sm font-medium text-slate-700">
+              <label htmlFor="taxes" className="text-sm font-medium text-foreground/80">
                 Taxes
               </label>
 
@@ -686,8 +686,8 @@ export default function EditReservationPage() {
 
         {/* Special Requests */}
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">
             Special Requests
           </h2>
 
@@ -700,7 +700,7 @@ export default function EditReservationPage() {
               )
             }
             rows={5}
-            className="mt-5 w-full rounded-lg border border-slate-200 px-3 py-3 text-sm outline-none focus:border-slate-500"
+            className="mt-5 w-full rounded-lg border border-border px-3 py-3 text-sm outline-none focus:border-border/600"
             placeholder="Any special requests..."
           />
         </section>
@@ -710,7 +710,7 @@ export default function EditReservationPage() {
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <Link
             href={`/reservations/${id}`}
-            className="rounded-lg border border-slate-200 bg-white px-5 py-3 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-border bg-card px-5 py-3 text-center text-sm font-medium text-foreground/80 hover:bg-muted"
           >
             Cancel
           </Link>
@@ -718,7 +718,7 @@ export default function EditReservationPage() {
           <button
             type="submit"
             disabled={saving || available === false}
-            className="rounded-lg bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-background px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving
               ? "Saving Changes..."

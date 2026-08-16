@@ -213,10 +213,10 @@ function MessagesContent() {
   return (
     <div className="min-h-full">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Messages
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           Guest conversations via WhatsApp.
         </p>
       </div>
@@ -246,23 +246,23 @@ function MessagesContent() {
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[320px_1fr]">
         {/* Conversation list */}
-        <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
-          <div className="border-b border-slate-100 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-700">
+        <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+          <div className="border-b border-border px-4 py-3">
+            <h2 className="text-sm font-semibold text-foreground/80">
               Conversations
             </h2>
           </div>
 
           {loading ? (
-            <div className="p-8 text-center text-sm text-slate-500">
+            <div className="p-8 text-center text-sm text-muted-foreground">
               Loading...
             </div>
           ) : conversations.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-sm font-medium text-slate-700">
+              <p className="text-sm font-medium text-foreground/80">
                 No conversations yet
               </p>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-muted-foreground/80">
                 Message a guest from their profile to start one.
               </p>
             </div>
@@ -272,15 +272,15 @@ function MessagesContent() {
                 <button
                   key={conversation.id}
                   onClick={() => setSelectedId(conversation.id)}
-                  className={`flex w-full flex-col items-start gap-1 px-4 py-3 text-left transition hover:bg-slate-50 ${
-                    selectedId === conversation.id ? "bg-slate-50" : ""
+                  className={`flex w-full flex-col items-start gap-1 px-4 py-3 text-left transition hover:bg-muted ${
+                    selectedId === conversation.id ? "bg-muted" : ""
                   }`}
                 >
                   <div className="flex w-full items-center justify-between gap-2">
-                    <span className="truncate text-sm font-medium text-slate-900">
+                    <span className="truncate text-sm font-medium text-foreground">
                       {conversationLabel(conversation)}
                     </span>
-                    <span className="shrink-0 text-xs text-slate-400">
+                    <span className="shrink-0 text-xs text-muted-foreground/80">
                       {formatRelative(conversation.last_message_at)}
                     </span>
                   </div>
@@ -297,21 +297,21 @@ function MessagesContent() {
         </div>
 
         {/* Thread */}
-        <div className="flex min-h-[65vh] flex-col overflow-hidden rounded-xl border bg-white shadow-sm">
+        <div className="flex min-h-[65vh] flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
           {pendingGuest ? (
             <>
-              <div className="border-b border-slate-100 px-5 py-4">
-                <p className="text-sm font-semibold text-slate-900">
+              <div className="border-b border-border px-5 py-4">
+                <p className="text-sm font-semibold text-foreground">
                   {pendingGuest.first_name} {pendingGuest.last_name ?? ""}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground/80">
                   {pendingGuest.phone ?? "No phone on file"} · New conversation
                 </p>
               </div>
 
               <div className="flex flex-1 items-center justify-center p-8 text-center">
                 {pendingGuest.phone ? (
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-muted-foreground/80">
                     Send a message below to start this conversation.
                   </p>
                 ) : (
@@ -322,7 +322,7 @@ function MessagesContent() {
                 )}
               </div>
 
-              <div className="flex gap-3 border-t border-slate-100 px-5 py-4">
+              <div className="flex gap-3 border-t border-border px-5 py-4">
                 <input
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
@@ -334,12 +334,12 @@ function MessagesContent() {
                   }}
                   disabled={!pendingGuest.phone}
                   placeholder="Type your first message..."
-                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50"
+                  className="flex-1 rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-primary disabled:cursor-not-allowed disabled:bg-muted"
                 />
                 <button
                   onClick={handleSendFirstMessage}
                   disabled={sending || !draft.trim() || !pendingGuest.phone}
-                  className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {sending ? "Sending..." : "Send"}
                 </button>
@@ -347,18 +347,18 @@ function MessagesContent() {
             </>
           ) : !selectedConversation ? (
             <div className="flex flex-1 items-center justify-center p-8 text-center">
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-muted-foreground/80">
                 Select a conversation to view messages.
               </p>
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <div className="flex items-center justify-between border-b border-border px-5 py-4">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">
+                  <p className="text-sm font-semibold text-foreground">
                     {conversationLabel(selectedConversation)}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-muted-foreground/80">
                     {selectedConversation.external_contact_id} · WhatsApp
                   </p>
                 </div>
@@ -375,11 +375,11 @@ function MessagesContent() {
 
               <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
                 {messagesLoading ? (
-                  <p className="text-center text-sm text-slate-400">
+                  <p className="text-center text-sm text-muted-foreground/80">
                     Loading...
                   </p>
                 ) : messages.length === 0 ? (
-                  <p className="text-center text-sm text-slate-400">
+                  <p className="text-center text-sm text-muted-foreground/80">
                     No messages yet.
                   </p>
                 ) : (
@@ -395,16 +395,16 @@ function MessagesContent() {
                       <div
                         className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
                           message.direction === "outbound"
-                            ? "bg-slate-900 text-white"
-                            : "bg-slate-100 text-slate-900"
+                            ? "bg-primary text-white"
+                            : "bg-muted text-foreground"
                         }`}
                       >
                         <p className="whitespace-pre-wrap">{message.body}</p>
                         <p
                           className={`mt-1 text-[10px] ${
                             message.direction === "outbound"
-                              ? "text-slate-300"
-                              : "text-slate-400"
+                              ? "text-primary-foreground/70"
+                              : "text-muted-foreground/80"
                           }`}
                         >
                           {new Date(message.created_at).toLocaleTimeString([], {
@@ -422,7 +422,7 @@ function MessagesContent() {
                 <div ref={threadEndRef} />
               </div>
 
-              <div className="flex gap-3 border-t border-slate-100 px-5 py-4">
+              <div className="flex gap-3 border-t border-border px-5 py-4">
                 <input
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
@@ -433,12 +433,12 @@ function MessagesContent() {
                     }
                   }}
                   placeholder="Type a message..."
-                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                  className="flex-1 rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-primary"
                 />
                 <button
                   onClick={handleSend}
                   disabled={sending || !draft.trim()}
-                  className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {sending ? "Sending..." : "Send"}
                 </button>
@@ -491,7 +491,7 @@ function LinkGuestControl({
       <select
         value={guestId}
         onChange={(event) => setGuestId(event.target.value)}
-        className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-slate-400"
+        className="rounded-lg border border-border px-2 py-1.5 text-xs outline-none focus:border-primary"
       >
         <option value="">Link to guest...</option>
         {guests.map((guest) => (
@@ -504,7 +504,7 @@ function LinkGuestControl({
       <button
         onClick={handleLink}
         disabled={!guestId || linking}
-        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
       >
         Link
       </button>

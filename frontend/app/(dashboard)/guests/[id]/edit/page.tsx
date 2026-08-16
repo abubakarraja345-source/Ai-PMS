@@ -141,9 +141,9 @@ export default function EditGuestPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-10">
+      <main className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-5xl">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8">
+          <div className="rounded-2xl border border-border bg-card p-8">
             Loading guest...
           </div>
         </div>
@@ -152,7 +152,7 @@ export default function EditGuestPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10">
+    <main className="min-h-screen bg-background px-6 py-10">
       <div className="mx-auto max-w-5xl">
 
         {/* Header */}
@@ -162,16 +162,16 @@ export default function EditGuestPage() {
             onClick={() =>
               router.push(`/guests/${guestId}`)
             }
-            className="mb-4 text-sm text-slate-500 hover:text-slate-900"
+            className="mb-4 text-sm text-muted-foreground hover:text-foreground"
           >
             ← Back to Guest
           </button>
 
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-4xl font-semibold tracking-tight text-foreground">
             Edit Guest
           </h1>
 
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-muted-foreground">
             Update this guest&apos;s profile information.
           </p>
         </div>
@@ -193,8 +193,8 @@ export default function EditGuestPage() {
           className="space-y-6"
         >
           {/* Basic Information */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Basic Information
             </h2>
 
@@ -237,8 +237,8 @@ export default function EditGuestPage() {
           </section>
 
           {/* Additional Details */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Additional Details
             </h2>
 
@@ -270,7 +270,7 @@ export default function EditGuestPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label className="mb-2 block text-sm font-medium text-foreground/80">
                   Notes
                 </label>
 
@@ -280,7 +280,7 @@ export default function EditGuestPage() {
                     updateField("notes", e.target.value)
                   }
                   rows={4}
-                  className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full resize-none rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
@@ -292,12 +292,12 @@ export default function EditGuestPage() {
                   onChange={(e) =>
                     updateField("vip", e.target.checked)
                   }
-                  className="h-5 w-5 rounded border-slate-300"
+                  className="h-5 w-5 rounded border-border"
                 />
 
                 <label
                   htmlFor="vip"
-                  className="text-sm font-medium text-slate-700"
+                  className="text-sm font-medium text-foreground/80"
                 >
                   Mark as VIP guest
                 </label>
@@ -313,7 +313,7 @@ export default function EditGuestPage() {
               onClick={() =>
                 router.push(`/guests/${guestId}`)
               }
-              className="rounded-xl border border-slate-200 bg-white px-6 py-3 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-xl border border-border bg-card px-6 py-3 font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
             >
               Cancel
             </button>
@@ -321,7 +321,7 @@ export default function EditGuestPage() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-slate-900 px-7 py-3 font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-primary px-7 py-3 font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving
                 ? "Saving Changes..."
@@ -349,7 +349,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
+      <label className="mb-2 block text-sm font-medium text-foreground/80">
         {label}
       </label>
 
@@ -358,7 +358,7 @@ function Field({
         value={value}
         required={required}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+        className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
       />
     </div>
   );

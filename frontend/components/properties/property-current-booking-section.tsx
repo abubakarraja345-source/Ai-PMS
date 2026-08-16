@@ -107,18 +107,18 @@ export default function PropertyCurrentBookingSection({
   }, [propertyId]);
 
   return (
-    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-slate-900">
+    <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-xl font-semibold text-foreground">
         {occupied ? "Current Booking" : "Availability"}
       </h2>
 
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-muted-foreground">
         Whether this property has an active booking today.
       </p>
 
       <div className="mt-5">
         {loading ? (
-          <p className="text-sm text-slate-500">Loading...</p>
+          <p className="text-sm text-muted-foreground">Loading...</p>
         ) : error ? (
           <p className="text-sm text-red-600">{error}</p>
         ) : occupied && current ? (
@@ -129,28 +129,28 @@ export default function PropertyCurrentBookingSection({
 
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Guest
                 </p>
-                <p className="mt-1 font-medium text-slate-900">
+                <p className="mt-1 font-medium text-foreground">
                   {current.guestName}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Check-in
                 </p>
-                <p className="mt-1 font-medium text-slate-900">
+                <p className="mt-1 font-medium text-foreground">
                   {formatDate(current.checkIn)}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Check-out
                 </p>
-                <p className="mt-1 font-medium text-slate-900">
+                <p className="mt-1 font-medium text-foreground">
                   {formatDate(current.checkOut)}
                 </p>
               </div>

@@ -59,6 +59,81 @@ async function fetchFeedText(feedUrl: string): Promise<string> {
 }
 
 /**
+ * X-WR-CALNAME is the one calendar-level (not per-event) property
+ * real OTA iCal exports reliably set to something human-meaningful —
+ * Airbnb/Booking.com/VRBO feeds are otherwise just anonymous blocked-
+ * date ranges with no listing name, address, price, or bedroom count
+ * anywhere in them (this is a genuine limitation of the iCal export
+ * format itself, not something this parser is missing). Read via a
+ * direct regex on the raw text rather than node-ical's parsed object
+ * — node-ical's parseICS doesn't surface calendar-level X- properties
+ * on its per-component result the way it does VEVENT fields.
+ */
+function extractCalendarName(feedText: string): string | null {
+  const match = feedText.match(/^X-WR-CALNAME:(.+)$/im);
+  const name = match?.[1]?.trim();
+  return name ? name : null;
+}
+
+/**
+ * Fetches a feed once and returns both its events and its calendar
+ * name — used by the "create a property from this calendar" flow
+ * (integrations/service.ts's createPropertyFromIcalFeed), which needs
+ * the name but not a second round-trip to the feed URL. Shares the
+ * exact same validation/fetch/parse path as icalAdapter.fetchEvents
+ * below (SSRF guard included), just also captures the calendar name
+ * before discarding the raw text.
+ */
+export async function fetchIcalFeedWithName(feedUrl: string): Promise<{
+  events: ExternalEvent[];
+  calendarName: string | null;
+}> {
+  await assertPublicHttpUrl(feedUrl);
+
+  const text = await fetchFeedText(feedUrl);
+
+  if (!text.includes("BEGIN:VCALENDAR")) {
+    throw new Error("Feed content is not valid iCal data");
+  }
+
+  let parsed: ical.CalendarResponse;
+
+  try {
+    parsed = ical.parseICS(text);
+  } catch {
+    throw new Error("Feed content is not valid iCal data");
+  }
+
+  const events: ExternalEvent[] = [];
+
+  for (const component of Object.values(parsed)) {
+    if (!component || component.type !== "VEVENT") continue;
+
+    const uid = component.uid;
+    const start = component.start;
+    const end = component.end;
+
+    if (!uid || !start || !end) continue;
+
+    const status =
+      typeof component.status === "string"
+        ? component.status.toUpperCase()
+        : "";
+
+    events.push({
+      externalId: String(uid),
+      checkIn: toDateOnly(new Date(start)),
+      checkOut: toDateOnly(new Date(end)),
+      summary:
+        typeof component.summary === "string" ? component.summary : null,
+      isCancelled: status === "CANCELLED",
+    });
+  }
+
+  return { events, calendarName: extractCalendarName(text) };
+}
+
+/**
  * Parses a subset of RFC 5545 (VEVENT UID/DTSTART/DTEND/STATUS)
  * sufficient to represent booking availability blocks — the shape
  * every real OTA iCal export (Airbnb, Booking.com, VRBO) uses.

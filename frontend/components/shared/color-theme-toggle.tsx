@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTheme } from "next-themes";
 import { Check } from "lucide-react";
-import { COLOR_THEMES } from "./color-theme-provider";
+import { COLOR_THEMES, useColorTheme } from "./color-theme-provider";
 
 /**
  * A grid of swatch buttons for the light-mode color theme (see
@@ -13,7 +12,7 @@ import { COLOR_THEMES } from "./color-theme-provider";
  * hydration-safety reasoning as ThemeToggle.
  */
 export default function ColorThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { colorTheme, setColorTheme } = useColorTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -33,13 +32,13 @@ export default function ColorThemeToggle() {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       {COLOR_THEMES.map((t) => {
-        const active = theme === t.value;
+        const active = colorTheme === t.value;
 
         return (
           <button
             key={t.value}
             type="button"
-            onClick={() => setTheme(t.value)}
+            onClick={() => setColorTheme(t.value)}
             aria-pressed={active}
             className={`relative flex flex-col gap-3 rounded-xl border p-3 text-left transition ${
               active

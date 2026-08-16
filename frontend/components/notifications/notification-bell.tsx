@@ -195,7 +195,7 @@ export default function NotificationBell() {
             ? `Notifications, ${unreadCount} unread`
             : "Notifications"
         }
-        className="relative rounded-lg border px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+        className="relative rounded-lg border px-3 py-2 text-sm text-foreground/70 hover:bg-muted"
       >
         Notifications
         {unreadCount > 0 && (
@@ -206,9 +206,9 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white shadow-lg sm:w-96">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-            <p className="text-sm font-semibold text-slate-900">
+        <div className="absolute right-0 z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card shadow-lg sm:w-96">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <p className="text-sm font-semibold text-foreground">
               Notifications
             </p>
 
@@ -216,7 +216,7 @@ export default function NotificationBell() {
               <button
                 onClick={loadNotifications}
                 disabled={loading}
-                className="text-xs font-medium text-slate-500 hover:text-slate-900 disabled:opacity-50"
+                className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
               >
                 Refresh
               </button>
@@ -235,13 +235,13 @@ export default function NotificationBell() {
 
           <div className="max-h-96 overflow-y-auto">
             {loading ? (
-              <div className="p-6 text-center text-sm text-slate-500">
+              <div className="p-6 text-center text-sm text-muted-foreground">
                 Loading notifications...
               </div>
             ) : error ? (
               <div className="p-4 text-sm text-red-600">{error}</div>
             ) : notifications.length === 0 ? (
-              <div className="p-6 text-center text-sm text-slate-500">
+              <div className="p-6 text-center text-sm text-muted-foreground">
                 You&apos;re all caught up.
               </div>
             ) : (
@@ -249,11 +249,11 @@ export default function NotificationBell() {
                 {notifications.map((notification) => (
                   <li
                     key={notification.id}
-                    className={`border-b border-slate-50 last:border-0 ${
-                      notification.isRead ? "" : "bg-blue-50/60"
+                    className={`border-b border-border last:border-0 ${
+                      notification.isRead ? "" : "bg-primary/5"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-slate-50">
+                    <div className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-muted">
                       <button
                         onClick={() => handleMarkRead(notification.id)}
                         disabled={notification.isRead}
@@ -263,18 +263,18 @@ export default function NotificationBell() {
                           {!notification.isRead && (
                             <span className="h-2 w-2 flex-shrink-0 rounded-full bg-blue-600" />
                           )}
-                          <p className="truncate text-sm font-medium text-slate-900">
+                          <p className="truncate text-sm font-medium text-foreground">
                             {notification.title}
                           </p>
                         </div>
 
                         {notification.message && (
-                          <p className="mt-1 text-xs text-slate-600">
+                          <p className="mt-1 text-xs text-foreground/70">
                             {notification.message}
                           </p>
                         )}
 
-                        <p className="mt-1 text-xs text-slate-400">
+                        <p className="mt-1 text-xs text-muted-foreground/80">
                           {formatDateTime(notification.createdAt)}
                         </p>
                       </button>
@@ -283,7 +283,7 @@ export default function NotificationBell() {
                         onClick={() => handleDelete(notification.id)}
                         disabled={busyId === notification.id}
                         aria-label={`Delete notification: ${notification.title}`}
-                        className="flex-shrink-0 text-xs text-slate-400 hover:text-red-600 disabled:opacity-50"
+                        className="flex-shrink-0 text-xs text-muted-foreground/80 hover:text-red-600 disabled:opacity-50"
                       >
                         Delete
                       </button>

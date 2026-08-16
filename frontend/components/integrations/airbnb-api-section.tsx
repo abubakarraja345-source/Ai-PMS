@@ -81,7 +81,7 @@ const HEALTH_CLASSES: Record<string, string> = {
   healthy: "bg-emerald-50 text-emerald-700 border-emerald-200",
   warning: "bg-amber-50 text-amber-700 border-amber-200",
   error: "bg-red-50 text-red-700 border-red-200",
-  disabled: "bg-slate-50 text-slate-600 border-slate-200",
+  disabled: "bg-muted text-foreground/70 border-border",
 };
 
 interface AirbnbApiSectionProps {
@@ -349,14 +349,14 @@ export default function AirbnbApiSection({
   return (
     <div
       id="airbnb-official-api"
-      className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+      className="mt-6 overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
     >
-      <div className="flex flex-col justify-between gap-4 border-b border-slate-100 px-6 py-4 md:flex-row md:items-center">
+      <div className="flex flex-col justify-between gap-4 border-b border-border px-6 py-4 md:flex-row md:items-center">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Airbnb — Official API
           </h3>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Direct API connection (separate from the iCal feed above).
           </p>
         </div>
@@ -370,7 +370,7 @@ export default function AirbnbApiSection({
 
       <div className="px-6 py-5">
         {loading ? (
-          <p className="text-sm text-slate-500">Loading Airbnb API status...</p>
+          <p className="text-sm text-muted-foreground">Loading Airbnb API status...</p>
         ) : error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
@@ -378,11 +378,11 @@ export default function AirbnbApiSection({
         ) : !status ? null : !status.connected ? (
           <div>
             {!status.configured ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-muted-foreground">
                 Airbnb API credentials are not configured.
               </p>
             ) : (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-muted-foreground">
                 Not connected. Connect your Airbnb account to import
                 listings and sync reservations directly via Airbnb&apos;s
                 API.
@@ -393,7 +393,7 @@ export default function AirbnbApiSection({
               <button
                 onClick={handleConnect}
                 disabled={connecting}
-                className="mt-4 inline-flex items-center justify-center rounded-lg bg-[#10172a] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#18213a] disabled:opacity-50"
+                className="mt-4 inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
               >
                 {connecting ? "Redirecting..." : "Connect Airbnb"}
               </button>
@@ -414,29 +414,29 @@ export default function AirbnbApiSection({
                 </span>
               )}
 
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-muted-foreground">
                 Account: {status.accountName ?? "Unknown"}
               </span>
             </div>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
               <div>
-                <p className="text-xs text-slate-400">Last sync</p>
-                <p className="mt-0.5 text-sm text-slate-700">
+                <p className="text-xs text-muted-foreground/80">Last sync</p>
+                <p className="mt-0.5 text-sm text-foreground/80">
                   {formatRelative(status.lastSuccessfulSyncAt)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-slate-400">Next sync</p>
-                <p className="mt-0.5 text-sm text-slate-700">
+                <p className="text-xs text-muted-foreground/80">Next sync</p>
+                <p className="mt-0.5 text-sm text-foreground/80">
                   {status.nextScheduledSyncAt
                     ? formatRelative(status.nextScheduledSyncAt, "ago")
                     : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-slate-400">Listings mapped</p>
-                <p className="mt-0.5 text-sm text-slate-700">
+                <p className="text-xs text-muted-foreground/80">Listings mapped</p>
+                <p className="mt-0.5 text-sm text-foreground/80">
                   {status.listingCount}
                 </p>
               </div>
@@ -446,7 +446,7 @@ export default function AirbnbApiSection({
               <div className="mt-5 flex flex-wrap gap-3">
                 <button
                   onClick={openListings}
-                  className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted"
                 >
                   Manage Listings
                 </button>
@@ -454,7 +454,7 @@ export default function AirbnbApiSection({
                 <button
                   onClick={handleSync}
                   disabled={syncing}
-                  className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
                 >
                   {syncing ? "Syncing..." : "Sync Now"}
                 </button>
@@ -484,13 +484,13 @@ export default function AirbnbApiSection({
       {/* Listing import / mapping modal */}
       {showListings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
-          <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-            <div className="sticky top-0 flex items-center justify-between border-b bg-white px-6 py-5">
+          <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-card shadow-2xl">
+            <div className="sticky top-0 flex items-center justify-between border-b bg-card px-6 py-5">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-lg font-semibold text-foreground">
                   Airbnb Listings
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Map each listing to an existing property, or create a
                   new one from the discovered details.
                 </p>
@@ -498,7 +498,7 @@ export default function AirbnbApiSection({
 
               <button
                 onClick={closeListingsModal}
-                className="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100"
+                className="rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted"
               >
                 ✕
               </button>
@@ -510,10 +510,10 @@ export default function AirbnbApiSection({
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-2xl text-emerald-600">
                     ✓
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold text-slate-900">
+                  <h3 className="mt-4 text-lg font-semibold text-foreground">
                     Import complete
                   </h3>
-                  <p className="mt-2 text-sm text-slate-500">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     {sessionTally.imported} listing
                     {sessionTally.imported === 1 ? "" : "s"} imported this
                     session
@@ -527,19 +527,19 @@ export default function AirbnbApiSection({
                   <div className="mt-6 flex flex-wrap justify-center gap-3">
                     <a
                       href="/properties"
-                      className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                      className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted"
                     >
                       View Properties
                     </a>
                     <a
                       href="/reservations"
-                      className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                      className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted"
                     >
                       View Reservations
                     </a>
                     <button
                       onClick={() => setShowSuccess(false)}
-                      className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+                      className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
                     >
                       Keep Importing
                     </button>
@@ -554,27 +554,27 @@ export default function AirbnbApiSection({
                   )}
 
                   {listingsLoading ? (
-                    <p className="text-sm text-slate-500">Loading listings...</p>
+                    <p className="text-sm text-muted-foreground">Loading listings...</p>
                   ) : listings.length === 0 ? (
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                       No listings found on this Airbnb account.
                     </p>
                   ) : (
                     <div className="space-y-4">
                       {/* Discovery summary — Phase 6B mockup: found /
                           already connected / new. */}
-                      <div className="grid grid-cols-3 gap-3 rounded-xl bg-slate-50 p-4 text-center">
+                      <div className="grid grid-cols-3 gap-3 rounded-xl bg-muted p-4 text-center">
                         <div>
-                          <p className="text-xl font-semibold text-slate-900">
+                          <p className="text-xl font-semibold text-foreground">
                             {listings.length}
                           </p>
-                          <p className="text-xs text-slate-500">Listings found</p>
+                          <p className="text-xs text-muted-foreground">Listings found</p>
                         </div>
                         <div>
-                          <p className="text-xl font-semibold text-slate-900">
+                          <p className="text-xl font-semibold text-foreground">
                             {listings.filter((l) => l.imported).length}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-muted-foreground">
                             Already connected
                           </p>
                         </div>
@@ -582,7 +582,7 @@ export default function AirbnbApiSection({
                           <p className="text-xl font-semibold text-emerald-600">
                             {listings.filter((l) => !l.imported).length}
                           </p>
-                          <p className="text-xs text-slate-500">New listings</p>
+                          <p className="text-xs text-muted-foreground">New listings</p>
                         </div>
                       </div>
 
@@ -607,23 +607,23 @@ export default function AirbnbApiSection({
                         return (
                           <div
                             key={listing.externalListingId}
-                            className="rounded-xl border border-slate-200 p-4"
+                            className="rounded-xl border border-border p-4"
                           >
                             <div className="flex items-start justify-between gap-4">
                               <div>
-                                <p className="font-medium text-slate-900">
+                                <p className="font-medium text-foreground">
                                   {listing.name}
                                 </p>
-                                <p className="mt-0.5 text-xs text-slate-400">
+                                <p className="mt-0.5 text-xs text-muted-foreground/80">
                                   Airbnb ID: {listing.externalListingId}
                                 </p>
                                 {listing.address && (
-                                  <p className="mt-1 text-xs text-slate-500">
+                                  <p className="mt-1 text-xs text-muted-foreground">
                                     {listing.address}
                                     {listing.city ? `, ${listing.city}` : ""}
                                   </p>
                                 )}
-                                <div className="mt-1 flex flex-wrap gap-x-3 gap-1 text-xs text-slate-400">
+                                <div className="mt-1 flex flex-wrap gap-x-3 gap-1 text-xs text-muted-foreground/80">
                                   {listing.bedrooms !== null && (
                                     <span>{listing.bedrooms} bed</span>
                                   )}
@@ -644,7 +644,7 @@ export default function AirbnbApiSection({
                                   Imported
                                 </span>
                               ) : (
-                                <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">
+                                <span className="shrink-0 rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
                                   Not imported
                                 </span>
                               )}
@@ -679,8 +679,8 @@ export default function AirbnbApiSection({
                                       }
                                       className={`rounded-md px-2.5 py-1 font-medium ${
                                         mode === "map"
-                                          ? "bg-slate-900 text-white"
-                                          : "border border-slate-200 text-slate-600"
+                                          ? "bg-primary text-white"
+                                          : "border border-border text-foreground/70"
                                       }`}
                                     >
                                       Map to existing
@@ -694,8 +694,8 @@ export default function AirbnbApiSection({
                                       }
                                       className={`rounded-md px-2.5 py-1 font-medium ${
                                         mode === "create"
-                                          ? "bg-slate-900 text-white"
-                                          : "border border-slate-200 text-slate-600"
+                                          ? "bg-primary text-white"
+                                          : "border border-border text-foreground/70"
                                       }`}
                                     >
                                       Create new property
@@ -717,7 +717,7 @@ export default function AirbnbApiSection({
                                               event.target.value,
                                           }))
                                         }
-                                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                                        className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary"
                                       >
                                         <option value="">
                                           Map to existing property...
@@ -738,7 +738,7 @@ export default function AirbnbApiSection({
                                           importingListingId ===
                                           listing.externalListingId
                                         }
-                                        className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                                        className="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
                                       >
                                         {importingListingId ===
                                         listing.externalListingId
@@ -763,7 +763,7 @@ export default function AirbnbApiSection({
                                           }))
                                         }
                                         placeholder="Property title"
-                                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                                        className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary"
                                       />
                                       <select
                                         value={
@@ -780,7 +780,7 @@ export default function AirbnbApiSection({
                                               event.target.value,
                                           }))
                                         }
-                                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                                        className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary"
                                       >
                                         {PROPERTY_TYPE_OPTIONS.map((opt) => (
                                           <option
@@ -798,7 +798,7 @@ export default function AirbnbApiSection({
                                           importingListingId ===
                                           listing.externalListingId
                                         }
-                                        className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                                        className="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
                                       >
                                         {importingListingId ===
                                         listing.externalListingId

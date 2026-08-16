@@ -4,6 +4,7 @@ import { OrganizationRequest } from "../../middleware/organization.middleware";
 import {
   addIntegration,
   connectPropertyCalendar,
+  createPropertyFromIcalFeed,
   disableIntegration,
   editIntegration,
   enableIntegration,
@@ -305,6 +306,47 @@ export async function testIcalUrlController(
     return res.status(400).json({
       success: false,
       error: isKnownError(error) ? error.message : "Unable to test this feed URL",
+    });
+  }
+}
+
+/**
+ * POST /api/integrations/ical/create-property — the connect-calendar
+ * wizard's "create a new property from this calendar" path, an
+ * alternative to requiring an existing property. See
+ * createPropertyFromIcalFeed's own comment for why price/bedrooms/
+ * type still need to be filled in manually afterward — the feed
+ * genuinely doesn't carry that data.
+ */
+export async function createPropertyFromIcalController(
+  req: OrganizationRequest,
+  res: Response
+) {
+  try {
+    if (!req.organization || !req.user) {
+      return res.status(403).json({ success: false, error: "Organization context is required" });
+    }
+
+    const feedUrl =
+      typeof req.body?.feedUrl === "string" ? req.body.feedUrl.trim() : "";
+
+    if (!feedUrl) {
+      return res.status(400).json({ success: false, error: "feedUrl is required" });
+    }
+
+    const data = await createPropertyFromIcalFeed(
+      req.organization.id,
+      req.user.id,
+      feedUrl
+    );
+
+    return res.status(201).json({ success: true, data });
+  } catch (error) {
+    console.error("Create property from iCal feed error:", error);
+
+    return res.status(400).json({
+      success: false,
+      error: isKnownError(error) ? error.message : "Unable to create a property from this feed",
     });
   }
 }

@@ -123,9 +123,9 @@ export default function PropertyDetailsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-10">
+      <main className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-6xl">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8">
+          <div className="rounded-2xl border border-border bg-card p-8">
             Loading property...
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function PropertyDetailsPage() {
 
   if (error || !property) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-10">
+      <main className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-6xl">
           <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
             {error || "Property not found."}
@@ -143,7 +143,7 @@ export default function PropertyDetailsPage() {
 
           <button
             onClick={() => router.push("/properties")}
-            className="mt-5 rounded-xl bg-slate-900 px-5 py-3 text-white"
+            className="mt-5 rounded-xl bg-primary px-5 py-3 text-white"
           >
             Back to Properties
           </button>
@@ -161,7 +161,7 @@ export default function PropertyDetailsPage() {
     .join(", ");
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10">
+    <main className="min-h-screen bg-background px-6 py-10">
       <div className="mx-auto max-w-6xl">
 
         {/* Header */}
@@ -169,13 +169,13 @@ export default function PropertyDetailsPage() {
           <div>
             <button
               onClick={() => router.push("/properties")}
-              className="mb-4 text-sm text-slate-500 hover:text-slate-900"
+              className="mb-4 text-sm text-muted-foreground hover:text-foreground"
             >
               ← Back to Properties
             </button>
 
             <div className="flex items-center gap-4">
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-900">
+              <h1 className="text-4xl font-semibold tracking-tight text-foreground">
                 {property.title}
               </h1>
 
@@ -183,14 +183,14 @@ export default function PropertyDetailsPage() {
                 className={`rounded-full px-3 py-1 text-sm font-medium ${
                   property.status === "active"
                     ? "bg-green-50 text-green-700"
-                    : "bg-slate-100 text-slate-600"
+                    : "bg-muted text-foreground/70"
                 }`}
               >
                 {property.status}
               </span>
             </div>
 
-            <p className="mt-2 capitalize text-slate-500">
+            <p className="mt-2 capitalize text-muted-foreground">
               {property.property_type}
               {location ? ` · ${location}` : ""}
             </p>
@@ -200,7 +200,7 @@ export default function PropertyDetailsPage() {
             onClick={() =>
               router.push(`/properties/${property.id}/edit`)
             }
-            className="rounded-xl bg-slate-900 px-6 py-3 font-medium text-white hover:bg-slate-800"
+            className="rounded-xl bg-primary px-6 py-3 font-medium text-white hover:opacity-90"
           >
             Edit Property
           </button>
@@ -214,12 +214,12 @@ export default function PropertyDetailsPage() {
         <PropertyCurrentBookingSection propertyId={property.id} />
 
         {/* Overview */}
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Property Overview
           </h2>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Key information about this property.
           </p>
 
@@ -247,13 +247,13 @@ export default function PropertyDetailsPage() {
         </section>
 
         {/* Financial Profile */}
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900">
+              <h2 className="text-xl font-semibold text-foreground">
                 Financial Profile
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Currency used for this property&apos;s reservations and
                 financial records.
               </p>
@@ -264,7 +264,7 @@ export default function PropertyDetailsPage() {
                 onClick={() =>
                   router.push(`/properties/${property.id}/edit`)
                 }
-                className="text-sm font-medium text-slate-700 hover:text-slate-900"
+                className="text-sm font-medium text-foreground/80 hover:text-foreground"
               >
                 Edit Settings →
               </button>
@@ -288,18 +288,18 @@ export default function PropertyDetailsPage() {
         {/* Description + Location */}
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Description
             </h2>
 
-            <p className="mt-4 leading-7 text-slate-600">
+            <p className="mt-4 leading-7 text-foreground/70">
               {property.description || "No description provided."}
             </p>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Location
             </h2>
 
@@ -333,8 +333,8 @@ export default function PropertyDetailsPage() {
         </div>
 
         {/* Guest Information */}
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Guest Information
           </h2>
 
@@ -362,8 +362,8 @@ export default function PropertyDetailsPage() {
         />
 
         {/* Wi-Fi / Manual */}
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Property Resources
           </h2>
 
@@ -383,7 +383,7 @@ export default function PropertyDetailsPage() {
             />
 
             <div>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-muted-foreground">
                 House Manual
               </p>
 
@@ -392,12 +392,12 @@ export default function PropertyDetailsPage() {
                   href={property.house_manual_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 block text-sm font-medium text-slate-900 underline"
+                  className="mt-1 block text-sm font-medium text-foreground underline"
                 >
                   Open House Manual
                 </a>
               ) : (
-                <p className="mt-1 text-sm text-slate-400">
+                <p className="mt-1 text-sm text-muted-foreground/80">
                   Not provided
                 </p>
               )}
@@ -423,8 +423,8 @@ export default function PropertyDetailsPage() {
         <PropertyAssignmentsSection propertyId={property.id} />
 
         {/* Coordinates */}
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Location Coordinates
           </h2>
 
@@ -442,8 +442,8 @@ export default function PropertyDetailsPage() {
         </section>
 
         {/* Metadata */}
-        <section className="mt-6 mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 mb-10 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Record Information
           </h2>
 
@@ -478,12 +478,12 @@ function InfoCard({
   value: string | number;
 }) {
   return (
-    <div className="rounded-xl bg-slate-50 p-5">
-      <p className="text-sm text-slate-500">
+    <div className="rounded-xl bg-muted p-5">
+      <p className="text-sm text-muted-foreground">
         {label}
       </p>
 
-      <p className="mt-2 text-2xl font-semibold text-slate-900">
+      <p className="mt-2 text-2xl font-semibold text-foreground">
         {value}
       </p>
     </div>
@@ -499,11 +499,11 @@ function DetailRow({
 }) {
   return (
     <div>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted-foreground">
         {label}
       </p>
 
-      <p className="mt-1 break-words text-sm font-medium text-slate-900">
+      <p className="mt-1 break-words text-sm font-medium text-foreground">
         {value || "Not provided"}
       </p>
     </div>

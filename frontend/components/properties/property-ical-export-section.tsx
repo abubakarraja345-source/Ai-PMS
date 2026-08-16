@@ -89,11 +89,11 @@ export default function PropertyIcalExportSection({
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-slate-900">
+    <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-xl font-semibold text-foreground">
         PMS Calendar Feed
       </h2>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-muted-foreground">
         Use this URL in Airbnb, Booking.com, VRBO, or another calendar
         provider that supports iCal imports. It exposes only booking dates
         — no guest, contact, or payment information.
@@ -106,7 +106,7 @@ export default function PropertyIcalExportSection({
       )}
 
       {loading ? (
-        <div className="mt-5 text-sm text-slate-500">Loading...</div>
+        <div className="mt-5 text-sm text-muted-foreground">Loading...</div>
       ) : (
         <div className="mt-5">
           {freshToken ? (
@@ -123,23 +123,23 @@ export default function PropertyIcalExportSection({
                   readOnly
                   value={`${API_URL}/api/ical/${freshToken}.ics`}
                   onFocus={(e) => e.target.select()}
-                  className="flex-1 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs text-slate-700"
+                  className="flex-1 rounded-lg border border-emerald-200 bg-card px-3 py-2 text-xs text-foreground/80"
                 />
                 <button
                   onClick={handleCopy}
-                  className="shrink-0 rounded-lg bg-[#10172a] px-4 py-2 text-xs font-medium text-white hover:bg-[#18213a]"
+                  className="shrink-0 rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2 text-xs font-medium text-white hover:opacity-90"
                 >
                   {copied ? "Copied!" : "Copy iCal URL"}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center justify-between rounded-xl border border-border p-4">
               <div>
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-medium text-foreground">
                   {enabled ? "Feed enabled" : "No feed generated yet"}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   {enabled
                     ? "Regenerate to get a fresh URL — this invalidates the old one."
                     : "Generate a secure URL to share this property's availability."}
@@ -150,7 +150,7 @@ export default function PropertyIcalExportSection({
                 <button
                   onClick={handleGenerate}
                   disabled={generating}
-                  className="shrink-0 rounded-lg border border-slate-300 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="shrink-0 rounded-lg border border-border px-4 py-2 text-xs font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
                 >
                   {generating
                     ? "Generating..."

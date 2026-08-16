@@ -213,8 +213,8 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 p-10">
-        <div className="text-slate-500">
+      <main className="min-h-screen bg-background p-10">
+        <div className="text-muted-foreground">
           Loading organization settings...
         </div>
       </main>
@@ -223,7 +223,7 @@ export default function SettingsPage() {
 
   if (error && !form) {
     return (
-      <main className="min-h-screen bg-slate-50 p-10">
+      <main className="min-h-screen bg-background p-10">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
           {error}
         </div>
@@ -234,14 +234,14 @@ export default function SettingsPage() {
   if (!form) return null;
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6 lg:p-10">
+    <main className="min-h-screen bg-background p-6 lg:p-10">
       <div className="mx-auto max-w-3xl">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-4xl font-semibold text-slate-950">
+            <h1 className="text-4xl font-semibold text-foreground">
               Settings
             </h1>
-            <p className="mt-2 text-lg text-slate-500">
+            <p className="mt-2 text-lg text-muted-foreground">
               Manage your organization&apos;s configuration.
             </p>
           </div>
@@ -251,7 +251,7 @@ export default function SettingsPage() {
               <button
                 onClick={handleDiscard}
                 disabled={saving}
-                className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                className="rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
               >
                 Discard
               </button>
@@ -259,7 +259,7 @@ export default function SettingsPage() {
               <button
                 onClick={handleSave}
                 disabled={saving || !canEdit}
-                className="rounded-xl bg-[#10172a] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#18213a] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-r from-primary to-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save Changes"}
               </button>
@@ -268,7 +268,7 @@ export default function SettingsPage() {
         </div>
 
         {!canEdit && (
-          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
+          <div className="mt-6 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
             You have read-only access to organization settings.
             Only an owner or company admin can make changes.
           </div>
@@ -290,22 +290,22 @@ export default function SettingsPage() {
             teammate can pick their own); persisted client-side via
             next-themes, same as the sidebar's Light/Dark/System
             toggle this duplicates for discoverability. */}
-        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">Appearance</h2>
-          <p className="mt-1 text-sm text-slate-500">
+        <section className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">Appearance</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Personal preference — only affects how the app looks for you.
           </p>
 
           <div className="mt-5">
-            <p className="mb-2 text-sm font-medium text-slate-700">Mode</p>
+            <p className="mb-2 text-sm font-medium text-foreground/80">Mode</p>
             <div className="max-w-xs">
               <ThemeToggle variant="surface" />
             </div>
           </div>
 
           <div className="mt-6">
-            <p className="mb-2 text-sm font-medium text-slate-700">Color theme</p>
-            <p className="mb-3 text-xs text-slate-400">
+            <p className="mb-2 text-sm font-medium text-foreground/80">Color theme</p>
+            <p className="mb-3 text-xs text-muted-foreground/80">
               Applies in light mode — dark mode always looks the same regardless.
             </p>
             <ColorThemeToggle />
@@ -313,16 +313,16 @@ export default function SettingsPage() {
         </section>
 
         {/* Organization */}
-        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Organization
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             The name of your organization.
           </p>
 
           <div className="mt-5">
-            <label htmlFor="org-name" className="text-sm font-medium text-slate-700">
+            <label htmlFor="org-name" className="text-sm font-medium text-foreground/80">
               Organization Name
             </label>
             <input
@@ -333,24 +333,24 @@ export default function SettingsPage() {
               onChange={(event) =>
                 updateField("name", event.target.value)
               }
-              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+              className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-foreground disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
             />
           </div>
         </section>
 
         {/* Localization */}
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Localization
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             These values are used for display purposes and do not
             affect existing reservations or reports.
           </p>
 
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             <div>
-              <label htmlFor="timezone" className="text-sm font-medium text-slate-700">
+              <label htmlFor="timezone" className="text-sm font-medium text-foreground/80">
                 Timezone
               </label>
               <input
@@ -362,12 +362,12 @@ export default function SettingsPage() {
                   updateField("timezone", event.target.value)
                 }
                 placeholder="e.g. Asia/Karachi"
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+                className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-foreground disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
               />
             </div>
 
             <div>
-              <label htmlFor="language" className="text-sm font-medium text-slate-700">
+              <label htmlFor="language" className="text-sm font-medium text-foreground/80">
                 Language
               </label>
               <input
@@ -379,19 +379,19 @@ export default function SettingsPage() {
                   updateField("language", event.target.value)
                 }
                 placeholder="e.g. en"
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+                className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-foreground disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
               />
             </div>
           </div>
         </section>
 
         {/* Financial Preferences */}
-        <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 p-6">
-            <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          <div className="border-b border-border p-6">
+            <h2 className="text-xl font-semibold text-foreground">
               Financial Preferences
             </h2>
-            <p className="mt-1 max-w-md text-sm text-slate-500">
+            <p className="mt-1 max-w-md text-sm text-muted-foreground">
               Manage how monetary values are displayed across your
               organization.
             </p>
@@ -414,7 +414,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setShowCurrencyPicker(true)}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground/80 transition hover:border-border hover:bg-muted"
               >
                 Change Currency
               </button>
@@ -432,11 +432,11 @@ export default function SettingsPage() {
         />
 
         {/* Guest Experience */}
-        <section className="mt-6 mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="mt-6 mb-10 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-foreground">
             Guest Experience
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Default check-in/check-out times and messaging. Individual
             properties may still set their own check-in/check-out
             times.
@@ -444,7 +444,7 @@ export default function SettingsPage() {
 
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             <div>
-              <label htmlFor="checkInTime" className="text-sm font-medium text-slate-700">
+              <label htmlFor="checkInTime" className="text-sm font-medium text-foreground/80">
                 Check-in Time
               </label>
               <input
@@ -455,12 +455,12 @@ export default function SettingsPage() {
                 onChange={(event) =>
                   updateField("checkInTime", event.target.value)
                 }
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+                className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-foreground disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
               />
             </div>
 
             <div>
-              <label htmlFor="checkOutTime" className="text-sm font-medium text-slate-700">
+              <label htmlFor="checkOutTime" className="text-sm font-medium text-foreground/80">
                 Check-out Time
               </label>
               <input
@@ -471,13 +471,13 @@ export default function SettingsPage() {
                 onChange={(event) =>
                   updateField("checkOutTime", event.target.value)
                 }
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+                className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-foreground disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
               />
             </div>
           </div>
 
           <div className="mt-5">
-            <label htmlFor="guestMessageTemplate" className="text-sm font-medium text-slate-700">
+            <label htmlFor="guestMessageTemplate" className="text-sm font-medium text-foreground/80">
               Guest Message Template
             </label>
             <textarea
@@ -492,7 +492,7 @@ export default function SettingsPage() {
                 )
               }
               placeholder="e.g. Welcome! Your check-in details are..."
-              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+              className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-foreground disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
             />
           </div>
         </section>
@@ -513,23 +513,23 @@ export default function SettingsPage() {
         }}
         description={
           <>
-            <div className="my-1 flex flex-col items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 py-4">
+            <div className="my-1 flex flex-col items-center gap-2 rounded-xl border border-border bg-muted py-4">
               <div className="text-center">
-                <p className="text-base font-semibold text-slate-900">
+                <p className="text-base font-semibold text-foreground">
                   {getCurrencyMeta(original?.currency).code}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   {getCurrencyMeta(original?.currency).name}
                 </p>
               </div>
 
-              <ArrowDown size={16} className="text-slate-300" />
+              <ArrowDown size={16} className="text-muted-foreground/50" />
 
               <div className="text-center">
                 <p className="text-base font-semibold text-blue-700">
                   {getCurrencyMeta(form?.currency).code}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   {getCurrencyMeta(form?.currency).name}
                 </p>
               </div>

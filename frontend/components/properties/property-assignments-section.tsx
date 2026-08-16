@@ -106,17 +106,17 @@ export default function PropertyAssignmentsSection({ propertyId }: { propertyId:
 
   if (loading) {
     return (
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-slate-900">Assigned Team Members</h2>
-        <p className="mt-3 text-sm text-slate-400">Loading...</p>
+      <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="text-xl font-semibold text-foreground">Assigned Team Members</h2>
+        <p className="mt-3 text-sm text-muted-foreground/80">Loading...</p>
       </section>
     );
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-slate-900">Assigned Team Members</h2>
-      <p className="mt-1 text-sm text-slate-500">
+    <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-xl font-semibold text-foreground">Assigned Team Members</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
         Manager, Host, and Spectator roles only see properties they&apos;re
         assigned to here. Owner and Admin always see every property.
       </p>
@@ -124,17 +124,17 @@ export default function PropertyAssignmentsSection({ propertyId }: { propertyId:
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
       {assignments.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-400">No one is specifically assigned yet.</p>
+        <p className="mt-4 text-sm text-muted-foreground/80">No one is specifically assigned yet.</p>
       ) : (
         <ul className="mt-4 space-y-2">
           {assignments.map((a) => (
             <li
               key={a.userId}
-              className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5"
+              className="flex items-center justify-between rounded-xl border border-border bg-muted px-4 py-2.5"
             >
               <div>
-                <p className="text-sm font-medium text-slate-900">{a.email ?? a.userId}</p>
-                <p className="text-xs capitalize text-slate-500">{a.role}</p>
+                <p className="text-sm font-medium text-foreground">{a.email ?? a.userId}</p>
+                <p className="text-xs capitalize text-muted-foreground">{a.role}</p>
               </div>
               {canManage && (
                 <button
@@ -154,7 +154,7 @@ export default function PropertyAssignmentsSection({ propertyId }: { propertyId:
           <select
             value={selectedUserId}
             onChange={(e) => setSelectedUserId(e.target.value)}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+            className="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary"
           >
             <option value="">Assign a team member...</option>
             {assignableMembers.map((m) => (
@@ -166,12 +166,12 @@ export default function PropertyAssignmentsSection({ propertyId }: { propertyId:
           <button
             onClick={handleAdd}
             disabled={!selectedUserId || adding}
-            className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             {adding ? "Assigning..." : "Assign"}
           </button>
           {assignableMembers.length === 0 && (
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted-foreground/80">
               No Manager/Host/Spectator members available to assign.
             </p>
           )}

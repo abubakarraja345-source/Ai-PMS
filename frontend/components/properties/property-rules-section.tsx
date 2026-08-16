@@ -93,9 +93,9 @@ export default function PropertyRulesSection({
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-slate-900">House Rules</h2>
-      <p className="mt-1 text-sm text-slate-500">
+    <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-xl font-semibold text-foreground">House Rules</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
         Guidelines guests should follow during their stay.
       </p>
 
@@ -106,11 +106,11 @@ export default function PropertyRulesSection({
       )}
 
       {loading ? (
-        <div className="mt-5 text-sm text-slate-500">
+        <div className="mt-5 text-sm text-muted-foreground">
           Loading house rules...
         </div>
       ) : rules.length === 0 ? (
-        <p className="mt-5 text-sm text-slate-400">
+        <p className="mt-5 text-sm text-muted-foreground/80">
           No house rules added yet.
         </p>
       ) : (
@@ -118,15 +118,15 @@ export default function PropertyRulesSection({
           {rules.map((rule) => (
             <li
               key={rule.id}
-              className="flex items-start justify-between gap-3 rounded-xl bg-slate-50 p-4"
+              className="flex items-start justify-between gap-3 rounded-xl bg-muted p-4"
             >
               <div>
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-medium text-foreground">
                   {rule.title}
                 </p>
 
                 {rule.description && (
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {rule.description}
                   </p>
                 )}
@@ -136,7 +136,7 @@ export default function PropertyRulesSection({
                 <button
                   onClick={() => handleDelete(rule.id)}
                   disabled={deletingId === rule.id}
-                  className="flex-shrink-0 text-xs text-slate-400 hover:text-red-600 disabled:opacity-50"
+                  className="flex-shrink-0 text-xs text-muted-foreground/80 hover:text-red-600 disabled:opacity-50"
                 >
                   {deletingId === rule.id ? "..." : "Delete"}
                 </button>
@@ -153,7 +153,7 @@ export default function PropertyRulesSection({
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Rule title (e.g. No smoking)"
-            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+            className="w-full rounded-xl border border-border px-4 py-2.5 text-sm"
           />
 
           <textarea
@@ -161,13 +161,13 @@ export default function PropertyRulesSection({
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Description (optional)"
             rows={2}
-            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+            className="w-full rounded-xl border border-border px-4 py-2.5 text-sm"
           />
 
           <button
             onClick={handleAdd}
             disabled={saving || !title.trim()}
-            className="rounded-xl bg-[#10172a] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#18213a] disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-gradient-to-r from-primary to-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? "Adding..." : "Add Rule"}
           </button>

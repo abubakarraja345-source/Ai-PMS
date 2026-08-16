@@ -57,7 +57,7 @@ export default function AuditLogPage() {
     <Suspense
       fallback={
         <div className="min-h-full">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Audit Log
           </h1>
         </div>
@@ -133,11 +133,11 @@ function AuditLogContent() {
   if (forbidden) {
     return (
       <div className="min-h-full">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Audit Log
         </h1>
 
-        <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
+        <div className="mt-6 rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
           Only an owner or company admin can view the organization&apos;s
           activity history.
         </div>
@@ -148,10 +148,10 @@ function AuditLogContent() {
   return (
     <div className="min-h-full">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Audit Log
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           Who did what, when — reservations, team, currency, and calendar
           connections.
         </p>
@@ -176,11 +176,11 @@ function AuditLogContent() {
       )}
 
       {/* Filters */}
-      <div className="mt-6 flex flex-wrap gap-3 rounded-xl border bg-white p-4 shadow-sm">
+      <div className="mt-6 flex flex-wrap gap-3 rounded-xl border bg-card p-4 shadow-sm">
         <select
           value={entityType}
           onChange={(event) => setEntityType(event.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         >
           <option value="all">All entities</option>
           {ENTITY_TYPES.map((type) => (
@@ -193,7 +193,7 @@ function AuditLogContent() {
         <select
           value={action}
           onChange={(event) => setAction(event.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         >
           <option value="all">All actions</option>
           {Object.entries(ACTION_LABELS).map(([value, label]) => (
@@ -207,40 +207,40 @@ function AuditLogContent() {
           type="date"
           value={start}
           onChange={(event) => setStart(event.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         />
 
-        <span className="self-center text-sm text-slate-400">to</span>
+        <span className="self-center text-sm text-muted-foreground/80">to</span>
 
         <input
           type="date"
           value={end}
           onChange={(event) => setEnd(event.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         />
 
         <button
           onClick={loadData}
           disabled={loading}
-          className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
         >
           Refresh
         </button>
       </div>
 
       {/* Table */}
-      <div className="mt-6 overflow-hidden rounded-xl border bg-white shadow-sm">
+      <div className="mt-6 overflow-hidden rounded-xl border bg-card shadow-sm">
         {loading ? (
           <div className="p-12 text-center">
-            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
-            <p className="mt-4 text-sm text-slate-500">Loading activity...</p>
+            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-border border-t-slate-900" />
+            <p className="mt-4 text-sm text-muted-foreground">Loading activity...</p>
           </div>
         ) : entries.length === 0 ? (
           <div className="p-12 text-center">
-            <p className="text-sm font-medium text-slate-900">
+            <p className="text-sm font-medium text-foreground">
               No activity recorded yet
             </p>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Actions like creating a reservation or inviting a team member
               will show up here.
             </p>
@@ -248,21 +248,21 @@ function AuditLogContent() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px] text-left text-sm">
-              <thead className="border-b bg-slate-50">
+              <thead className="border-b bg-muted">
                 <tr>
-                  <th className="px-5 py-4 font-medium text-slate-600">
+                  <th className="px-5 py-4 font-medium text-foreground/70">
                     Time
                   </th>
-                  <th className="px-5 py-4 font-medium text-slate-600">
+                  <th className="px-5 py-4 font-medium text-foreground/70">
                     User
                   </th>
-                  <th className="px-5 py-4 font-medium text-slate-600">
+                  <th className="px-5 py-4 font-medium text-foreground/70">
                     Action
                   </th>
-                  <th className="px-5 py-4 font-medium text-slate-600">
+                  <th className="px-5 py-4 font-medium text-foreground/70">
                     Entity
                   </th>
-                  <th className="px-5 py-4 font-medium text-slate-600">
+                  <th className="px-5 py-4 font-medium text-foreground/70">
                     Details
                   </th>
                 </tr>
@@ -270,26 +270,26 @@ function AuditLogContent() {
 
               <tbody className="divide-y">
                 {entries.map((entry) => (
-                  <tr key={entry.id} className="transition hover:bg-slate-50">
-                    <td className="whitespace-nowrap px-5 py-4 text-slate-500">
+                  <tr key={entry.id} className="transition hover:bg-muted">
+                    <td className="whitespace-nowrap px-5 py-4 text-muted-foreground">
                       {new Date(entry.created_at).toLocaleString()}
                     </td>
 
-                    <td className="px-5 py-4 font-medium text-slate-800">
+                    <td className="px-5 py-4 font-medium text-foreground/90">
                       {entry.actor_label ?? "System"}
                     </td>
 
                     <td className="px-5 py-4">
-                      <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+                      <span className="inline-flex rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-medium text-foreground/80">
                         {actionLabel(entry.action)}
                       </span>
                     </td>
 
-                    <td className="px-5 py-4 capitalize text-slate-700">
+                    <td className="px-5 py-4 capitalize text-foreground/80">
                       {entry.entity_type}
                     </td>
 
-                    <td className="max-w-xs truncate px-5 py-4 text-xs text-slate-400">
+                    <td className="max-w-xs truncate px-5 py-4 text-xs text-muted-foreground/80">
                       {formatMetadata(entry.metadata)}
                     </td>
                   </tr>

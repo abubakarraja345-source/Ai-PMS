@@ -9,6 +9,7 @@ import NotificationBell from "@/components/notifications/notification-bell";
 import ReviewCountBadge from "@/components/reservations/review-count-badge";
 import ThemeMenuButton from "@/components/shared/theme-menu-button";
 import CurrencyCalculator from "@/components/shared/currency-calculator";
+import AiBotWidget from "@/components/shared/ai-bot-widget";
 import { apiFetch, PLATFORM_ADMIN_SESSION_KEY } from "@/lib/api";
 import { PermissionProvider, usePermission } from "@/lib/permission-context";
 
@@ -36,7 +37,6 @@ const navItems = [
   { name: "Dashboard", href: "/dashboard" },
   { name: "Properties", href: "/properties" },
   { name: "Reservations", href: "/reservations" },
-  { name: "Review", href: "/reservations/review" },
   { name: "Calendar", href: "/calendar" },
   { name: "Guests", href: "/guests" },
   { name: "Messages", href: "/messages" },
@@ -131,7 +131,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
   const navLinks = (onNavigate?: () => void) => (
     <>
-      <p className="mb-3 px-3 text-xs font-medium uppercase tracking-wider text-slate-500">
+      <p className="mb-3 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         Workspace
       </p>
 
@@ -145,12 +145,12 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             onClick={onNavigate}
             className={`mt-1 flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition ${
               active
-                ? "bg-gradient-to-r from-primary/90 to-accent/90 text-white shadow-lg shadow-black/20"
+                ? "bg-primary text-primary-foreground shadow-lg shadow-black/20"
                 : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
           >
             {item.name}
-            {item.href === "/reservations/review" && <ReviewCountBadge />}
+            {item.href === "/reservations" && <ReviewCountBadge />}
           </Link>
         );
       })}
@@ -244,7 +244,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
                 <button
                   onClick={() => setMobileNavOpen(false)}
                   aria-label="Close navigation menu"
-                  className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+                  className="rounded-lg p-2 text-muted-foreground/80 hover:bg-white/10 hover:text-white"
                 >
                   <X size={20} />
                 </button>
@@ -305,7 +305,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             </div>
             <button
               onClick={exitPlatformAdminView}
-              className="shrink-0 rounded-lg border border-amber-400 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-transparent dark:text-amber-300 dark:hover:bg-amber-500/10"
+              className="shrink-0 rounded-lg border border-amber-400 bg-card px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-transparent dark:text-amber-300 dark:hover:bg-amber-500/10"
             >
               Exit organization view
             </button>
@@ -316,6 +316,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
       </div>
 
       <CurrencyCalculator />
+      <AiBotWidget />
     </div>
   );
 }

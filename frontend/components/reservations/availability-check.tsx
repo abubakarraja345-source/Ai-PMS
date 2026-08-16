@@ -112,7 +112,7 @@ export default function AvailabilityCheck({
 
   if (status === "checking") {
     return (
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-muted-foreground">
         Checking availability...
       </p>
     );

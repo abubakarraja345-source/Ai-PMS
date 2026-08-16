@@ -371,37 +371,37 @@ export default function ReportsPage() {
   }, [summary, granularity]);
 
   return (
-    <main className="min-h-screen bg-slate-50 p-4 md:p-10">
+    <main className="min-h-screen bg-background p-4 md:p-10">
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-3xl font-semibold text-slate-950 md:text-5xl">
+          <h1 className="text-3xl font-semibold text-foreground md:text-5xl">
             Reports / Analytics
           </h1>
 
-          <p className="mt-2 text-slate-500 md:mt-3 md:text-lg">
+          <p className="mt-2 text-muted-foreground md:mt-3 md:text-lg">
             {range.start} → {range.end}
           </p>
         </div>
 
         <button
           onClick={loadSummary}
-          className="rounded-xl border border-slate-200 bg-white px-6 py-4 text-slate-700 hover:bg-slate-50"
+          className="rounded-xl border border-border bg-card px-6 py-4 text-foreground/80 hover:bg-muted"
         >
           Refresh
         </button>
       </div>
 
       {/* Date range controls */}
-      <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-4 shadow-sm">
         {PRESETS.map((p) => (
           <button
             key={p.key}
             onClick={() => applyPreset(p.key)}
             className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
               preset === p.key
-                ? "bg-slate-900 text-white"
-                : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                ? "bg-primary text-white"
+                : "border border-border text-foreground/80 hover:bg-muted"
             }`}
           >
             {p.label}
@@ -413,19 +413,19 @@ export default function ReportsPage() {
             type="date"
             value={customStart}
             onChange={(e) => setCustomStart(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-slate-400"
+            className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground/80 outline-none focus:border-primary"
           />
-          <span className="text-sm text-slate-400">to</span>
+          <span className="text-sm text-muted-foreground/80">to</span>
           <input
             type="date"
             value={customEnd}
             onChange={(e) => setCustomEnd(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-slate-400"
+            className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground/80 outline-none focus:border-primary"
           />
           <button
             onClick={applyCustomRange}
             disabled={!customStart || !customEnd}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
           >
             Apply
           </button>
@@ -443,7 +443,7 @@ export default function ReportsPage() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-32 animate-pulse rounded-2xl bg-white"
+              className="h-32 animate-pulse rounded-2xl bg-card"
             />
           ))}
         </div>
@@ -608,28 +608,28 @@ export default function ReportsPage() {
           </div>
 
           {/* Booking lead time note */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">
               Booking Lead Time
             </h2>
-            <p className="mt-2 text-3xl font-semibold text-slate-900">
+            <p className="mt-2 text-3xl font-semibold text-foreground">
               {summary.bookings.avgLeadTimeDays !== null
                 ? `${summary.bookings.avgLeadTimeDays} days`
                 : "No data"}
             </p>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Average days between booking and check-in.
             </p>
           </div>
 
           {/* Properties */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-lg font-semibold text-foreground">
                   Property Performance
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Sorted alphabetically — revenue is never mixed
                   across currencies, so properties aren&apos;t
                   ranked by revenue.
@@ -659,7 +659,7 @@ export default function ReportsPage() {
                       ]
                     )
                   }
-                  className="flex-shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  className="flex-shrink-0 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-muted"
                 >
                   Export CSV
                 </button>
@@ -667,14 +667,14 @@ export default function ReportsPage() {
             </div>
 
             {summary.properties.length === 0 ? (
-              <p className="mt-6 text-sm text-slate-400">
+              <p className="mt-6 text-sm text-muted-foreground/80">
                 No properties yet.
               </p>
             ) : (
               <div className="mt-5 overflow-x-auto">
                 <table className="w-full min-w-[600px] text-left text-sm">
                   <thead>
-                    <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
+                    <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground/80">
                       <th className="pb-3 pr-4 font-medium">
                         Property
                       </th>
@@ -693,15 +693,15 @@ export default function ReportsPage() {
                     {summary.properties.map((p) => (
                       <tr
                         key={p.propertyId}
-                        className="border-b border-slate-50 last:border-0"
+                        className="border-b border-border/60 last:border-0"
                       >
-                        <td className="py-3 pr-4 font-medium text-slate-900">
+                        <td className="py-3 pr-4 font-medium text-foreground">
                           {p.title}
                         </td>
-                        <td className="py-3 pr-4 text-slate-700">
+                        <td className="py-3 pr-4 text-foreground/80">
                           {p.reservationCount}
                         </td>
-                        <td className="py-3 pr-4 text-slate-700">
+                        <td className="py-3 pr-4 text-foreground/80">
                           {p.revenue.length === 0
                             ? "—"
                             : p.revenue
@@ -713,7 +713,7 @@ export default function ReportsPage() {
                                 )
                                 .join(" · ")}
                         </td>
-                        <td className="py-3 text-slate-700">
+                        <td className="py-3 text-foreground/80">
                           {p.occupancy.occupancyRate}%
                         </td>
                       </tr>
@@ -770,26 +770,26 @@ export default function ReportsPage() {
                 </ResponsiveContainer>
               )}
 
-              <div className="mt-5 grid grid-cols-3 gap-4 border-t border-slate-100 pt-5 text-sm">
+              <div className="mt-5 grid grid-cols-3 gap-4 border-t border-border pt-5 text-sm">
                 <div>
-                  <p className="text-slate-500">VIP</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                  <p className="text-muted-foreground">VIP</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">
                     {summary.guests.vipProportion}%
                   </p>
                 </div>
                 <div>
-                  <p className="text-slate-500">
+                  <p className="text-muted-foreground">
                     Repeat Guests
                   </p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                  <p className="mt-1 text-lg font-semibold text-foreground">
                     {summary.guests.repeatGuestRate}%
                   </p>
                 </div>
                 <div>
-                  <p className="text-slate-500">
+                  <p className="text-muted-foreground">
                     Unique Guests
                   </p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                  <p className="mt-1 text-lg font-semibold text-foreground">
                     {summary.guests.uniqueGuestCount}
                   </p>
                 </div>
@@ -802,7 +802,7 @@ export default function ReportsPage() {
             >
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
                     Country
                   </p>
                   <BreakdownList
@@ -810,7 +810,7 @@ export default function ReportsPage() {
                   />
                 </div>
                 <div>
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
                     Language
                   </p>
                   <BreakdownList
@@ -833,18 +833,18 @@ export default function ReportsPage() {
                 <div className="space-y-5">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-slate-500">
+                      <p className="text-muted-foreground">
                         Task Volume
                       </p>
-                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                      <p className="mt-1 text-lg font-semibold text-foreground">
                         {summary.cleaning.taskVolume}
                       </p>
                     </div>
                     <div>
-                      <p className="text-slate-500">
+                      <p className="text-muted-foreground">
                         Avg Completion
                       </p>
-                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                      <p className="mt-1 text-lg font-semibold text-foreground">
                         {summary.cleaning
                           .avgCompletionHours !== null
                           ? `${summary.cleaning.avgCompletionHours}h`
@@ -855,7 +855,7 @@ export default function ReportsPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
                         By Status
                       </p>
                       <BreakdownList
@@ -863,7 +863,7 @@ export default function ReportsPage() {
                       />
                     </div>
                     <div>
-                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
                         By Priority
                       </p>
                       <BreakdownList
@@ -885,18 +885,18 @@ export default function ReportsPage() {
                 <div className="space-y-5">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-slate-500">
+                      <p className="text-muted-foreground">
                         Ticket Volume
                       </p>
-                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                      <p className="mt-1 text-lg font-semibold text-foreground">
                         {summary.maintenance.ticketVolume}
                       </p>
                     </div>
                     <div>
-                      <p className="text-slate-500">
+                      <p className="text-muted-foreground">
                         Avg Resolution
                       </p>
-                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                      <p className="mt-1 text-lg font-semibold text-foreground">
                         {summary.maintenance
                           .avgResolutionHours !== null
                           ? `${summary.maintenance.avgResolutionHours}h`
@@ -904,19 +904,19 @@ export default function ReportsPage() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-slate-500">
+                      <p className="text-muted-foreground">
                         Estimated Cost
                       </p>
-                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                      <p className="mt-1 text-lg font-semibold text-foreground">
                         {summary.maintenance
                           .estimatedCostTotal ?? 0}
                       </p>
                     </div>
                     <div>
-                      <p className="text-slate-500">
+                      <p className="text-muted-foreground">
                         Actual Cost
                       </p>
-                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                      <p className="mt-1 text-lg font-semibold text-foreground">
                         {summary.maintenance.actualCostTotal ??
                           0}
                       </p>
@@ -925,7 +925,7 @@ export default function ReportsPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
                         By Status
                       </p>
                       <BreakdownList
@@ -933,7 +933,7 @@ export default function ReportsPage() {
                       />
                     </div>
                     <div>
-                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
                         By Category
                       </p>
                       <BreakdownList
@@ -950,17 +950,17 @@ export default function ReportsPage() {
               subtitle="Current stock levels across all properties (point-in-time, not date-range scoped)."
             >
               {summary.inventory.totalItems === 0 ? (
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-muted-foreground/80">
                   No inventory items yet.
                 </p>
               ) : (
                 <div className="space-y-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-2xl font-semibold text-slate-900">
+                      <p className="text-2xl font-semibold text-foreground">
                         {summary.inventory.totalItems}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-muted-foreground">
                         Total items
                       </p>
                     </div>
@@ -969,19 +969,19 @@ export default function ReportsPage() {
                         className={`text-2xl font-semibold ${
                           summary.inventory.lowStockCount > 0
                             ? "text-red-600"
-                            : "text-slate-900"
+                            : "text-foreground"
                         }`}
                       >
                         {summary.inventory.lowStockCount}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-muted-foreground">
                         Low-stock items
                       </p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
                       By Category
                     </p>
                     <BreakdownList data={summary.inventory.byCategory} />
@@ -1006,14 +1006,14 @@ function KpiCard({
   sub: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-      <p className="text-sm font-medium text-slate-500">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <p className="text-sm font-medium text-muted-foreground">
         {label}
       </p>
-      <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">
+      <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
         {value}
       </p>
-      <p className="mt-2 text-xs text-slate-400">{sub}</p>
+      <p className="mt-2 text-xs text-muted-foreground/80">{sub}</p>
     </div>
   );
 }
@@ -1028,11 +1028,11 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-foreground">
         {title}
       </h2>
-      <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
       <div className="mt-5">{children}</div>
     </div>
   );
@@ -1040,7 +1040,7 @@ function ChartCard({
 
 function EmptyChartState() {
   return (
-    <div className="flex h-[280px] items-center justify-center text-sm text-slate-400">
+    <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground/80">
       No data in this period.
     </div>
   );
@@ -1048,7 +1048,7 @@ function EmptyChartState() {
 
 function NoDataState({ message }: { message: string }) {
   return (
-    <div className="flex h-32 items-center justify-center text-sm text-slate-400">
+    <div className="flex h-32 items-center justify-center text-sm text-muted-foreground/80">
       {message}
     </div>
   );
@@ -1088,7 +1088,7 @@ function BreakdownChart({ data }: { data: CountBucket[] }) {
 
 function BreakdownList({ data }: { data: CountBucket[] }) {
   if (data.length === 0) {
-    return <p className="text-sm text-slate-400">No data.</p>;
+    return <p className="text-sm text-muted-foreground/80">No data.</p>;
   }
 
   return (
@@ -1098,10 +1098,10 @@ function BreakdownList({ data }: { data: CountBucket[] }) {
           key={item.key}
           className="flex items-center justify-between"
         >
-          <span className="capitalize text-slate-700">
+          <span className="capitalize text-foreground/80">
             {item.key}
           </span>
-          <span className="font-medium text-slate-900">
+          <span className="font-medium text-foreground">
             {item.count}
           </span>
         </li>

@@ -58,7 +58,7 @@ export default function ConfirmDialog({
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-md rounded-2xl bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
       >
         <div className="flex items-start gap-3">
           <div
@@ -78,11 +78,11 @@ export default function ConfirmDialog({
           <div className="min-w-0 flex-1">
             <h2
               id="confirm-dialog-title"
-              className="text-base font-semibold text-slate-900"
+              className="text-base font-semibold text-foreground"
             >
               {title}
             </h2>
-            <div className="mt-2 text-sm leading-6 text-slate-600">
+            <div className="mt-2 text-sm leading-6 text-foreground/70">
               {description}
             </div>
           </div>
@@ -92,7 +92,7 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted"
           >
             {cancelLabel}
           </button>
@@ -101,7 +101,7 @@ export default function ConfirmDialog({
             type="button"
             ref={confirmRef}
             onClick={onConfirm}
-            className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+            className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
           >
             {confirmLabel}
           </button>

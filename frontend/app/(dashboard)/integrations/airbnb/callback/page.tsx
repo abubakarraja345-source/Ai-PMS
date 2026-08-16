@@ -86,10 +86,10 @@ function AirbnbCallbackContent() {
 
 function CallbackStatus({ message }: { message: string }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50">
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
-        <p className="mt-4 text-sm text-slate-600">{message}</p>
+    <main className="flex min-h-screen items-center justify-center bg-muted">
+      <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-border border-t-slate-900" />
+        <p className="mt-4 text-sm text-foreground/70">{message}</p>
       </div>
     </main>
   );

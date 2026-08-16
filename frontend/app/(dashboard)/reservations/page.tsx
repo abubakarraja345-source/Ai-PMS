@@ -1,11 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Search, CalendarDays, CheckCircle2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { PaginationControls } from "@/components/shared/pagination-controls";
 import AvailabilityCheck from "@/components/reservations/availability-check";
 import { formatMoney as formatMoneyShared, getCurrencyMeta } from "@/lib/currency";
 import MoneyInput from "@/components/shared/money-input";
+import { usePermission } from "@/lib/permission-context";
+import { Skeleton } from "@/components/shared/skeleton";
 
 interface PropertySummary {
   id: string;
@@ -50,6 +53,8 @@ interface Reservation {
   currency: string | null;
 
   special_requests: string | null;
+
+  needs_review?: boolean;
 
   created_at?: string;
   updated_at?: string;
@@ -155,14 +160,38 @@ function getStatusClasses(status: string) {
       return "bg-blue-50 text-blue-700 border-blue-200";
 
     default:
-      return "bg-slate-50 text-slate-700 border-slate-200";
+      return "bg-muted text-foreground/80 border-border";
   }
 }
 
 function isImportedReservation(
   bookingReference: string | null
 ) {
-  return !!bookingReference && bookingReference.startsWith("ical:");
+  return (
+    !!bookingReference &&
+    (bookingReference.startsWith("ical:") ||
+      bookingReference.startsWith("airbnb_api:"))
+  );
+}
+
+/**
+ * The Booking column's display value. A real, human-assigned
+ * reference ("TEST-001") is shown as-is. An imported reservation's
+ * booking_reference is an internal technical key (ical:..., or
+ * airbnb_api:{connectionId}:{listingReservationId}) — never
+ * meaningful to a viewer, and neither is this app's own internal
+ * reservation UUID. The guest's actual name (genuine data from the
+ * source platform, not a fabricated placeholder) is what's actually
+ * recognizable here.
+ */
+function bookingDisplayLabel(reservation: Reservation) {
+  const ref = reservation.booking_reference;
+
+  if (ref && !isImportedReservation(ref)) {
+    return ref;
+  }
+
+  return getGuestName(reservation.guest);
 }
 
 function getGuestName(
@@ -250,6 +279,25 @@ export default function ReservationsPage() {
   const [startFilter, setStartFilter] = useState("");
   const [endFilter, setEndFilter] = useState("");
 
+  // Merged in from the old standalone /reservations/review page — a
+  // quick filter rather than a separate route, so "everything about a
+  // reservation" lives in one place. Initialized from the URL once on
+  // mount so existing links (dashboard's "Review required" card,
+  // bookmarks) still land directly on the filtered view.
+  const [needsReviewOnly, setNeedsReviewOnly] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("needs_review") === "true") {
+      setNeedsReviewOnly(true);
+    }
+  }, []);
+
+  const { can } = usePermission();
+  const canReview = can("reservations.review");
+
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>(
@@ -306,7 +354,7 @@ export default function ReservationsPage() {
   // filtered set is the only page guaranteed to exist.
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter, propertyFilter, startFilter, endFilter]);
+  }, [search, statusFilter, propertyFilter, startFilter, endFilter, needsReviewOnly]);
 
   /*
    * Reservations now already contain reservation.property and
@@ -326,6 +374,7 @@ export default function ReservationsPage() {
         params.set("property_id", propertyFilter);
       if (startFilter) params.set("start", startFilter);
       if (endFilter) params.set("end", endFilter);
+      if (needsReviewOnly) params.set("needs_review", "true");
       params.set("page", String(page));
 
       const response = await apiFetch(
@@ -344,11 +393,64 @@ export default function ReservationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, propertyFilter, startFilter, endFilter, page]);
+  }, [search, statusFilter, propertyFilter, startFilter, endFilter, needsReviewOnly, page]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Independent of the main list/filter — always reflects the true
+  // review-queue size so the filter toggle's count stays accurate even
+  // while a different filter is active.
+  const loadReviewCount = useCallback(async () => {
+    try {
+      const response = await apiFetch(
+        "/api/reservations?needs_review=true&limit=1"
+      );
+      setReviewCount(response.meta?.total ?? 0);
+    } catch {
+      // Silent — the count badge just won't update this cycle.
+    }
+  }, []);
+
+  useEffect(() => {
+    loadReviewCount();
+  }, [loadReviewCount, reservations]);
+
+  /**
+   * Clears needs_review directly from the list — same
+   * PATCH /:id/review endpoint the reservation detail page's review
+   * banner uses (permissions/matrix.ts grants reservations.review to
+   * owner/company_admin/manager; canReview above mirrors that via the
+   * same permission engine every other gated action in this app uses).
+   */
+  async function markReviewed(reservation: Reservation) {
+    try {
+      setReviewingId(reservation.id);
+      setError("");
+
+      await apiFetch(`/api/reservations/${reservation.id}/review`, {
+        method: "PATCH",
+      });
+
+      setReservations((current) =>
+        needsReviewOnly
+          ? current.filter((r) => r.id !== reservation.id)
+          : current.map((r) =>
+              r.id === reservation.id ? { ...r, needs_review: false } : r
+            )
+      );
+      await loadReviewCount();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to mark reservation as reviewed"
+      );
+    } finally {
+      setReviewingId(null);
+    }
+  }
 
   function updateForm(
     field: keyof ReservationForm,
@@ -711,11 +813,11 @@ export default function ReservationsPage() {
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Reservations
           </h1>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage bookings, guests, stays, and
             reservation status.
           </p>
@@ -723,7 +825,7 @@ export default function ReservationsPage() {
 
         <button
           onClick={openCreateModal}
-          className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800"
+          className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
         >
           <span className="mr-2 text-lg leading-none">
             +
@@ -761,11 +863,12 @@ export default function ReservationsPage() {
       )}
 
       {/* Filters */}
-      <div className="mt-6 flex flex-col gap-3 rounded-xl border bg-white p-4 shadow-sm md:flex-row">
+      <div className="mt-6 flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm md:flex-row">
         <div className="relative flex-1">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-            🔍
-          </span>
+          <Search
+            size={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/80"
+          />
 
           <input
             value={search}
@@ -773,7 +876,7 @@ export default function ReservationsPage() {
               setSearch(event.target.value)
             }
             placeholder="Search booking, guest, property..."
-            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+            className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
           />
         </div>
 
@@ -782,7 +885,7 @@ export default function ReservationsPage() {
           onChange={(event) =>
             setStatusFilter(event.target.value)
           }
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         >
           <option value="all">
             All statuses
@@ -808,7 +911,7 @@ export default function ReservationsPage() {
         <select
           value={propertyFilter}
           onChange={(event) => setPropertyFilter(event.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         >
           <option value="all">All properties</option>
           {properties.map((property) => (
@@ -822,22 +925,44 @@ export default function ReservationsPage() {
           type="date"
           value={startFilter}
           onChange={(event) => setStartFilter(event.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         />
 
-        <span className="self-center text-sm text-slate-400">to</span>
+        <span className="self-center text-sm text-muted-foreground/80">to</span>
 
         <input
           type="date"
           value={endFilter}
           onChange={(event) => setEndFilter(event.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         />
+
+        <button
+          onClick={() => setNeedsReviewOnly((v) => !v)}
+          className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition ${
+            needsReviewOnly
+              ? "border-warning/40 bg-warning/10 text-warning"
+              : "border-border text-foreground/80 hover:bg-muted"
+          }`}
+        >
+          Needs Review
+          {reviewCount > 0 && (
+            <span
+              className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
+                needsReviewOnly
+                  ? "bg-warning text-warning-foreground"
+                  : "bg-muted text-foreground/80"
+              }`}
+            >
+              {reviewCount > 99 ? "99+" : reviewCount}
+            </span>
+          )}
+        </button>
 
         <button
           onClick={loadData}
           disabled={loading}
-          className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
         >
           Refresh
         </button>
@@ -846,12 +971,12 @@ export default function ReservationsPage() {
       {/* Stats */}
       <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">
+        <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground">
             Total Reservations
           </p>
 
-          <p className="mt-2 text-2xl font-semibold text-slate-900">
+          <p className="mt-2 text-2xl font-semibold text-foreground">
             {Object.values(statusCounts).reduce(
               (sum, count) => sum + count,
               0
@@ -859,8 +984,8 @@ export default function ReservationsPage() {
           </p>
         </div>
 
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">
+        <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground">
             Confirmed
           </p>
 
@@ -869,8 +994,8 @@ export default function ReservationsPage() {
           </p>
         </div>
 
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">
+        <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground">
             Pending
           </p>
 
@@ -879,8 +1004,8 @@ export default function ReservationsPage() {
           </p>
         </div>
 
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">
+        <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground">
             Cancelled
           </p>
 
@@ -892,39 +1017,54 @@ export default function ReservationsPage() {
       </div>
 
       {/* Table */}
-      <div className="mt-6 overflow-hidden rounded-xl border bg-white shadow-sm">
+      <div className="mt-6 overflow-hidden rounded-xl border bg-card shadow-sm">
 
         {loading ? (
-          <div className="p-12 text-center">
-            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
-
-            <p className="mt-4 text-sm text-slate-500">
-              Loading reservations...
-            </p>
+          <div className="divide-y divide-slate-100">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-6 px-5 py-4">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-4 flex-1" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+            ))}
           </div>
         ) : reservations.length === 0 ? (
           <div className="p-12 text-center">
 
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-              📅
+            <div
+              className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${
+                needsReviewOnly
+                  ? "bg-success/10 text-success"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {needsReviewOnly ? <CheckCircle2 size={22} /> : <CalendarDays size={22} />}
             </div>
 
-            <h3 className="mt-4 font-medium text-slate-900">
-              No reservations found
+            <h3 className="mt-4 font-medium text-foreground">
+              {needsReviewOnly
+                ? "You're all caught up"
+                : "No reservations found"}
             </h3>
 
-            <p className="mt-1 text-sm text-slate-500">
-              {search ||
-              statusFilter !== "all"
+            <p className="mt-1 text-sm text-muted-foreground">
+              {needsReviewOnly
+                ? "There are no reservations requiring review."
+                : search || statusFilter !== "all"
                 ? "Try changing your search or filters."
                 : "Create your first reservation to get started."}
             </p>
 
-            {!search &&
+            {!needsReviewOnly &&
+              !search &&
               statusFilter === "all" && (
                 <button
                   onClick={openCreateModal}
-                  className="mt-5 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+                  className="mt-5 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
                 >
                   Create Reservation
                 </button>
@@ -935,37 +1075,37 @@ export default function ReservationsPage() {
 
             <table className="w-full min-w-[1050px] text-left text-sm">
 
-              <thead className="border-b bg-slate-50">
+              <thead className="border-b bg-muted">
                 <tr>
-                  <th className="px-5 py-4 font-medium text-slate-600">
+                  <th className="px-5 py-4 font-medium text-foreground/70">
                     Booking
                   </th>
 
-                  <th className="px-5 py-4 font-medium text-slate-600">
+                  <th className="px-5 py-4 font-medium text-foreground/70">
                     Guest
                   </th>
 
-                  <th className="px-5 py-4 font-medium text-slate-600">
+                  <th className="px-5 py-4 font-medium text-foreground/70">
                     Property
                   </th>
 
-                  <th className="px-5 py-4 font-medium text-slate-600">
+                  <th className="px-5 py-4 font-medium text-foreground/70">
                     Stay
                   </th>
 
-                  <th className="px-5 py-4 font-medium text-slate-600">
+                  <th className="px-5 py-4 font-medium text-foreground/70">
                     Guests
                   </th>
 
-                  <th className="px-5 py-4 font-medium text-slate-600">
+                  <th className="px-5 py-4 font-medium text-foreground/70">
                     Amount
                   </th>
 
-                  <th className="px-5 py-4 font-medium text-slate-600">
+                  <th className="px-5 py-4 font-medium text-foreground/70">
                     Status
                   </th>
 
-                  <th className="px-5 py-4 text-right font-medium text-slate-600">
+                  <th className="px-5 py-4 text-right font-medium text-foreground/70">
                     Actions
                   </th>
                 </tr>
@@ -984,7 +1124,7 @@ export default function ReservationsPage() {
                     return (
                       <tr
                         key={reservation.id}
-                        className="transition hover:bg-slate-50"
+                        className="transition hover:bg-muted"
                       >
 
                         {/* Booking */}
@@ -995,17 +1135,9 @@ export default function ReservationsPage() {
                                 reservation
                               )
                             }
-                            className="font-medium text-slate-900 hover:underline"
+                            className="font-medium text-foreground hover:underline"
                           >
-                            {isImportedReservation(
-                              reservation.booking_reference
-                            )
-                              ? reservation.id.slice(0, 8)
-                              : reservation.booking_reference ||
-                                reservation.id.slice(
-                                  0,
-                                  8
-                                )}
+                            {bookingDisplayLabel(reservation)}
                           </button>
 
                           {isImportedReservation(
@@ -1016,7 +1148,7 @@ export default function ReservationsPage() {
                             </span>
                           )}
 
-                          <p className="mt-1 text-xs capitalize text-slate-500">
+                          <p className="mt-1 text-xs capitalize text-muted-foreground">
                             {reservation.source}
                           </p>
                         </td>
@@ -1024,13 +1156,13 @@ export default function ReservationsPage() {
                         {/* Guest */}
                         <td className="px-5 py-4">
 
-                          <p className="font-medium text-slate-800">
+                          <p className="font-medium text-foreground/90">
                             {guestName}
                           </p>
 
                           {reservation.guest
                             ?.email && (
-                            <p className="mt-1 max-w-[200px] truncate text-xs text-slate-500">
+                            <p className="mt-1 max-w-[200px] truncate text-xs text-muted-foreground">
                               {
                                 reservation
                                   .guest
@@ -1044,7 +1176,7 @@ export default function ReservationsPage() {
                         {/* Property */}
                         <td className="px-5 py-4">
 
-                          <p className="font-medium text-slate-800">
+                          <p className="font-medium text-foreground/90">
                             {reservation.property
                               ?.title ??
                               "Unknown property"}
@@ -1055,18 +1187,18 @@ export default function ReservationsPage() {
                         {/* Stay */}
                         <td className="px-5 py-4">
 
-                          <p className="text-slate-700">
+                          <p className="text-foreground/80">
                             {reservation.check_in}
                           </p>
 
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 text-xs text-muted-foreground">
                             →{" "}
                             {
                               reservation.check_out
                             }
                           </p>
 
-                          <p className="mt-1 text-xs font-medium text-slate-600">
+                          <p className="mt-1 text-xs font-medium text-foreground/70">
                             {reservation.nights ??
                               (calculateNights(
                                 reservation.check_in,
@@ -1080,13 +1212,13 @@ export default function ReservationsPage() {
                         {/* Guests */}
                         <td className="px-5 py-4">
 
-                          <p className="font-medium text-slate-800">
+                          <p className="font-medium text-foreground/90">
                             {reservation.adults +
                               reservation.children +
                               reservation.infants}
                           </p>
 
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 text-xs text-muted-foreground">
                             {reservation.adults} adults
                           </p>
 
@@ -1095,7 +1227,7 @@ export default function ReservationsPage() {
                         {/* Amount */}
                         <td className="px-5 py-4">
 
-                          <p className="font-medium text-slate-900">
+                          <p className="font-medium text-foreground">
                             {formatCurrency(
                               reservation.total_amount,
                               reservation.currency
@@ -1105,7 +1237,7 @@ export default function ReservationsPage() {
                           {reservation.taxes &&
                             reservation.taxes >
                               0 ? (
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p className="mt-1 text-xs text-muted-foreground">
                               + taxes
                             </p>
                           ) : null}
@@ -1125,6 +1257,12 @@ export default function ReservationsPage() {
                             }
                           </span>
 
+                          {reservation.needs_review && (
+                            <span className="mt-1.5 block w-fit rounded-full border border-warning/30 bg-warning/10 px-2.5 py-1 text-[11px] font-medium text-warning">
+                              Needs Review
+                            </span>
+                          )}
+
                         </td>
 
                         {/* Actions */}
@@ -1132,13 +1270,25 @@ export default function ReservationsPage() {
 
                           <div className="flex justify-end gap-2">
 
+                            {reservation.needs_review && canReview && (
+                              <button
+                                onClick={() => markReviewed(reservation)}
+                                disabled={reviewingId === reservation.id}
+                                className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-1.5 text-xs font-medium text-warning hover:bg-warning/20 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {reviewingId === reservation.id
+                                  ? "Marking..."
+                                  : "Mark Reviewed"}
+                              </button>
+                            )}
+
                             <button
                               onClick={() =>
                                 openViewReservation(
                                   reservation
                                 )
                               }
-                              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-muted"
                             >
                               View
                             </button>
@@ -1149,7 +1299,7 @@ export default function ReservationsPage() {
                                   reservation
                                 )
                               }
-                              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-muted"
                             >
                               Edit
                             </button>
@@ -1194,23 +1344,23 @@ export default function ReservationsPage() {
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
 
-          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-card shadow-2xl">
 
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-5">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card px-6 py-5">
 
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-lg font-semibold text-foreground">
                   New Reservation
                 </h2>
 
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Create a new guest reservation.
                 </p>
               </div>
 
               <button
                 onClick={closeCreateModal}
-                className="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100"
+                className="rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted"
               >
                 ✕
               </button>
@@ -1226,7 +1376,7 @@ export default function ReservationsPage() {
               <div className="grid gap-5 md:grid-cols-2">
 
                 <div>
-                  <label htmlFor="create-property_id" className="text-sm font-medium text-slate-700">
+                  <label htmlFor="create-property_id" className="text-sm font-medium text-foreground/80">
                     Property *
                   </label>
 
@@ -1240,7 +1390,7 @@ export default function ReservationsPage() {
                         event.target.value
                       )
                     }
-                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                    className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-primary"
                   >
                     <option value="">
                       Select property
@@ -1260,7 +1410,7 @@ export default function ReservationsPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="create-guest_id" className="text-sm font-medium text-slate-700">
+                  <label htmlFor="create-guest_id" className="text-sm font-medium text-foreground/80">
                     Guest *
                   </label>
 
@@ -1274,7 +1424,7 @@ export default function ReservationsPage() {
                         event.target.value
                       )
                     }
-                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                    className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-primary"
                   >
                     <option value="">
                       Select guest
@@ -1301,7 +1451,7 @@ export default function ReservationsPage() {
               <div className="grid gap-5 md:grid-cols-3">
 
                 <div>
-                  <label htmlFor="create-booking_reference" className="text-sm font-medium text-slate-700">
+                  <label htmlFor="create-booking_reference" className="text-sm font-medium text-foreground/80">
                     Booking Reference
                   </label>
 
@@ -1315,12 +1465,12 @@ export default function ReservationsPage() {
                       )
                     }
                     placeholder="RES-1001"
-                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                    className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-primary"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="create-source" className="text-sm font-medium text-slate-700">
+                  <label htmlFor="create-source" className="text-sm font-medium text-foreground/80">
                     Source
                   </label>
 
@@ -1333,7 +1483,7 @@ export default function ReservationsPage() {
                         event.target.value
                       )
                     }
-                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                    className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm"
                   >
                     <option value="direct">
                       Direct
@@ -1358,7 +1508,7 @@ export default function ReservationsPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="create-status" className="text-sm font-medium text-slate-700">
+                  <label htmlFor="create-status" className="text-sm font-medium text-foreground/80">
                     Status
                   </label>
 
@@ -1371,7 +1521,7 @@ export default function ReservationsPage() {
                         event.target.value
                       )
                     }
-                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                    className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm"
                   >
                     <option value="confirmed">
                       Confirmed
@@ -1388,14 +1538,14 @@ export default function ReservationsPage() {
               {/* Dates */}
               <div>
 
-                <h3 className="text-sm font-semibold text-slate-900">
+                <h3 className="text-sm font-semibold text-foreground">
                   Stay Details
                 </h3>
 
                 <div className="mt-4 grid gap-5 md:grid-cols-3">
 
                   <div>
-                    <label htmlFor="create-check_in" className="text-sm font-medium text-slate-700">
+                    <label htmlFor="create-check_in" className="text-sm font-medium text-foreground/80">
                       Check-in *
                     </label>
 
@@ -1410,12 +1560,12 @@ export default function ReservationsPage() {
                           event.target.value
                         )
                       }
-                      className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                      className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="create-check_out" className="text-sm font-medium text-slate-700">
+                    <label htmlFor="create-check_out" className="text-sm font-medium text-foreground/80">
                       Check-out *
                     </label>
 
@@ -1434,19 +1584,19 @@ export default function ReservationsPage() {
                           event.target.value
                         )
                       }
-                      className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                      className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm"
                     />
                   </div>
 
                   <div className="flex items-end">
 
-                    <div className="w-full rounded-lg bg-slate-50 px-4 py-3">
+                    <div className="w-full rounded-lg bg-muted px-4 py-3">
 
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-muted-foreground">
                         Nights
                       </p>
 
-                      <p className="mt-1 font-semibold text-slate-900">
+                      <p className="mt-1 font-semibold text-foreground">
                         {createNights || "-"}
                       </p>
 
@@ -1467,7 +1617,7 @@ export default function ReservationsPage() {
               {/* Guest Count */}
               <div>
 
-                <h3 className="text-sm font-semibold text-slate-900">
+                <h3 className="text-sm font-semibold text-foreground">
                   Guests
                 </h3>
 
@@ -1490,7 +1640,7 @@ export default function ReservationsPage() {
                     ([field, label, min]) => (
                       <div key={field}>
 
-                        <label htmlFor={`create-${field}`} className="text-sm font-medium text-slate-700">
+                        <label htmlFor={`create-${field}`} className="text-sm font-medium text-foreground/80">
                           {label}
                         </label>
 
@@ -1511,7 +1661,7 @@ export default function ReservationsPage() {
                               )
                             )
                           }
-                          className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                          className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm"
                         />
 
                       </div>
@@ -1524,24 +1674,24 @@ export default function ReservationsPage() {
               {/* Financial */}
               <div>
 
-                <h3 className="text-sm font-semibold text-slate-900">
+                <h3 className="text-sm font-semibold text-foreground">
                   Financial Details
                 </h3>
 
                 <div className="mt-3 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-sm font-semibold text-blue-700 shadow-sm">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-card text-sm font-semibold text-blue-700 shadow-sm">
                     {getCurrencyMeta(effectiveCreateCurrency).symbol}
                   </div>
 
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-foreground">
                       Currency{" "}
                       <span className="font-semibold text-blue-700">
                         {getCurrencyMeta(effectiveCreateCurrency).code} ·{" "}
                         {getCurrencyMeta(effectiveCreateCurrency).name}
                       </span>
                     </p>
-                    <p className="mt-0.5 text-xs text-slate-500">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       Your amounts will be recorded in this property&apos;s
                       effective currency and cannot be changed manually.
                     </p>
@@ -1551,7 +1701,7 @@ export default function ReservationsPage() {
                 <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
                   <div>
-                    <label htmlFor="create-total_amount" className="text-sm font-medium text-slate-700">
+                    <label htmlFor="create-total_amount" className="text-sm font-medium text-foreground/80">
                       Total Amount
                     </label>
 
@@ -1568,7 +1718,7 @@ export default function ReservationsPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="create-cleaning_fee" className="text-sm font-medium text-slate-700">
+                    <label htmlFor="create-cleaning_fee" className="text-sm font-medium text-foreground/80">
                       Cleaning Fee
                     </label>
 
@@ -1585,7 +1735,7 @@ export default function ReservationsPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="create-taxes" className="text-sm font-medium text-slate-700">
+                    <label htmlFor="create-taxes" className="text-sm font-medium text-foreground/80">
                       Taxes
                     </label>
 
@@ -1605,7 +1755,7 @@ export default function ReservationsPage() {
               {/* Requests */}
               <div>
 
-                <label htmlFor="create-special_requests" className="text-sm font-medium text-slate-700">
+                <label htmlFor="create-special_requests" className="text-sm font-medium text-foreground/80">
                   Special Requests
                 </label>
 
@@ -1620,7 +1770,7 @@ export default function ReservationsPage() {
                     )
                   }
                   placeholder="Late check-in, extra bed, airport pickup..."
-                  className="mt-2 w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                  className="mt-2 w-full resize-none rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-primary"
                 />
 
               </div>
@@ -1632,7 +1782,7 @@ export default function ReservationsPage() {
                   type="button"
                   onClick={closeCreateModal}
                   disabled={saving}
-                  className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1645,7 +1795,7 @@ export default function ReservationsPage() {
                     !form.guest_id ||
                     createAvailable === false
                   }
-                  className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving
                     ? "Creating..."
@@ -1664,22 +1814,21 @@ export default function ReservationsPage() {
         modalMode && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
 
-            <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+            <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-card shadow-2xl">
 
               {/* Header */}
-              <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-5">
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card px-6 py-5">
 
                 <div>
 
-                  <h2 className="text-lg font-semibold text-slate-900">
+                  <h2 className="text-lg font-semibold text-foreground">
                     {modalMode === "view"
                       ? "Reservation Details"
                       : "Edit Reservation"}
                   </h2>
 
-                  <p className="mt-1 text-sm text-slate-500">
-                    {selectedReservation.booking_reference ||
-                      selectedReservation.id}
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {bookingDisplayLabel(selectedReservation)}
                   </p>
 
                 </div>
@@ -1688,7 +1837,7 @@ export default function ReservationsPage() {
                   onClick={
                     closeReservationModal
                   }
-                  className="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100"
+                  className="rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted"
                 >
                   ✕
                 </button>
@@ -1700,13 +1849,13 @@ export default function ReservationsPage() {
                 {/* Summary */}
                 <div className="grid gap-4 sm:grid-cols-2">
 
-                  <div className="rounded-lg bg-slate-50 p-4">
+                  <div className="rounded-lg bg-muted p-4">
 
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Property
                     </p>
 
-                    <p className="mt-1 font-medium text-slate-900">
+                    <p className="mt-1 font-medium text-foreground">
                       {selectedReservation.property
                         ?.title ??
                         "Unknown property"}
@@ -1714,13 +1863,13 @@ export default function ReservationsPage() {
 
                   </div>
 
-                  <div className="rounded-lg bg-slate-50 p-4">
+                  <div className="rounded-lg bg-muted p-4">
 
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Guest
                     </p>
 
-                    <p className="mt-1 font-medium text-slate-900">
+                    <p className="mt-1 font-medium text-foreground">
                       {getGuestName(
                         selectedReservation.guest
                       )}
@@ -1728,7 +1877,7 @@ export default function ReservationsPage() {
 
                     {selectedReservation.guest
                       ?.email && (
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {
                           selectedReservation
                             .guest.email
@@ -1746,58 +1895,58 @@ export default function ReservationsPage() {
                     <div className="grid gap-5 sm:grid-cols-2">
 
                       <div>
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                           Booking Reference
                         </p>
 
-                        <p className="mt-1 text-slate-900">
+                        <p className="mt-1 text-foreground">
                           {selectedReservation.booking_reference ??
                             "-"}
                         </p>
                       </div>
 
                       <div>
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                           Source
                         </p>
 
-                        <p className="mt-1 capitalize text-slate-900">
+                        <p className="mt-1 capitalize text-foreground">
                           {selectedReservation.source}
                         </p>
                       </div>
 
                       <div>
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                           Check-in
                         </p>
 
-                        <p className="mt-1 text-slate-900">
+                        <p className="mt-1 text-foreground">
                           {selectedReservation.check_in}
                         </p>
                       </div>
 
                       <div>
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                           Check-out
                         </p>
 
-                        <p className="mt-1 text-slate-900">
+                        <p className="mt-1 text-foreground">
                           {selectedReservation.check_out}
                         </p>
                       </div>
 
                       <div>
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                           Nights
                         </p>
 
-                        <p className="mt-1 text-slate-900">
+                        <p className="mt-1 text-foreground">
                           {selectedNights}
                         </p>
                       </div>
 
                       <div>
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                           Status
                         </p>
 
@@ -1813,18 +1962,18 @@ export default function ReservationsPage() {
                       </div>
 
                       <div>
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                           Guests
                         </p>
 
-                        <p className="mt-1 text-slate-900">
+                        <p className="mt-1 text-foreground">
                           {selectedReservation.adults +
                             selectedReservation.children +
                             selectedReservation.infants}{" "}
                           total
                         </p>
 
-                        <p className="mt-1 text-xs text-slate-500">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {
                             selectedReservation.adults
                           }{" "}
@@ -1845,11 +1994,11 @@ export default function ReservationsPage() {
                       </div>
 
                       <div>
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                           Total Amount
                         </p>
 
-                        <p className="mt-1 text-lg font-semibold text-slate-900">
+                        <p className="mt-1 text-lg font-semibold text-foreground">
                           {formatCurrency(
                             selectedReservation.total_amount,
                             selectedReservation.currency
@@ -1864,18 +2013,18 @@ export default function ReservationsPage() {
                       selectedReservation.taxes) && (
                       <div className="border-t pt-5">
 
-                        <h3 className="text-sm font-semibold text-slate-900">
+                        <h3 className="text-sm font-semibold text-foreground">
                           Additional Details
                         </h3>
 
                         {selectedReservation.special_requests && (
-                          <div className="mt-4 rounded-lg bg-slate-50 p-4">
+                          <div className="mt-4 rounded-lg bg-muted p-4">
 
-                            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                               Special Requests
                             </p>
 
-                            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                            <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/80">
                               {
                                 selectedReservation.special_requests
                               }
@@ -1887,11 +2036,11 @@ export default function ReservationsPage() {
                         <div className="mt-4 grid gap-4 sm:grid-cols-2">
 
                           <div>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-muted-foreground">
                               Cleaning Fee
                             </p>
 
-                            <p className="mt-1 font-medium text-slate-900">
+                            <p className="mt-1 font-medium text-foreground">
                               {formatCurrency(
                                 selectedReservation.cleaning_fee,
                                 selectedReservation.currency
@@ -1900,11 +2049,11 @@ export default function ReservationsPage() {
                           </div>
 
                           <div>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-muted-foreground">
                               Taxes
                             </p>
 
-                            <p className="mt-1 font-medium text-slate-900">
+                            <p className="mt-1 font-medium text-foreground">
                               {formatCurrency(
                                 selectedReservation.taxes,
                                 selectedReservation.currency
@@ -1924,7 +2073,7 @@ export default function ReservationsPage() {
                             selectedReservation
                           )
                         }
-                        className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+                        className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:opacity-90"
                       >
                         Edit Reservation
                       </button>
@@ -1939,7 +2088,7 @@ export default function ReservationsPage() {
                     <div className="grid gap-5 sm:grid-cols-2">
 
                       <div>
-                        <label htmlFor="edit-check_in" className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-check_in" className="text-sm font-medium text-foreground/80">
                           Check-in
                         </label>
 
@@ -1955,12 +2104,12 @@ export default function ReservationsPage() {
                               event.target.value
                             )
                           }
-                          className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                          className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm"
                         />
                       </div>
 
                       <div>
-                        <label htmlFor="edit-check_out" className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-check_out" className="text-sm font-medium text-foreground/80">
                           Check-out
                         </label>
 
@@ -1979,7 +2128,7 @@ export default function ReservationsPage() {
                               event.target.value
                             )
                           }
-                          className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                          className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm"
                         />
 
                         <AvailabilityCheck
@@ -1992,7 +2141,7 @@ export default function ReservationsPage() {
                       </div>
 
                       <div>
-                        <label htmlFor="edit-adults" className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-adults" className="text-sm font-medium text-foreground/80">
                           Adults
                         </label>
 
@@ -2011,12 +2160,12 @@ export default function ReservationsPage() {
                               )
                             )
                           }
-                          className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                          className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm"
                         />
                       </div>
 
                       <div>
-                        <label htmlFor="edit-children" className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-children" className="text-sm font-medium text-foreground/80">
                           Children
                         </label>
 
@@ -2035,12 +2184,12 @@ export default function ReservationsPage() {
                               )
                             )
                           }
-                          className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                          className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm"
                         />
                       </div>
 
                       <div>
-                        <label htmlFor="edit-infants" className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-infants" className="text-sm font-medium text-foreground/80">
                           Infants
                         </label>
 
@@ -2059,12 +2208,12 @@ export default function ReservationsPage() {
                               )
                             )
                           }
-                          className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                          className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm"
                         />
                       </div>
 
                       <div>
-                        <label htmlFor="edit-pets" className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-pets" className="text-sm font-medium text-foreground/80">
                           Pets
                         </label>
 
@@ -2083,12 +2232,12 @@ export default function ReservationsPage() {
                               )
                             )
                           }
-                          className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                          className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm"
                         />
                       </div>
 
                       <div>
-                        <label htmlFor="edit-total_amount" className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-total_amount" className="text-sm font-medium text-foreground/80">
                           Total Amount
                         </label>
 
@@ -2112,7 +2261,7 @@ export default function ReservationsPage() {
                       </div>
 
                       <div>
-                        <label htmlFor="edit-status" className="text-sm font-medium text-slate-700">
+                        <label htmlFor="edit-status" className="text-sm font-medium text-foreground/80">
                           Status
                         </label>
 
@@ -2127,7 +2276,7 @@ export default function ReservationsPage() {
                               event.target.value
                             )
                           }
-                          className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm"
+                          className="mt-2 w-full rounded-lg border border-border px-3 py-2.5 text-sm"
                         >
                           <option value="confirmed">
                             Confirmed
@@ -2150,19 +2299,19 @@ export default function ReservationsPage() {
                     </div>
 
                     <div className="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-sm font-semibold text-amber-700 shadow-sm">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-card text-sm font-semibold text-amber-700 shadow-sm">
                         {getCurrencyMeta(selectedReservation.currency).symbol}
                       </div>
 
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-900">
+                        <p className="text-sm font-medium text-foreground">
                           Currency{" "}
                           <span className="font-semibold text-amber-700">
                             {getCurrencyMeta(selectedReservation.currency).code} ·{" "}
                             {getCurrencyMeta(selectedReservation.currency).name}
                           </span>
                         </p>
-                        <p className="mt-0.5 text-xs text-slate-500">
+                        <p className="mt-0.5 text-xs text-muted-foreground">
                           Fixed for this reservation — set automatically at
                           creation and cannot be changed here.
                         </p>
@@ -2170,13 +2319,13 @@ export default function ReservationsPage() {
                     </div>
 
                     {/* Nights preview */}
-                    <div className="rounded-lg bg-slate-50 p-4">
+                    <div className="rounded-lg bg-muted p-4">
 
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-muted-foreground">
                         Updated stay
                       </p>
 
-                      <p className="mt-1 font-semibold text-slate-900">
+                      <p className="mt-1 font-semibold text-foreground">
                         {selectedNights} nights
                       </p>
 
@@ -2191,7 +2340,7 @@ export default function ReservationsPage() {
                           closeReservationModal
                         }
                         disabled={saving}
-                        className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                        className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
                       >
                         Cancel
                       </button>
@@ -2200,7 +2349,7 @@ export default function ReservationsPage() {
                         type="button"
                         onClick={updateReservation}
                         disabled={saving || editAvailable === false}
-                        className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                        className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
                       >
                         {saving
                           ? "Saving..."

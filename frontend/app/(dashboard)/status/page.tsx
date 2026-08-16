@@ -63,10 +63,10 @@ const HEALTH_META: Record<
   },
   disabled: {
     label: "Disabled",
-    dot: "bg-slate-400",
-    text: "text-slate-600",
-    border: "border-slate-200",
-    bg: "bg-slate-50",
+    dot: "bg-muted-foreground/50",
+    text: "text-foreground/70",
+    border: "border-border",
+    bg: "bg-muted",
   },
 };
 
@@ -177,10 +177,10 @@ export default function StatusCenterPage() {
   return (
     <div className="min-h-full">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Status Center
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           A single place to monitor every connected calendar&apos;s health.
         </p>
       </div>
@@ -206,14 +206,14 @@ export default function StatusCenterPage() {
           return (
             <div
               key={key}
-              className="rounded-xl border bg-white p-5 shadow-sm"
+              className="rounded-xl border bg-card p-5 shadow-sm"
             >
               <div className="flex items-center gap-2">
                 <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
-                <p className="text-sm text-slate-500">{label}</p>
+                <p className="text-sm text-muted-foreground">{label}</p>
               </div>
 
-              <p className="mt-2 text-2xl font-semibold text-slate-900">
+              <p className="mt-2 text-2xl font-semibold text-foreground">
                 {loading ? "—" : buckets[key].length}
               </p>
             </div>
@@ -229,24 +229,24 @@ export default function StatusCenterPage() {
       )}
 
       {/* List */}
-      <div className="mt-6 rounded-xl border bg-white shadow-sm">
+      <div className="mt-6 rounded-xl border bg-card shadow-sm">
         {loading ? (
           <div className="p-12 text-center">
-            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
-            <p className="mt-4 text-sm text-slate-500">Loading status...</p>
+            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-border border-t-slate-900" />
+            <p className="mt-4 text-sm text-muted-foreground">Loading status...</p>
           </div>
         ) : integrations.length === 0 ? (
           <div className="p-12 text-center">
-            <p className="text-sm font-medium text-slate-900">
+            <p className="text-sm font-medium text-foreground">
               No calendar connections yet
             </p>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Connect a calendar from the Integrations page to see its
               health here.
             </p>
             <Link
               href="/integrations"
-              className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+              className="mt-4 inline-block rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
             >
               Go to Integrations
             </Link>
@@ -261,7 +261,7 @@ export default function StatusCenterPage() {
                   <Link
                     key={integration.id}
                     href="/integrations"
-                    className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50"
+                    className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-muted"
                   >
                     <div className="flex items-center gap-3">
                       <span
@@ -269,10 +269,10 @@ export default function StatusCenterPage() {
                       />
 
                       <div>
-                        <p className="text-sm font-medium text-slate-900">
+                        <p className="text-sm font-medium text-foreground">
                           {integrationLabel(integration)}
                         </p>
-                        <p className="mt-0.5 text-xs text-slate-500">
+                        <p className="mt-0.5 text-xs text-muted-foreground">
                           {PROVIDER_LABELS[integration.provider] ??
                             integration.provider}
                           {integration.propertyTitle
@@ -288,7 +288,7 @@ export default function StatusCenterPage() {
                       >
                         {meta.label}
                       </span>
-                      <p className="mt-1 text-xs text-slate-400">
+                      <p className="mt-1 text-xs text-muted-foreground/80">
                         Last sync: {formatRelative(integration.lastSuccessfulSyncAt)}
                       </p>
                     </div>

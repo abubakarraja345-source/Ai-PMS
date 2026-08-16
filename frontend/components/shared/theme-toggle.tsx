@@ -15,14 +15,11 @@ const OPTIONS = [
  * mounted — `next-themes`' resolved value isn't known on the server,
  * so rendering the real state before hydration would mismatch.
  *
- * `variant` picks colors for the surface this is placed ON — "light"/
- * "dark" both assume the app's own dark sidebar (both were designed
- * before the "surface" variant existed, when the toggle only ever
- * lived there); "surface" is for a plain light card background, e.g.
- * the Settings page — which still uses this app's original hardcoded
- * slate palette rather than the design-token system, so this variant
- * intentionally matches that instead of the token-based sidebar
- * colors.
+ * Fixed dual navy/gray-blue palette (specified directly, not the
+ * per-org color-theme tokens) — same combo on both the sidebar
+ * (dark surface) and Settings (light card), just applied to the two
+ * ends of it: dark tones for the sidebar's track/active state, light
+ * tones for Settings'.
  */
 export default function ThemeToggle({
   variant = "light",
@@ -38,18 +35,18 @@ export default function ThemeToggle({
 
   const trackClasses =
     variant === "surface"
-      ? "border-slate-200 bg-slate-50"
-      : variant === "dark"
-      ? "border-white/10 bg-white/5"
-      : "border-sidebar-border bg-white/5";
+      ? "border-[#9BA8AB]/50 bg-[#CCD0CF]/60"
+      : "border-[#4A5C6A]/50 bg-[#11212D]/70";
 
   const activeClasses =
-    variant === "surface" ? "bg-slate-900 text-white" : "bg-sidebar-primary text-white";
+    variant === "surface"
+      ? "bg-[#4E5775] text-white"
+      : "bg-[#4E5775] text-white";
 
   const inactiveClasses =
     variant === "surface"
-      ? "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-      : "text-slate-400 hover:bg-white/10 hover:text-white";
+      ? "text-[#253745] hover:bg-[#9BA8AB]/40 hover:text-[#06141B]"
+      : "text-[#9BA8AB] hover:bg-white/10 hover:text-[#CCD0CF]";
 
   if (!mounted) {
     return <div className={`h-9 w-full animate-pulse rounded-lg border ${trackClasses}`} />;

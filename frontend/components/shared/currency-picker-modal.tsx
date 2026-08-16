@@ -124,22 +124,22 @@ export default function CurrencyPickerModal({
         onMouseEnter={() => setHighlighted(index)}
         onClick={() => handleSelect(meta.code)}
         className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition ${
-          index === highlighted ? "bg-slate-50" : ""
+          index === highlighted ? "bg-muted" : ""
         }`}
       >
         <span className="flex h-4 w-4 shrink-0 items-center justify-center text-blue-600">
           {isSelected && <Check size={14} />}
         </span>
-        <span className="w-6 shrink-0 text-center text-slate-400">
+        <span className="w-6 shrink-0 text-center text-muted-foreground/80">
           {meta.symbol}
         </span>
-        <span className="w-12 shrink-0 font-semibold text-slate-900">
+        <span className="w-12 shrink-0 font-semibold text-foreground">
           {meta.code}
         </span>
-        <span className="min-w-0 flex-1 truncate text-slate-500">
+        <span className="min-w-0 flex-1 truncate text-muted-foreground">
           {meta.name}
         </span>
-        <span className="shrink-0 tabular-nums text-slate-400">
+        <span className="shrink-0 tabular-nums text-muted-foreground/80">
           {formatMoney(1250, meta.code)}
         </span>
       </button>
@@ -157,28 +157,28 @@ export default function CurrencyPickerModal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+        className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-150"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">
+            <h2 className="text-base font-semibold text-foreground">
               {title}
             </h2>
-            <p className="mt-0.5 text-xs text-slate-500">{description}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="shrink-0 rounded-lg p-1.5 text-muted-foreground/80 hover:bg-muted hover:text-foreground/70"
             aria-label="Close"
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
-          <Search size={16} className="shrink-0 text-slate-400" />
+        <div className="flex items-center gap-2 border-b border-border px-5 py-3">
+          <Search size={16} className="shrink-0 text-muted-foreground/80" />
           <input
             ref={searchRef}
             value={query}
@@ -189,18 +189,18 @@ export default function CurrencyPickerModal({
             onKeyDown={handleListKeyDown}
             placeholder="Search currency..."
             aria-label="Search currency"
-            className="w-full text-sm outline-none placeholder:text-slate-400"
+            className="w-full text-sm outline-none placeholder:text-muted-foreground/80"
           />
         </div>
 
         <div role="listbox" className="overflow-y-auto p-2">
           {filtered.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-slate-400">
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground/80">
               No currency matches &ldquo;{query}&rdquo;
             </p>
           ) : showGrouped ? (
             <>
-              <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
                 Popular
               </p>
               {popular.map((meta) =>
@@ -210,7 +210,7 @@ export default function CurrencyPickerModal({
                 )
               )}
 
-              <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
                 All currencies
               </p>
               {filtered

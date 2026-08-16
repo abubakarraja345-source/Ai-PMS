@@ -66,13 +66,13 @@ export default function MoneyInput({
   return (
     <div className={className}>
       <div
-        className={`flex items-stretch overflow-hidden rounded-xl border bg-white transition focus-within:ring-4 ${
+        className={`flex items-stretch overflow-hidden rounded-xl border bg-card transition focus-within:ring-4 ${
           error
             ? "border-red-300 focus-within:border-red-400 focus-within:ring-red-50"
-            : "border-slate-200 focus-within:border-slate-900 focus-within:ring-slate-900/5"
-        } ${disabled ? "bg-slate-50" : ""}`}
+            : "border-border focus-within:border-primary focus-within:ring-slate-900/5"
+        } ${disabled ? "bg-muted" : ""}`}
       >
-        <span className="flex min-w-[3.5rem] shrink-0 items-center justify-center border-r border-slate-200 bg-slate-50 px-2 text-xs font-semibold tracking-wide text-slate-500">
+        <span className="flex min-w-[3.5rem] shrink-0 items-center justify-center border-r border-border bg-muted px-2 text-xs font-semibold tracking-wide text-muted-foreground">
           {meta.code}
         </span>
 
@@ -84,12 +84,12 @@ export default function MoneyInput({
           disabled={disabled}
           placeholder={placeholder ?? defaultPlaceholder}
           onChange={(event) => handleChange(event.target.value)}
-          className="min-w-0 flex-1 bg-transparent px-3 py-3 text-base font-semibold tabular-nums text-slate-900 outline-none disabled:cursor-not-allowed disabled:text-slate-500"
+          className="min-w-0 flex-1 bg-transparent px-3 py-3 text-base font-semibold tabular-nums text-foreground outline-none disabled:cursor-not-allowed disabled:text-muted-foreground"
         />
 
         <span
           aria-hidden="true"
-          className="flex shrink-0 items-center pr-3 text-sm text-slate-300"
+          className="flex shrink-0 items-center pr-3 text-sm text-muted-foreground/50"
         >
           {meta.symbol}
         </span>

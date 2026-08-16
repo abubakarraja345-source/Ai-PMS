@@ -261,9 +261,9 @@ export default function EditPropertyPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-10">
+      <main className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-5xl">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8">
+          <div className="rounded-2xl border border-border bg-card p-8">
             Loading property...
           </div>
         </div>
@@ -272,7 +272,7 @@ export default function EditPropertyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10">
+    <main className="min-h-screen bg-background px-6 py-10">
       <div className="mx-auto max-w-5xl">
 
         {/* Header */}
@@ -282,16 +282,16 @@ export default function EditPropertyPage() {
             onClick={() =>
               router.push(`/properties/${propertyId}`)
             }
-            className="mb-4 text-sm text-slate-500 hover:text-slate-900"
+            className="mb-4 text-sm text-muted-foreground hover:text-foreground"
           >
             ← Back to Property
           </button>
 
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-4xl font-semibold tracking-tight text-foreground">
             Edit Property
           </h1>
 
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-muted-foreground">
             Update your property information.
           </p>
         </div>
@@ -313,8 +313,8 @@ export default function EditPropertyPage() {
           className="space-y-6"
         >
           {/* Basic Information */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Basic Information
             </h2>
 
@@ -330,7 +330,7 @@ export default function EditPropertyPage() {
               />
 
               <div>
-                <label htmlFor="property_type" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="property_type" className="mb-2 block text-sm font-medium text-foreground/80">
                   Property Type *
                 </label>
 
@@ -343,7 +343,7 @@ export default function EditPropertyPage() {
                       e.target.value
                     )
                   }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 outline-none focus:border-primary"
                 >
                   <option value="apartment">
                     Apartment
@@ -361,7 +361,7 @@ export default function EditPropertyPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="description" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="description" className="mb-2 block text-sm font-medium text-foreground/80">
                   Description
                 </label>
 
@@ -375,15 +375,15 @@ export default function EditPropertyPage() {
                     )
                   }
                   rows={4}
-                  className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full resize-none rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
             </div>
           </section>
 
           {/* Location */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Location
             </h2>
 
@@ -438,8 +438,8 @@ export default function EditPropertyPage() {
           </section>
 
           {/* Property Details */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Property Details
             </h2>
 
@@ -484,14 +484,14 @@ export default function EditPropertyPage() {
           </section>
 
           {/* Guest Information */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Guest Information
             </h2>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label htmlFor="check_in_time" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="check_in_time" className="mb-2 block text-sm font-medium text-foreground/80">
                   Check-in Time
                 </label>
 
@@ -505,12 +505,12 @@ export default function EditPropertyPage() {
                       e.target.value
                     )
                   }
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="check_out_time" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="check_out_time" className="mb-2 block text-sm font-medium text-foreground/80">
                   Check-out Time
                 </label>
 
@@ -524,19 +524,19 @@ export default function EditPropertyPage() {
                       e.target.value
                     )
                   }
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
             </div>
           </section>
 
           {/* Financial Settings */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Financial Settings
             </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Choose which currency this property uses for reservations and
               financial records.
             </p>
@@ -546,7 +546,7 @@ export default function EditPropertyPage() {
                 className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
                   form.currency === ""
                     ? "border-blue-300 bg-blue-50/50 ring-1 ring-blue-100"
-                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                    : "border-border hover:border-border hover:bg-muted"
                 }`}
               >
                 <input
@@ -558,10 +558,10 @@ export default function EditPropertyPage() {
                 />
 
                 <span>
-                  <span className="block text-sm font-medium text-slate-900">
+                  <span className="block text-sm font-medium text-foreground">
                     Use organization default
                   </span>
-                  <span className="mt-0.5 block text-sm text-slate-500">
+                  <span className="mt-0.5 block text-sm text-muted-foreground">
                     {orgDefaultCurrency}
                     {CURRENCIES[orgDefaultCurrency]
                       ? ` · ${CURRENCIES[orgDefaultCurrency]!.name}`
@@ -574,7 +574,7 @@ export default function EditPropertyPage() {
                 className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
                   form.currency !== ""
                     ? "border-blue-300 bg-blue-50/50 ring-1 ring-blue-100"
-                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                    : "border-border hover:border-border hover:bg-muted"
                 }`}
               >
                 <input
@@ -588,7 +588,7 @@ export default function EditPropertyPage() {
                 />
 
                 <span className="w-full">
-                  <span className="block text-sm font-medium text-slate-900">
+                  <span className="block text-sm font-medium text-foreground">
                     Custom property currency
                   </span>
 
@@ -624,8 +624,8 @@ export default function EditPropertyPage() {
           </section>
 
           {/* Additional */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Additional Information
             </h2>
 
@@ -666,7 +666,7 @@ export default function EditPropertyPage() {
               />
 
               <div>
-                <label htmlFor="status" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="status" className="mb-2 block text-sm font-medium text-foreground/80">
                   Status
                 </label>
 
@@ -679,7 +679,7 @@ export default function EditPropertyPage() {
                       e.target.value
                     )
                   }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 outline-none focus:border-primary"
                 >
                   <option value="active">Active</option>
                   <option value="inactive">
@@ -700,7 +700,7 @@ export default function EditPropertyPage() {
                   `/properties/${propertyId}`
                 )
               }
-              className="rounded-xl border border-slate-200 bg-white px-6 py-3 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-xl border border-border bg-card px-6 py-3 font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
             >
               Cancel
             </button>
@@ -708,7 +708,7 @@ export default function EditPropertyPage() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-slate-900 px-7 py-3 font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-primary px-7 py-3 font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving
                 ? "Saving Changes..."
@@ -740,7 +740,7 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-2 block text-sm font-medium text-slate-700">
+      <label htmlFor={id} className="mb-2 block text-sm font-medium text-foreground/80">
         {label}
       </label>
 
@@ -751,7 +751,7 @@ function Field({
         required={required}
         step={step}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+        className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
       />
     </div>
   );

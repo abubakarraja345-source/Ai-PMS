@@ -217,13 +217,13 @@ export default function PropertyChannelLinksSection({
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">
+          <h2 className="text-xl font-semibold text-foreground">
             Channel Connections
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Listing mapping and iCal calendar synchronization. This does
             not create a live Airbnb/Booking.com/VRBO API connection —
             only standard iCal calendar sync.
@@ -232,7 +232,7 @@ export default function PropertyChannelLinksSection({
 
         <Link
           href="/integrations"
-          className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-muted"
         >
           Manage Connections
         </Link>
@@ -245,7 +245,7 @@ export default function PropertyChannelLinksSection({
       )}
 
       {loading ? (
-        <div className="mt-5 text-sm text-slate-500">
+        <div className="mt-5 text-sm text-muted-foreground">
           Loading channel mappings...
         </div>
       ) : (
@@ -258,10 +258,10 @@ export default function PropertyChannelLinksSection({
             return (
               <div
                 key={provider.id}
-                className="rounded-xl border border-slate-200 p-4"
+                className="rounded-xl border border-border p-4"
               >
                 <div className="flex items-start justify-between">
-                  <p className="font-medium text-slate-900">
+                  <p className="font-medium text-foreground">
                     {provider.label}
                   </p>
 
@@ -269,7 +269,7 @@ export default function PropertyChannelLinksSection({
                     className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
                       link
                         ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border-slate-200 bg-slate-50 text-slate-500"
+                        : "border-border bg-muted text-muted-foreground"
                     }`}
                   >
                     {link ? "Mapped" : "Not mapped"}
@@ -278,11 +278,11 @@ export default function PropertyChannelLinksSection({
 
                 {link && !isEditing && (
                   <div className="mt-3 space-y-1 text-sm">
-                    <p className="text-slate-500">External Listing ID</p>
-                    <p className="break-all font-medium text-slate-900">
+                    <p className="text-muted-foreground">External Listing ID</p>
+                    <p className="break-all font-medium text-foreground">
                       {link.externalListingId}
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-muted-foreground/80">
                       Mapped {formatDateTime(link.createdAt)}
                     </p>
 
@@ -296,12 +296,12 @@ export default function PropertyChannelLinksSection({
                               : connectionsByProvider[provider.id].status ===
                                   "error"
                                 ? "text-red-600"
-                                : "text-slate-400"
+                                : "text-muted-foreground/80"
                           }
                         >
                           ●
                         </span>
-                        <span className="text-slate-500">
+                        <span className="text-muted-foreground">
                           {connectionsByProvider[provider.id].status ===
                           "active"
                             ? "Connected"
@@ -320,7 +320,7 @@ export default function PropertyChannelLinksSection({
                 )}
 
                 {!link && !isEditing && (
-                  <p className="mt-3 text-sm text-slate-400">
+                  <p className="mt-3 text-sm text-muted-foreground/80">
                     Not connected
                   </p>
                 )}
@@ -329,7 +329,7 @@ export default function PropertyChannelLinksSection({
                   <div className="mt-3 space-y-2">
                     <label
                       htmlFor={`listing-id-${provider.id}`}
-                      className="block text-sm text-slate-500"
+                      className="block text-sm text-muted-foreground"
                     >
                       External Listing ID
                     </label>
@@ -340,7 +340,7 @@ export default function PropertyChannelLinksSection({
                       value={listingIdInput}
                       onChange={(e) => setListingIdInput(e.target.value)}
                       placeholder="e.g. 123456789"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                      className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary"
                     />
 
                     {formError && (
@@ -354,7 +354,7 @@ export default function PropertyChannelLinksSection({
                           setFormError("");
                         }}
                         disabled={saving}
-                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-muted disabled:opacity-50"
                       >
                         Cancel
                       </button>
@@ -362,7 +362,7 @@ export default function PropertyChannelLinksSection({
                       <button
                         onClick={() => handleSave(provider.id)}
                         disabled={saving}
-                        className="rounded-lg bg-[#10172a] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#18213a] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="rounded-lg bg-gradient-to-r from-primary to-accent px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {saving ? "Saving..." : "Save Mapping"}
                       </button>
@@ -374,7 +374,7 @@ export default function PropertyChannelLinksSection({
                   <div className="mt-4 flex gap-2">
                     <button
                       onClick={() => startEdit(provider.id)}
-                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-muted"
                     >
                       {link ? "Edit" : "Add Listing"}
                     </button>
@@ -397,7 +397,7 @@ export default function PropertyChannelLinksSection({
       )}
 
       {!loading && !canManage && links.length === 0 && (
-        <p className="mt-5 text-sm text-slate-400">
+        <p className="mt-5 text-sm text-muted-foreground/80">
           No channel mappings yet.
         </p>
       )}

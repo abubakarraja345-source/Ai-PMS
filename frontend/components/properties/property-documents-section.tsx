@@ -150,13 +150,13 @@ export default function PropertyDocumentsSection({
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">
+          <h2 className="text-xl font-semibold text-foreground">
             Documents
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Contracts, permits, and other property files.
           </p>
         </div>
@@ -176,7 +176,7 @@ export default function PropertyDocumentsSection({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="rounded-xl bg-[#10172a] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#18213a] disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-gradient-to-r from-primary to-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {uploading ? "Uploading..." : "+ Add Document"}
             </button>
@@ -191,11 +191,11 @@ export default function PropertyDocumentsSection({
       )}
 
       {loading ? (
-        <div className="mt-5 text-sm text-slate-500">
+        <div className="mt-5 text-sm text-muted-foreground">
           Loading documents...
         </div>
       ) : documents.length === 0 ? (
-        <p className="mt-5 text-sm text-slate-400">
+        <p className="mt-5 text-sm text-muted-foreground/80">
           No documents uploaded yet.
         </p>
       ) : (
@@ -203,7 +203,7 @@ export default function PropertyDocumentsSection({
           {documents.map((document) => (
             <li
               key={document.id}
-              className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-4"
+              className="flex items-center justify-between gap-3 rounded-xl bg-muted p-4"
             >
               <div className="min-w-0">
                 {document.signedUrl ? (
@@ -211,17 +211,17 @@ export default function PropertyDocumentsSection({
                     href={document.signedUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="truncate text-sm font-medium text-slate-900 underline"
+                    className="truncate text-sm font-medium text-foreground underline"
                   >
                     {document.name}
                   </a>
                 ) : (
-                  <p className="truncate text-sm font-medium text-slate-900">
+                  <p className="truncate text-sm font-medium text-foreground">
                     {document.name}
                   </p>
                 )}
 
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-muted-foreground/80">
                   Uploaded {formatDate(document.createdAt)}
                 </p>
               </div>
@@ -230,7 +230,7 @@ export default function PropertyDocumentsSection({
                 <button
                   onClick={() => handleDelete(document.id)}
                   disabled={deletingId === document.id}
-                  className="flex-shrink-0 text-xs text-slate-400 hover:text-red-600 disabled:opacity-50"
+                  className="flex-shrink-0 text-xs text-muted-foreground/80 hover:text-red-600 disabled:opacity-50"
                 >
                   {deletingId === document.id ? "..." : "Delete"}
                 </button>

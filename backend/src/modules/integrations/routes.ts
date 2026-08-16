@@ -8,6 +8,7 @@ import {
   channelOverviewController,
   connectPropertyCalendarController,
   createIntegrationController,
+  createPropertyFromIcalController,
   deleteIntegrationController,
   disableIntegrationController,
   enableIntegrationController,
@@ -51,6 +52,7 @@ router.delete("/channel-links/:id", mutate, deleteChannelLinkController);
 // before "/:id" so the literal segment "ical" is never captured as an
 // :id param.
 router.post("/ical/test", mutate, testIcalUrlController);
+router.post("/ical/create-property", mutate, createPropertyFromIcalController);
 router.post("/ical", mutate, connectPropertyCalendarController);
 
 router.get("/", listIntegrationsController);

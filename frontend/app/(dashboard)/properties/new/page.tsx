@@ -164,23 +164,23 @@ export default function NewPropertyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10">
+    <main className="min-h-screen bg-background px-6 py-10">
       <div className="mx-auto max-w-5xl">
         {/* Header */}
         <div className="mb-8">
           <button
             type="button"
             onClick={() => router.push("/properties")}
-            className="mb-4 text-sm text-slate-500 hover:text-slate-900"
+            className="mb-4 text-sm text-muted-foreground hover:text-foreground"
           >
             ← Back to Properties
           </button>
 
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-4xl font-semibold tracking-tight text-foreground">
             Add Property
           </h1>
 
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-muted-foreground">
             Add a new property to your PMS portfolio.
           </p>
         </div>
@@ -201,18 +201,18 @@ export default function NewPropertyPage() {
 
         <form onSubmit={createProperty} className="space-y-6">
           {/* Basic Information */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Basic Information
             </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               The basic information guests and your team will see.
             </p>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label htmlFor="title" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="title" className="mb-2 block text-sm font-medium text-foreground/80">
                   Property Title *
                 </label>
 
@@ -224,13 +224,13 @@ export default function NewPropertyPage() {
                     updateField("title", e.target.value)
                   }
                   placeholder="e.g. Luxury Lahore Apartment"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none transition focus:border-primary"
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor="property_type" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="property_type" className="mb-2 block text-sm font-medium text-foreground/80">
                   Property Type *
                 </label>
 
@@ -243,7 +243,7 @@ export default function NewPropertyPage() {
                       e.target.value
                     )
                   }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 outline-none focus:border-primary"
                   required
                 >
                   <option value="apartment">Apartment</option>
@@ -258,7 +258,7 @@ export default function NewPropertyPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="description" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="description" className="mb-2 block text-sm font-medium text-foreground/80">
                   Description
                 </label>
 
@@ -273,25 +273,25 @@ export default function NewPropertyPage() {
                   }
                   placeholder="Describe the property..."
                   rows={4}
-                  className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full resize-none rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
             </div>
           </section>
 
           {/* Location */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Location
             </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Where is this property located?
             </p>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div className="md:col-span-2">
-                <label htmlFor="address" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="address" className="mb-2 block text-sm font-medium text-foreground/80">
                   Address
                 </label>
 
@@ -303,12 +303,12 @@ export default function NewPropertyPage() {
                     updateField("address", e.target.value)
                   }
                   placeholder="Street address"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="city" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="city" className="mb-2 block text-sm font-medium text-foreground/80">
                   City
                 </label>
 
@@ -320,12 +320,12 @@ export default function NewPropertyPage() {
                     updateField("city", e.target.value)
                   }
                   placeholder="Lahore"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="state" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="state" className="mb-2 block text-sm font-medium text-foreground/80">
                   State / Province
                 </label>
 
@@ -337,12 +337,12 @@ export default function NewPropertyPage() {
                     updateField("state", e.target.value)
                   }
                   placeholder="Punjab"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="prop_country" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="prop_country" className="mb-2 block text-sm font-medium text-foreground/80">
                   Country
                 </label>
 
@@ -354,12 +354,12 @@ export default function NewPropertyPage() {
                     updateField("country", e.target.value)
                   }
                   placeholder="Pakistan"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="postal_code" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="postal_code" className="mb-2 block text-sm font-medium text-foreground/80">
                   Postal Code
                 </label>
 
@@ -374,15 +374,15 @@ export default function NewPropertyPage() {
                     )
                   }
                   placeholder="54000"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
             </div>
           </section>
 
           {/* Property Details */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Property Details
             </h2>
 
@@ -426,14 +426,14 @@ export default function NewPropertyPage() {
           </section>
 
           {/* Check-in / Check-out */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Guest Information
             </h2>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
-                <label htmlFor="check_in_time" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="check_in_time" className="mb-2 block text-sm font-medium text-foreground/80">
                   Check-in Time
                 </label>
 
@@ -447,12 +447,12 @@ export default function NewPropertyPage() {
                       e.target.value
                     )
                   }
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="check_out_time" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="check_out_time" className="mb-2 block text-sm font-medium text-foreground/80">
                   Check-out Time
                 </label>
 
@@ -466,19 +466,19 @@ export default function NewPropertyPage() {
                       e.target.value
                     )
                   }
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
             </div>
           </section>
 
           {/* Financial Settings */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Financial Settings
             </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Choose which currency this property uses for reservations and
               financial records.
             </p>
@@ -488,7 +488,7 @@ export default function NewPropertyPage() {
                 className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
                   form.currency === ""
                     ? "border-blue-300 bg-blue-50/50 ring-1 ring-blue-100"
-                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                    : "border-border hover:border-border hover:bg-muted"
                 }`}
               >
                 <input
@@ -500,10 +500,10 @@ export default function NewPropertyPage() {
                 />
 
                 <span>
-                  <span className="block text-sm font-medium text-slate-900">
+                  <span className="block text-sm font-medium text-foreground">
                     Use organization default
                   </span>
-                  <span className="mt-0.5 block text-sm text-slate-500">
+                  <span className="mt-0.5 block text-sm text-muted-foreground">
                     {orgDefaultCurrency}
                     {CURRENCIES[orgDefaultCurrency]
                       ? ` · ${CURRENCIES[orgDefaultCurrency]!.name}`
@@ -516,7 +516,7 @@ export default function NewPropertyPage() {
                 className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
                   form.currency !== ""
                     ? "border-blue-300 bg-blue-50/50 ring-1 ring-blue-100"
-                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                    : "border-border hover:border-border hover:bg-muted"
                 }`}
               >
                 <input
@@ -530,7 +530,7 @@ export default function NewPropertyPage() {
                 />
 
                 <span className="w-full">
-                  <span className="block text-sm font-medium text-slate-900">
+                  <span className="block text-sm font-medium text-foreground">
                     Custom property currency
                   </span>
 
@@ -565,14 +565,14 @@ export default function NewPropertyPage() {
           </section>
 
           {/* Additional */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
               Additional Information
             </h2>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div className="md:col-span-2">
-                <label htmlFor="house_manual_url" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="house_manual_url" className="mb-2 block text-sm font-medium text-foreground/80">
                   House Manual URL
                 </label>
 
@@ -587,7 +587,7 @@ export default function NewPropertyPage() {
                     )
                   }
                   placeholder="https://example.com/manual"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
                 />
               </div>
 
@@ -612,7 +612,7 @@ export default function NewPropertyPage() {
               />
 
               <div>
-                <label htmlFor="status" className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="status" className="mb-2 block text-sm font-medium text-foreground/80">
                   Status
                 </label>
 
@@ -622,7 +622,7 @@ export default function NewPropertyPage() {
                   onChange={(e) =>
                     updateField("status", e.target.value)
                   }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-slate-900"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 outline-none focus:border-primary"
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
@@ -637,7 +637,7 @@ export default function NewPropertyPage() {
               type="button"
               onClick={() => router.push("/properties")}
               disabled={loading}
-              className="rounded-xl border border-slate-200 bg-white px-6 py-3 font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-xl border border-border bg-card px-6 py-3 font-medium text-foreground/80 transition hover:bg-muted disabled:opacity-50"
             >
               Cancel
             </button>
@@ -645,7 +645,7 @@ export default function NewPropertyPage() {
             <button
               type="submit"
               disabled={loading}
-              className="rounded-xl bg-slate-900 px-7 py-3 font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-primary px-7 py-3 font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Creating Property..." : "Create Property"}
             </button>
@@ -671,7 +671,7 @@ function NumberField({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-2 block text-sm font-medium text-slate-700">
+      <label htmlFor={id} className="mb-2 block text-sm font-medium text-foreground/80">
         {label}
       </label>
 
@@ -683,7 +683,7 @@ function NumberField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="0"
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900"
+        className="w-full rounded-xl border border-border px-4 py-3 outline-none focus:border-primary"
       />
     </div>
   );

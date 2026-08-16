@@ -51,23 +51,23 @@ export default function ApprovalSettingsSection({ canEdit }: { canEdit: boolean 
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-slate-900">Approval Rules</h2>
-      <p className="mt-1 text-sm text-slate-500">
+    <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-xl font-semibold text-foreground">Approval Rules</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
         Whether Member-role edits to reservation dates, cancellations, and
         financial fields require approval from a Manager, Admin, or Owner
         before taking effect.
       </p>
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-400">Loading...</p>
+        <p className="mt-4 text-sm text-muted-foreground/80">Loading...</p>
       ) : (
-        <div className="mt-5 flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3.5">
+        <div className="mt-5 flex items-center justify-between rounded-xl border border-border bg-muted px-4 py-3.5">
           <div>
-            <p className="text-sm font-medium text-slate-900">
+            <p className="text-sm font-medium text-foreground">
               Require approval for Member reservation changes
             </p>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {requireApproval
                 ? "On — Members' date/cancellation/financial edits are held for review."
                 : "Off — Members can edit reservations freely, same as before this feature existed."}
@@ -80,7 +80,7 @@ export default function ApprovalSettingsSection({ canEdit }: { canEdit: boolean 
             role="switch"
             aria-checked={requireApproval ?? false}
             className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-50 ${
-              requireApproval ? "bg-slate-900" : "bg-slate-300"
+              requireApproval ? "bg-primary" : "bg-muted"
             }`}
             title={
               canEdit
@@ -89,7 +89,7 @@ export default function ApprovalSettingsSection({ canEdit }: { canEdit: boolean 
             }
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+              className={`inline-block h-4 w-4 transform rounded-full bg-card transition ${
                 requireApproval ? "translate-x-6" : "translate-x-1"
               }`}
             />

@@ -217,11 +217,11 @@ export default function PropertyImagesSection({
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">Photos</h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <h2 className="text-xl font-semibold text-foreground">Photos</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             {images.length} / {MAX_IMAGES} images
             {canManage ? " · drag to reorder" : ""}
           </p>
@@ -243,7 +243,7 @@ export default function PropertyImagesSection({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading || images.length >= MAX_IMAGES}
-              className="rounded-xl bg-[#10172a] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#18213a] disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-gradient-to-r from-primary to-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {uploading ? "Uploading..." : "+ Add Photos"}
             </button>
@@ -258,9 +258,9 @@ export default function PropertyImagesSection({
       )}
 
       {loading ? (
-        <div className="mt-6 text-sm text-slate-500">Loading photos...</div>
+        <div className="mt-6 text-sm text-muted-foreground">Loading photos...</div>
       ) : images.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
+        <div className="mt-6 rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground/80">
           No photos yet.
         </div>
       ) : (
@@ -272,7 +272,7 @@ export default function PropertyImagesSection({
               onDragStart={() => handleDragStart(image.id)}
               onDragOver={(event) => event.preventDefault()}
               onDrop={() => handleDropOn(image.id)}
-              className={`group relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50 ${
+              className={`group relative aspect-square overflow-hidden rounded-xl border border-border bg-muted ${
                 canManage ? "cursor-move" : ""
               }`}
             >
@@ -284,7 +284,7 @@ export default function PropertyImagesSection({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">
+                <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground/80">
                   Unavailable
                 </div>
               )}
@@ -301,7 +301,7 @@ export default function PropertyImagesSection({
                     <button
                       onClick={() => handleSetCover(image.id)}
                       disabled={busyId === image.id}
-                      className="rounded-lg bg-white/90 px-2 py-1 text-xs font-medium text-slate-800 hover:bg-white disabled:opacity-50"
+                      className="rounded-lg bg-white/90 px-2 py-1 text-xs font-medium text-foreground/90 hover:bg-card disabled:opacity-50"
                     >
                       Set cover
                     </button>
@@ -310,7 +310,7 @@ export default function PropertyImagesSection({
                   <button
                     onClick={() => handleDelete(image.id)}
                     disabled={busyId === image.id}
-                    className="rounded-lg bg-white/90 px-2 py-1 text-xs font-medium text-red-600 hover:bg-white disabled:opacity-50"
+                    className="rounded-lg bg-white/90 px-2 py-1 text-xs font-medium text-red-600 hover:bg-card disabled:opacity-50"
                   >
                     {busyId === image.id ? "..." : "Delete"}
                   </button>

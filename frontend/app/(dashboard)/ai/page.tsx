@@ -259,23 +259,23 @@ export default function AiAssistantPage() {
   return (
     <main className="mx-auto flex h-[calc(100vh-8rem)] max-w-6xl flex-col gap-6 lg:flex-row">
       {/* Conversation list */}
-      <aside className="w-full shrink-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:w-64">
+      <aside className="w-full shrink-0 rounded-2xl border border-border bg-card p-4 shadow-sm lg:w-64">
         <button
           onClick={startNewConversation}
-          className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+          className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
         >
           New conversation
         </button>
 
         <div className="mt-4">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
             History
           </p>
 
           {loadingConversations ? (
-            <p className="text-sm text-slate-500">Loading...</p>
+            <p className="text-sm text-muted-foreground">Loading...</p>
           ) : conversations.length === 0 ? (
-            <p className="text-sm text-slate-400">No conversations yet.</p>
+            <p className="text-sm text-muted-foreground/80">No conversations yet.</p>
           ) : (
             <ul className="space-y-1">
               {conversations.map((c) => (
@@ -284,8 +284,8 @@ export default function AiAssistantPage() {
                     onClick={() => openConversation(c.id)}
                     className={`block w-full truncate rounded-lg px-3 py-2 text-left text-sm ${
                       c.id === conversationId
-                        ? "bg-slate-100 font-medium text-slate-900"
-                        : "text-slate-600 hover:bg-slate-50"
+                        ? "bg-muted font-medium text-foreground"
+                        : "text-foreground/70 hover:bg-muted"
                     }`}
                   >
                     {c.title || "Untitled conversation"}
@@ -298,20 +298,20 @@ export default function AiAssistantPage() {
       </aside>
 
       {/* Chat panel */}
-      <section className="flex flex-1 flex-col rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+      <section className="flex flex-1 flex-col rounded-2xl border border-border bg-card shadow-sm">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">
+            <h1 className="text-lg font-semibold text-foreground">
               AI Assistant
             </h1>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Answers and proposed actions based on your organization&apos;s live PMS data.
             </p>
           </div>
 
           <button
             onClick={handleClear}
-            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-red-600"
+            className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-red-600"
           >
             Clear
           </button>
@@ -319,10 +319,10 @@ export default function AiAssistantPage() {
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {loadingMessages ? (
-            <p className="text-sm text-slate-500">Loading conversation...</p>
+            <p className="text-sm text-muted-foreground">Loading conversation...</p>
           ) : messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-muted-foreground/80">
                 Ask a question about your properties, reservations, cleaning,
                 maintenance, inventory, or reports.
               </p>
@@ -332,7 +332,7 @@ export default function AiAssistantPage() {
                   <button
                     key={prompt}
                     onClick={() => sendMessage(prompt)}
-                    className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50"
+                    className="rounded-full border border-border px-3 py-1.5 text-xs text-foreground/70 hover:bg-muted"
                   >
                     {prompt}
                   </button>
@@ -376,8 +376,8 @@ export default function AiAssistantPage() {
                       <div
                         className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm ${
                           m.role === "user"
-                            ? "bg-slate-900 text-white"
-                            : "bg-slate-100 text-slate-800"
+                            ? "bg-primary text-white"
+                            : "bg-muted text-foreground/90"
                         }`}
                       >
                         {m.message}
@@ -385,7 +385,7 @@ export default function AiAssistantPage() {
                     </div>
 
                     {m.role === "model" && tools.length > 0 && (
-                      <p className="mt-1 text-xs text-slate-400">
+                      <p className="mt-1 text-xs text-muted-foreground/80">
                         Looked up: {tools.map((t) => t.replace(/_/g, " ")).join(", ")}
                       </p>
                     )}
@@ -424,7 +424,7 @@ export default function AiAssistantPage() {
 
               {sending && (
                 <div className="flex justify-start">
-                  <div className="max-w-[80%] rounded-2xl bg-slate-100 px-4 py-2.5 text-sm text-slate-400">
+                  <div className="max-w-[80%] rounded-2xl bg-muted px-4 py-2.5 text-sm text-muted-foreground/80">
                     Thinking...
                   </div>
                 </div>
@@ -446,7 +446,7 @@ export default function AiAssistantPage() {
             e.preventDefault();
             sendMessage(input);
           }}
-          className="flex items-end gap-3 border-t border-slate-100 px-6 py-4"
+          className="flex items-end gap-3 border-t border-border px-6 py-4"
         >
           <textarea
             value={input}
@@ -460,13 +460,13 @@ export default function AiAssistantPage() {
             placeholder="Ask about your properties, reservations, cleaning, maintenance, inventory..."
             rows={1}
             disabled={sending}
-            className="flex-1 resize-none rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-slate-400 focus:outline-none disabled:opacity-60"
+            className="flex-1 resize-none rounded-xl border border-border px-4 py-2.5 text-sm focus:border-primary focus:outline-none disabled:opacity-60"
           />
 
           <button
             type="submit"
             disabled={sending || !input.trim()}
-            className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             Send
           </button>

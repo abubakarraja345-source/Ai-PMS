@@ -37,11 +37,11 @@ function getStatusClasses(status: string) {
     case "resolved":
       return "bg-emerald-50 text-emerald-700 border-emerald-200";
     case "closed":
-      return "bg-slate-100 text-slate-600 border-slate-200";
+      return "bg-muted text-foreground/70 border-border";
     case "cancelled":
       return "bg-red-50 text-red-700 border-red-200";
     default:
-      return "bg-slate-50 text-slate-700 border-slate-200";
+      return "bg-muted text-foreground/80 border-border";
   }
 }
 
@@ -52,9 +52,9 @@ function getPriorityClasses(priority: string) {
     case "high":
       return "bg-amber-50 text-amber-700 border-amber-200";
     case "low":
-      return "bg-slate-50 text-slate-500 border-slate-200";
+      return "bg-muted text-muted-foreground border-border";
     default:
-      return "bg-slate-50 text-slate-700 border-slate-200";
+      return "bg-muted text-foreground/80 border-border";
   }
 }
 
@@ -191,14 +191,14 @@ export default function MaintenancePage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 p-4 md:p-10">
+    <main className="min-h-screen bg-background p-4 md:p-10">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-3xl font-semibold text-slate-950 md:text-5xl">
+          <h1 className="text-3xl font-semibold text-foreground md:text-5xl">
             Maintenance
           </h1>
 
-          <p className="mt-2 text-slate-500 md:mt-3 md:text-lg">
+          <p className="mt-2 text-muted-foreground md:mt-3 md:text-lg">
             Track and resolve property maintenance issues.
           </p>
         </div>
@@ -207,18 +207,18 @@ export default function MaintenancePage() {
           onClick={() => {
             window.location.href = "/maintenance/new";
           }}
-          className="rounded-xl bg-[#10172a] px-6 py-4 text-white hover:bg-[#18213a]"
+          className="rounded-xl bg-gradient-to-r from-primary to-accent px-6 py-4 text-white hover:opacity-90"
         >
           + New Ticket
         </button>
       </div>
 
       {/* Filters */}
-      <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-4 shadow-sm">
         <select
           value={propertyFilter}
           onChange={(e) => setPropertyFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         >
           <option value="all">All properties</option>
           {properties.map((property) => (
@@ -231,7 +231,7 @@ export default function MaintenancePage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         >
           <option value="all">All statuses</option>
           <option value="open">Open</option>
@@ -244,7 +244,7 @@ export default function MaintenancePage() {
         <select
           value={priorityFilter}
           onChange={(e) => setPriorityFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         >
           <option value="all">All priorities</option>
           <option value="low">Low</option>
@@ -258,7 +258,7 @@ export default function MaintenancePage() {
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
           placeholder="Filter by category..."
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         />
 
         <input
@@ -266,12 +266,12 @@ export default function MaintenancePage() {
           value={assignedToFilter}
           onChange={(e) => setAssignedToFilter(e.target.value)}
           placeholder="Assigned to..."
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground/80 outline-none focus:border-primary"
         />
 
         <button
           onClick={loadTickets}
-          className="ml-auto rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="ml-auto rounded-lg border border-border px-3 py-2.5 text-sm font-medium text-foreground/80 hover:bg-muted"
         >
           Refresh
         </button>
@@ -284,25 +284,25 @@ export default function MaintenancePage() {
       )}
 
       {loading ? (
-        <div className="mt-10 text-slate-500">
+        <div className="mt-10 text-muted-foreground">
           Loading maintenance tickets...
         </div>
       ) : tickets.length === 0 ? (
-        <div className="mt-10 rounded-2xl border bg-white p-10 text-center">
-          <h2 className="text-2xl font-semibold text-slate-900">
+        <div className="mt-10 rounded-2xl border bg-card p-10 text-center">
+          <h2 className="text-2xl font-semibold text-foreground">
             No maintenance tickets yet
           </h2>
 
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-muted-foreground">
             Create a ticket to start tracking a property
             issue.
           </p>
         </div>
       ) : (
-        <div className="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="mt-8 overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
           <table className="w-full min-w-[900px] text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
+              <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground/80">
                 <th className="px-5 py-3 font-medium">
                   Property
                 </th>
@@ -337,18 +337,18 @@ export default function MaintenancePage() {
               {tickets.map((ticket) => (
                 <tr
                   key={ticket.id}
-                  className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60"
+                  className="border-b border-border/60 last:border-0 hover:bg-muted/60"
                 >
-                  <td className="px-5 py-4 font-medium text-slate-900">
+                  <td className="px-5 py-4 font-medium text-foreground">
                     {ticket.property?.title ??
                       "Unknown property"}
                   </td>
 
-                  <td className="px-5 py-4 text-slate-700">
+                  <td className="px-5 py-4 text-foreground/80">
                     {ticket.title}
                   </td>
 
-                  <td className="px-5 py-4 text-slate-500">
+                  <td className="px-5 py-4 text-muted-foreground">
                     {ticket.category ?? "—"}
                   </td>
 
@@ -372,15 +372,15 @@ export default function MaintenancePage() {
                     </span>
                   </td>
 
-                  <td className="px-5 py-4 text-slate-700">
+                  <td className="px-5 py-4 text-foreground/80">
                     {ticket.assigned_to ?? (
-                      <span className="text-slate-400">
+                      <span className="text-muted-foreground/80">
                         Unassigned
                       </span>
                     )}
                   </td>
 
-                  <td className="px-5 py-4 text-slate-700">
+                  <td className="px-5 py-4 text-foreground/80">
                     {ticket.reservation
                       ? ticket.reservation
                           .booking_reference ??
@@ -388,7 +388,7 @@ export default function MaintenancePage() {
                       : "—"}
                   </td>
 
-                  <td className="px-5 py-4 text-slate-500">
+                  <td className="px-5 py-4 text-muted-foreground">
                     {formatDate(ticket.created_at)}
                   </td>
 
@@ -398,7 +398,7 @@ export default function MaintenancePage() {
                         onClick={() =>
                           (window.location.href = `/maintenance/${ticket.id}`)
                         }
-                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-muted"
                       >
                         View
                       </button>
@@ -407,7 +407,7 @@ export default function MaintenancePage() {
                         onClick={() =>
                           (window.location.href = `/maintenance/${ticket.id}/edit`)
                         }
-                        className="rounded-lg bg-[#10172a] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#18213a]"
+                        className="rounded-lg bg-gradient-to-r from-primary to-accent px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
                       >
                         Edit
                       </button>

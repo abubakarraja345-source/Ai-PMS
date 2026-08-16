@@ -37,7 +37,7 @@ export default function ReviewCountBadge() {
   if (!count) return null;
 
   return (
-    <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white">
+    <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1.5 text-xs font-semibold text-warning-foreground">
       {count > 99 ? "99+" : count}
     </span>
   );

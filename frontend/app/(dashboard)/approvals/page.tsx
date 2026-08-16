@@ -104,8 +104,8 @@ export default function ApprovalsPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="text-3xl font-bold tracking-tight text-slate-900">Approvals</h1>
-      <p className="mt-2 text-slate-500">
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">Approvals</h1>
+      <p className="mt-2 text-muted-foreground">
         Sensitive changes submitted by team members, waiting for review.
       </p>
 
@@ -133,8 +133,8 @@ export default function ApprovalsPage() {
             onClick={() => setTab(t.value)}
             className={`rounded-lg px-4 py-2 text-sm font-medium ${
               tab === t.value
-                ? "bg-slate-900 text-white"
-                : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                ? "bg-primary text-white"
+                : "border border-border text-foreground/70 hover:bg-muted"
             }`}
           >
             {t.label}
@@ -142,11 +142,11 @@ export default function ApprovalsPage() {
         ))}
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         {loading ? (
-          <p className="p-10 text-center text-sm text-slate-500">Loading...</p>
+          <p className="p-10 text-center text-sm text-muted-foreground">Loading...</p>
         ) : requests.length === 0 ? (
-          <p className="p-10 text-center text-sm text-slate-400">
+          <p className="p-10 text-center text-sm text-muted-foreground/80">
             No {tab} approval requests.
           </p>
         ) : (
@@ -155,16 +155,16 @@ export default function ApprovalsPage() {
               <li key={r.id} className="p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-foreground">
                       {humanizeResourceAction(r.resourceAction)} on a {r.entityType}
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       Requested by {r.requestedByLabel ?? r.requestedBy} ·{" "}
                       {new Date(r.createdAt).toLocaleString()}
                     </p>
-                    <p className="mt-2 text-sm text-slate-600">{payloadSummary(r.payload)}</p>
+                    <p className="mt-2 text-sm text-foreground/70">{payloadSummary(r.payload)}</p>
                     {r.reviewedByLabel && (
-                      <p className="mt-2 text-xs text-slate-400">
+                      <p className="mt-2 text-xs text-muted-foreground/80">
                         Reviewed by {r.reviewedByLabel}
                         {r.reviewNote ? ` — "${r.reviewNote}"` : ""}
                       </p>
@@ -181,7 +181,7 @@ export default function ApprovalsPage() {
                       </button>
                       <button
                         onClick={() => setConfirmTarget({ request: r, action: "approve" })}
-                        className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
+                        className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
                       >
                         Approve
                       </button>

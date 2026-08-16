@@ -66,7 +66,7 @@ export default function ThemeMenuButton() {
         aria-expanded={open}
         aria-label="Change theme"
         title="Change theme"
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/10 hover:text-white"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9BA8AB] transition hover:bg-white/10 hover:text-[#CCD0CF]"
       >
         <ActiveIcon size={16} />
       </button>
@@ -74,7 +74,7 @@ export default function ThemeMenuButton() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-30 mt-2 w-44 origin-top-right rounded-xl border border-white/10 bg-slate-900/95 p-1.5 shadow-xl backdrop-blur-xl animate-in fade-in zoom-in-95 slide-in-from-top-1 duration-150"
+          className="absolute right-0 top-full z-30 mt-2 w-44 origin-top-right rounded-xl border border-[#4A5C6A]/40 bg-[#11212D]/95 p-1.5 shadow-xl backdrop-blur-xl animate-in fade-in zoom-in-95 slide-in-from-top-1 duration-150"
         >
           {OPTIONS.map((option) => {
             const Icon = option.icon;
@@ -92,8 +92,8 @@ export default function ThemeMenuButton() {
                 }}
                 className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
                   active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-slate-300 hover:bg-white/10 hover:text-white"
+                    ? "bg-[#4E5775] text-white"
+                    : "text-[#9BA8AB] hover:bg-white/10 hover:text-[#CCD0CF]"
                 }`}
               >
                 <Icon size={14} />
